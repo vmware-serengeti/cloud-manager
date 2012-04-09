@@ -1,4 +1,4 @@
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   class ThreadPool
 
     def initialize(options = {})

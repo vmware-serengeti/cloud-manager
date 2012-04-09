@@ -37,7 +37,7 @@ module VHelper::VSphereCloud
 
     def ct_mob_ref_to_attr_hash(mob, type, options={})
       return mob
-    end 
+    end
 
     def get_host_by_cs_mob(mob, options={})
       return mob["hosts"]
@@ -45,11 +45,11 @@ module VHelper::VSphereCloud
 
     def get_rps_by_cs_mob(cluster_mob, options={})
       return cluster_mob["resource_pool"]
-    end 
+    end
 
     def get_cs_by_dc_mob(dc_mob, options={})
       return dc_mob["clusters"]
-    end 
+    end
 
     def get_datastores_by_cs_mob(cluster_mob, options={})
       return cluster_mob["datastores"]
@@ -68,26 +68,24 @@ module VHelper::VSphereCloud
     end
 
     def vm_reboot(vm, options={})
-    end 
+    end
 
     def vm_create_disk(vm, disk, options={})
-    end 
+    end
 
     def vm_attach_disk(vm, disk, options={})
-    end 
+    end
 
     def vm_detach_disk(vm, disk, options={})
-    end 
+    end
 
     def vm_delete_disk(vm, disk, options={})
-    end 
+    end
 
     def reconfigure_vm_cpu_mem(vm, cpu, mem, options={})
-    end 
+    end
 
     def resize_disk(vm, disk, new_size, options={})
-    end 
-
-
-  end 
+    end
+  end
 end

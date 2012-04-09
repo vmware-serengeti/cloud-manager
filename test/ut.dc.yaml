@@ -1,7 +1,7 @@
 ---
 - name: testDC
   mob:  dc-1
-  clusters: 
+  clusters:
   - name: Cluster1
     mob: cs1
     resource_pool:
@@ -15,7 +15,7 @@
     hosts:
     - name: host1
       mob: hs1
-      cpu: 1 
+      cpu: 1
       mem: 4096
       datastores:
       - name: share-ds
@@ -25,7 +25,7 @@
 
     - name: host2
       mob: hs2
-      cpu: 4 
+      cpu: 4
       mem: 16000
       datastores:
       - name: share-ds
@@ -35,7 +35,7 @@
 
     - name: host3
       mob: hs3
-      cpu: 2 
+      cpu: 2
       mem: 10000
       datastores:
       - name: share-ds
@@ -51,7 +51,6 @@
           - size: 200
             fullname: localdisk/vh-testDC.Cluster1.host3.1/local-disk-2.vmdk
             unit_number: 1
-          
 
   - name: Cluster2
     mob: cs2
@@ -61,7 +60,7 @@
     hosts:
     - name: host4
       mob: hs4
-      cpu: 2 
+      cpu: 2
       mem: 10000
       datastores:
       - name: share-ds

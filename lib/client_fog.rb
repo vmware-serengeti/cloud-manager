@@ -1,6 +1,6 @@
 require './cloud_item'
 
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   class Fog_adapter
     def initialize
     end

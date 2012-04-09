@@ -5,7 +5,7 @@ require './vm_group'
 require './cluster_diff'
 require './cloud_placement'
 
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   class VHelperCloud
     attr_reader :vc_share_datastore_patten
     attr_reader :vc_local_datastore_patten
@@ -25,8 +25,8 @@ module VHelper::VSphereCloud
       @vm_running = 0
 
       @lock = Mutex.new
-      @status = CLUSTER_BIRTH 
-      @rs_lock = Mutex.new 
+      @status = CLUSTER_BIRTH
+      @rs_lock = Mutex.new
       @client = nil
     end
 
@@ -71,7 +71,7 @@ module VHelper::VSphereCloud
         ###########################################################
         # Connect to Cloud server
         @logger.debug("Connect to Cloud Server...")
-        @status = CLUSTER_CONNECT 
+        @status = CLUSTER_CONNECT
         @client = ClientFactory.create(@client_name, @logger)
         @client.login(@vc_address, @vc_username, @vc_password)
 
@@ -79,17 +79,17 @@ module VHelper::VSphereCloud
         @resources = Resources.new(@client, self)
 
         ###########################################################
-        # Create inputed vm_group from vhelper input 
+        # Create inputed vm_group from vhelper input
         @logger.debug("Create vm group from vhelper input...")
         vm_groups_input = create_vm_group_from_vhelper_input(cluster_info)
         vm_groups_existed = {}
         cluster_changes = []
-        dc_resources = {} 
+        dc_resources = {}
         @status = CLUSTER_FETCH_INFO
         dc_resources = @resources.fetch_datacenter
 
         ###########################################################
-        # Create existed vm groups 
+        # Create existed vm groups
         @logger.debug("Create vm group from resources...")
         vm_groups_existed = create_vm_group_from_resources(dc_resources)
         @logger.info("Finish collect vm_group info from resources")
@@ -100,7 +100,7 @@ module VHelper::VSphereCloud
           @status = CLUSTER_UPDATE
           nodifference, cluster_changes = cluster_diff(dc_resources, vm_groups_input, vm_groups_existed)
           if nodifference
-            @status = CLUSTER_DONE 
+            @status = CLUSTER_DONE
           end
         end
       rescue => e
@@ -115,13 +115,13 @@ module VHelper::VSphereCloud
         return
       end
 
-      retryNum = 3
+      retry_num = 3
 
-      retryNum.times do |cycleNum|
+      retry_num.times do |cycleNum|
         begin
           ###########################################################
           #Caculate cluster placement
-          @status = CLUSTER_PLACE 
+          @status = CLUSTER_PLACE
           placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
 
           @status = CLUSTER_DEPLOY
@@ -134,15 +134,15 @@ module VHelper::VSphereCloud
         rescue => e
           if cycleNum + 1  >= retryNum
             cluster_failed(task)
-            raise 
+            raise
           end
           @logger.debug("Loop placement faild and retry #{cycleNum} loop")
           @logger.debug("#{e} - #{e.backtrace.join("\n")}")
         end
       end
       ###########################################################
-      # Cluster deploy successfully 
-      @status = CLUSTER_DONE 
+      # Cluster deploy successfully
+      @status = CLUSTER_DONE
       cluster_done(task)
     end
 

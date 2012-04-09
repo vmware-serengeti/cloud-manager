@@ -1,4 +1,4 @@
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   STATE_RUNNING = "running"
   STATE_FAILED = "failed"
   STATE_SUCCESS = "success"
@@ -55,7 +55,7 @@ module VHelper::VSphereCloud
       @vm_ids = {}
       @req_info = Resource_info.new(rp)
       return unless rp
-      @name = rp["name"] 
+      @name = rp["name"]
       @instances = rp["instance_num"]
     end
 
@@ -106,7 +106,7 @@ module VHelper::VSphereCloud
       @host = host
       @req_rp = req_rp
       @vm_group = nil
-      @status = VM_STATE_BIRTH 
+      @status = VM_STATE_BIRTH
     end
 
     def disk_add(size, fullpath, unit_number = 0)
@@ -114,7 +114,7 @@ module VHelper::VSphereCloud
       disk.type = nil
       disk.fullpath = fullpath
       disk.size = size
-      disk.unit_number = unit_number 
+      disk.unit_number = unit_number
       disk.datastore = nil
       disks[fullpath] = disk
     end
@@ -126,7 +126,7 @@ module VHelper::VSphereCloud
 
   class VHelperCloud
     attr_accessor :name
-    attr_accessor :vc_req_resource_pools 
+    attr_accessor :vc_req_resource_pools
     attr_accessor :vc_req_datacenter
     attr_accessor :vc_req_clusters
     attr_accessor :vc_address

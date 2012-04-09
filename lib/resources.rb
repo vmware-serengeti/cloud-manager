@@ -1,6 +1,6 @@
 require './cloud_item'
 
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   class Resources
     class Datacenter
       attr_accessor :mob
@@ -99,7 +99,7 @@ module VHelper::VSphereCloud
     end
 
     #########################################################
-    # Begin Resource functions 
+    # Begin Resource functions
     def initialize(client, vhelper, mem_over_commit = 1.0)
       @client           = client
       @vhelper          = vhelper
@@ -141,7 +141,7 @@ module VHelper::VSphereCloud
       cluster_mobs = @client.get_cs_by_dc_mob(datacenter.mob)
 
       cluster_names = @vhelper.vc_req_clusters
-      resource_pool_names = @vhelper.vc_req_resource_pools 
+      resource_pool_names = @vhelper.vc_req_resource_pools
 
       clusters = {}
       cluster_mobs.each do |cluster_mob|
@@ -169,7 +169,7 @@ module VHelper::VSphereCloud
                                                          datacenter.local_datastore_pattern)
 
         # make sure share_datastores and local_datastores are mutually exclusive
-        #share_datastore_names = cluster.share_datastores.map { |ds| ds.name } 
+        #share_datastore_names = cluster.share_datastores.map { |ds| ds.name }
         #local_datastore_names = cluster.local_datastores.map { |ds| ds.name }
 
         #if (share_datastore_names & local_datastore_names).length != 0 && !datacenter.allow_mixed_datastores
@@ -192,9 +192,9 @@ module VHelper::VSphereCloud
       resource_pool_mobs = @client.get_rps_by_cs_mob(cluster_mob)
 
       resource_pool_mobs.each do |resource_pool_mob|
-        attr = @client.ct_mob_ref_to_attr_hash(resource_pool_mob, RS_ATTR_TO_PROP) 
-        if attr["name"] == resource_pool_name 
-          return resource_pool_mob 
+        attr = @client.ct_mob_ref_to_attr_hash(resource_pool_mob, RS_ATTR_TO_PROP)
+        if attr["name"] == resource_pool_name
+          return resource_pool_mob
         end
       end
 

@@ -1,6 +1,6 @@
 require './client_fog'
 require '../test/fog_dummy'
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   class ClientFactory
     def self.create(name, logger)
       case name
@@ -17,16 +17,16 @@ module VHelper::VSphereCloud
   class Client_dummy
     #TODO add dummy functions here
     def ct_mob_ref_to_attr_hash(mob, type, options={})
-    end 
+    end
 
     def get_host_by_cs_mob(mob, options={})
     end
 
     def get_rps_by_cs_mob(cluster_mob, options={})
-    end 
+    end
 
     def get_cs_by_dc_mob(dc_mob, options={})
-    end 
+    end
 
     def get_vms_by_host_mob(vm_mob, options={})
     end
@@ -53,5 +53,4 @@ module VHelper::VSphereCloud
     end
 
    end
- 
 end

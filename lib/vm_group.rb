@@ -1,4 +1,4 @@
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   class VHelperCloud
     def gen_vm_name(cluster_name, group_name, num)
       return "vh-#{cluster_name}.#{group_name}.#{num}"

@@ -1,6 +1,6 @@
 require './cloud_item'
 require './utils'
-module VHelper::VSphereCloud 
+module VHelper::VSphereCloud
   class VHelperCloud
     def cluster_deploy(cluster_changes, vm_placement)
       #TODO add placement code here
@@ -17,10 +17,10 @@ module VHelper::VSphereCloud
 
       vm_deploy(thread_pool, vm_placement) do |vm|
         @logger.info("placing vm #{vm.name}")
-        vm.status = VM_STATE_CLONE 
+        vm.status = VM_STATE_CLONE
         vm_clone(vm, :poweron => false)
 
-        vm.status = VM_STATE_RECONFIG 
+        vm.status = VM_STATE_RECONFIG
         reconfigure_vm_disk(vm)
 
         vm.status = VM_STATE_POWER_ON
@@ -39,7 +39,7 @@ module VHelper::VSphereCloud
             pool.process do
               begin
                 yield vm
-              rescue 
+              rescue
                 #TODO do some warning handler here
               end
             end
@@ -51,19 +51,19 @@ module VHelper::VSphereCloud
 
 
     def vm_clone(vm, options={})
-      #TODO 
+      #TODO
     end
 
     def vm_reconfigure_disk(vm)
-      #TODO 
+      #TODO
     end
 
     def vm_poweron(vm)
-      #TODO 
+      #TODO
     end
 
     def vm_finish(vm)
-      #TODO 
+      #TODO
     end
 
     ###################################
