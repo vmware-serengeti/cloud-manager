@@ -1,6 +1,6 @@
 require './cloud_item'
 
-module VHelper::VSphereCloud
+module VHelper::CloudManager
   class Resources
     class Datacenter
       attr_accessor :mob
@@ -243,7 +243,7 @@ module VHelper::VSphereCloud
       return vms if vm_mobs.nil?
       vm_mobs.each do |vm_mob|
         vm_vsphere = @client.ct_mob_ref_to_attr_hash(vm_mob, VM_ATTR_TO_PROP)
-        vm = VHelper::VSphereCloud::VM_Info.new(vm_vsphere["name"], host, @logger)
+        vm = VHelper::CloudManager::VmInfo.new(vm_vsphere["name"], host, @logger)
         vm.mob = vm_mob
         #TODO add fill data to vm structure
         disk_mobs = @client.get_disk_from_vm_mob(vm_mob)
@@ -279,6 +279,7 @@ module VHelper::VSphereCloud
       datastores
     end
     def isMatched?(name, match_pattern)
+      #TODO match_pattern is a array
       true
     end
   end

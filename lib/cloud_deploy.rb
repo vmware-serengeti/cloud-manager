@@ -1,8 +1,8 @@
 require './cloud_item'
 require './utils'
-module VHelper::VSphereCloud
+module VHelper::CloudManager
   class VHelperCloud
-    def cluster_deploy(cluster_changes, vm_placement)
+    def cluster_deploy(cluster_changes, vm_placement, options={})
       #TODO add placement code here
 
       thread_pool = ThreadPool.new(:max_threads => 32)
@@ -17,6 +17,7 @@ module VHelper::VSphereCloud
 
       vm_deploy(thread_pool, vm_placement) do |vm|
         @logger.info("placing vm #{vm.name}")
+        vm_begin_create(vm)
         vm.status = VM_STATE_CLONE
         vm_clone(vm, :poweron => false)
 
@@ -32,7 +33,7 @@ module VHelper::VSphereCloud
       @logger.info("Finish all deployments")
     end
 
-    def vm_deploy(thread_pool, group_placement)
+    def vm_deploy(thread_pool, group_placement, options={})
       group_placement.each do |group_change|
         thread_pool.wrap do |pool|
           group_placement.each do |vm|
@@ -49,20 +50,24 @@ module VHelper::VSphereCloud
       end
     end
 
+    def vm_begin_create(vm, options={})
+      add_deploying_vm(vm)
+    end
 
     def vm_clone(vm, options={})
       #TODO
     end
 
-    def vm_reconfigure_disk(vm)
+    def vm_reconfigure_disk(vm, options={})
       #TODO
     end
 
-    def vm_poweron(vm)
+    def vm_poweron(vm, options={})
       #TODO
     end
 
-    def vm_finish(vm)
+    def vm_finish(vm, options={})
+      deploying_vm_move_to_existed(vm, options)
       #TODO
     end
 

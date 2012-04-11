@@ -1,20 +1,20 @@
-require './client_fog'
+#require './client_fog'
 require '../test/fog_dummy'
-module VHelper::VSphereCloud
+module VHelper::CloudManager
   class ClientFactory
     def self.create(name, logger)
       case name
       when "ut"
-        return Fog_dummy.new(logger)
+        return FogDummy.new(logger)
       when "fog"
-        return fog_adapter.new
+        return FogAdapter.new
       else
-        return Client_dummy.new(logger)
+        return ClientDummy.new(logger)
       end
     end
   end
 
-  class Client_dummy
+  class ClientDummy
     #TODO add dummy functions here
     def ct_mob_ref_to_attr_hash(mob, type, options={})
     end

@@ -1,4 +1,4 @@
-module VHelper::VSphereCloud
+module VHelper::CloudManager
   class Resources
     RS_ATTR_TO_PROP = 0
     DS_ATTR_TO_PROP = 1
@@ -7,10 +7,8 @@ module VHelper::VSphereCloud
     VM_ATTR_TO_PROP = 4
     CS_ATTR_TO_PROP = 5
   end
-  class Fog_dummy
-
+  class FogDummy
     attr_accessor:logger
-
     DC_CONFIG_FILE = "../test/ut.dc.yaml"
     def initialize(logger)
       @logger = logger

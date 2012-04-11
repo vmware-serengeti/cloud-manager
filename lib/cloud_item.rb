@@ -1,4 +1,4 @@
-module VHelper::VSphereCloud
+module VHelper::CloudManager
   STATE_RUNNING = "running"
   STATE_FAILED = "failed"
   STATE_SUCCESS = "success"
@@ -23,7 +23,7 @@ module VHelper::VSphereCloud
   SHARE = "share"
   LOCAL = "local"
 
-  class Resource_info
+  class ResourceInfo
     attr_accessor :cpu
     attr_accessor :mem
     attr_accessor :disk_type
@@ -45,15 +45,15 @@ module VHelper::VSphereCloud
     end
   end
 
-  class VM_Group_Info
+  class VmGroupInfo
     attr_accessor :name
-    attr_accessor :req_info  #class Resource_info
+    attr_accessor :req_info  #class ResourceInfo
     attr_accessor :instances
-    attr_accessor :vm_ids    #classes VM_Info
+    attr_accessor :vm_ids    #classes VmInfo
     def initialize(logger, rp=nil)
       @logger = logger
       @vm_ids = {}
-      @req_info = Resource_info.new(rp)
+      @req_info = ResourceInfo.new(rp)
       return unless rp
       @name = rp["name"]
       @instances = rp["instance_num"]
@@ -82,7 +82,7 @@ module VHelper::VSphereCloud
     end
   end
 
-  class Disk_Info
+  class DiskInfo
     attr_accessor :type
     attr_accessor :fullpath
     attr_accessor :size
@@ -90,7 +90,7 @@ module VHelper::VSphereCloud
     attr_accessor :datastore
   end
 
-  class VM_Info
+  class VmInfo
     attr_accessor :name
     attr_accessor :status
     attr_accessor :host
@@ -99,6 +99,8 @@ module VHelper::VSphereCloud
     attr_accessor :vm_spec
     attr_accessor :vm_group
     attr_accessor :mob
+    attr_accessor :error_msg
+    attr_accessor :ip_address
     def initialize(vm_name, host, logger, req_rp = nil)
       @lock = Mutex.new
       @disks = {}
@@ -107,10 +109,12 @@ module VHelper::VSphereCloud
       @req_rp = req_rp
       @vm_group = nil
       @status = VM_STATE_BIRTH
+      @ip_address = ""
+      @error_msg = ""
     end
 
     def disk_add(size, fullpath, unit_number = 0)
-      disk = Disk_Info.new
+      disk = DiskInfo.new
       disk.type = nil
       disk.fullpath = fullpath
       disk.size = size

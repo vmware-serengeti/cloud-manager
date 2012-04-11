@@ -5,7 +5,7 @@ require './vm_group'
 require './cluster_diff'
 require './cloud_placement'
 
-module VHelper::VSphereCloud
+module VHelper::CloudManager
   class VHelperCloud
     attr_reader :vc_share_datastore_patten
     attr_reader :vc_local_datastore_patten
@@ -14,37 +14,51 @@ module VHelper::VSphereCloud
     attr_reader :vc_req_clusters
     attr_reader :allow_mixed_datastores
     attr_reader :racks
+    attr_reader :need_abort
 
     def initialize(logger)
       @logger = logger
       @dc_resource = nil
       @clusters = nil
-      @vms = nil
-      @vm_success = 0
-      @vm_fail = 0
-      @vm_running = 0
+      @vm_lock = Mutex.new
+      @deploy_vms = {} 
+      @existed_vms = {}
+      @failure_vms = {}
+      @need_abort = nil
 
-      @lock = Mutex.new
       @status = CLUSTER_BIRTH
       @rs_lock = Mutex.new
       @client = nil
     end
 
-    def create_vhelper_info(vhelper_info)
-      @name = vhelper_info["name"]
-      resource_pool = vhelper_info["vc_resource_pools"]
+    def add_deploying_vm(vm)
+      @vm_lock.synchronize do
+        @deploy_vms[vm.name] = vm
+      end
+    end
+
+    def deploying_vm_move_to_existed(vm)
+      @vm_lock.synchronize do
+        @deploy_vms.delete(vm)
+        @existed_vms[vm.name] = vm
+      end
+    end
+
+    def create_cloud_provider(cloud_provider)
+      @name = cloud_provider["name"]
+      resource_pool = cloud_provider["vc_resource_pools"]
       #@vc_req_resource_pools = resource_pool.split(',').delete_if(&:empty?)
       @vc_req_resource_pools = [resource_pool]
-      @vc_req_datacenter = vhelper_info["vc_datacenter"]
-      vc_req_cluster_string = vhelper_info["vc_clusters"]
+      @vc_req_datacenter = cloud_provider["vc_datacenter"]
+      vc_req_cluster_string = cloud_provider["vc_clusters"]
       #@vc_req_clusters = vc_req_cluster_string.split(',').delete_if(&:empty?)
       @vc_req_clusters = [vc_req_cluster_string]
-      @vc_address = vhelper_info["vc_address"]
-      @vc_username = vhelper_info["vc_username"]
-      @vc_password = vhelper_info["vc_password"]
-      @vc_share_datastore_patten = vhelper_info["vc_share_datastore_patten"]
-      @vc_local_datastore_patten = vhelper_info["vc_local_datastore_patten"]
-      @client_name = vhelper_info["cloud_adapter"] || "fog"
+      @vc_address = cloud_provider["vc_address"]
+      @vc_username = cloud_provider["vc_username"]
+      @vc_password = cloud_provider["vc_password"]
+      @vc_share_datastore_patten = cloud_provider["vc_share_datastore_patten"]
+      @vc_local_datastore_patten = cloud_provider["vc_local_datastore_patten"]
+      @client_name = cloud_provider["cloud_adapter"] || "fog"
       @allow_mixed_datastores = nil
       @racks = nil
     end
@@ -57,13 +71,22 @@ module VHelper::VSphereCloud
       "<vHelperCloud: #{@name} vc: #{@vc_address} status: #{@status} client: #{@client.inspect}>"
     end
 
-    def work(vhelper_info, clusters_info, task)
-      @logger.debug("enter work...")
-      create_vhelper_info(vhelper_info)
-      @vm_success = 0
-      @vm_fail = 0
-      @vm_running = 0
+    def delete(cloud_provider, clusters_info, task)
+      @logger.debug("enter delete ... not implement")
+      #TODO add code here to delete all cluster
+    end
+
+    def create_and_update(cloud_provider, clusters_info, task)
+      @logger.debug("enter create_and_update...")
+      create_cloud_provider(cloud_provider)
+      @vm_lock.synchronize do 
+        @deploy_vms = {} 
+        @existed_vms = {}
+        @failure_vms = {}
+      end
       #FIXME we only support one cluster, currently
+
+      @logger.debug("#{clusters_info.inspect}")
       cluster_info = clusters_info[0]
       @logger.debug("Begin vHelper work...")
 
@@ -105,8 +128,8 @@ module VHelper::VSphereCloud
         end
       rescue => e
         @logger.debug("Prepare working failed.")
-        cluster_failed(task)
         @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+        cluster_failed(task)
         #TODO add all kinds of error handlers here
         raise e
       end
@@ -117,7 +140,7 @@ module VHelper::VSphereCloud
 
       retry_num = 3
 
-      retry_num.times do |cycleNum|
+      retry_num.times do |cycle_num|
         begin
           ###########################################################
           #Caculate cluster placement
@@ -132,11 +155,11 @@ module VHelper::VSphereCloud
           dc_resources = @resources.fetch_datacenter
           #TODO add all kinds of error handlers here
         rescue => e
-          if cycleNum + 1  >= retryNum
+          if cycle_num + 1  >= retry_num
             cluster_failed(task)
             raise
           end
-          @logger.debug("Loop placement faild and retry #{cycleNum} loop")
+          @logger.debug("Loop placement faild and retry #{cycle_num} loop")
           @logger.debug("#{e} - #{e.backtrace.join("\n")}")
         end
       end
@@ -146,16 +169,46 @@ module VHelper::VSphereCloud
       cluster_done(task)
     end
 
+    def get_result_by_vms(vms)
+      vms.each_value do |vm|
+        vm_status = IaasServer.new
+        vm_status.vm_name = vm.name
+        result = get_from_vm_name(vm.name)
+        vm_status.cluster_name = result[1]
+        vm_status.group_name = result[2]
+        yield(vm, vm_status)
+      end
+    end
+
+    def get_result
+      result = IaasResult.new
+      @vm_lock.synchronize do 
+        result.running = @deploy_vms.size
+        result.finished = @existed_vms.size 
+        result.failed = @failure_vms.size
+        get_result_by_vms(@deploy_vms) do
+        end
+        get_result_by_vms(@existed_vms) do
+          vm_status.create = true
+          vm_status.powered_on = vm.powerd_on
+          vm_status.ip_address = vm.ip_address
+        end
+        get_result_by_vms(@failure_vms) do
+          vm_status.error_code = -1
+          vm_status.error_msg = vm.error_msg
+        end
+      end
+      [0, result]
+    end
+
     def cluster_failed(task)
       @logger.debug("Enter Cluster_failed")
-      task.set_result(inspect)
       task.set_finish("failed")
     end
 
     def cluster_done(task)
-      @logger.debug("Enter Cluster_done")
+      @logger.debug("Enter cluster_done")
       # TODO finish cluster information
-      task.set_result(inspect)
       task.set_finish("success")
     end
 

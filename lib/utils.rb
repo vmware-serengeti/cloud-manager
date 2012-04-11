@@ -1,6 +1,34 @@
-module VHelper::VSphereCloud
-  class ThreadPool
+module VHelper::CloudManager
+  class Logger
+    def initialize()
+      puts "initiated logger"
+    end
+    def info(msg)
+      puts "INFO: #{msg2str(msg)}"
+    end
 
+    def debug(msg)
+      puts "DEBUG: #{msg2str(msg)}"
+    end
+
+    def inspect
+      "<Cloud-manager-Logger>"
+    end
+
+    def msg2str(msg)
+      case msg
+      when ::String
+        msg
+      when ::Exception
+        "EXCEPTION #{ msg.message } (#{ msg.class })\n" <<
+        (msg.backtrace || []).join("\n")
+      else
+        msg.inspect
+      end
+    end
+  end
+
+  class ThreadPool
     def initialize(options = {})
       @actions = []
       @lock = Mutex.new
