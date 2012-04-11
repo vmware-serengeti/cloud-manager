@@ -1,4 +1,4 @@
-#require './client_fog'
+require './client_fog'
 require '../test/fog_dummy'
 module VHelper::CloudManager
   class ClientFactory

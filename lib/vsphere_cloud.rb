@@ -6,7 +6,7 @@ require "./vhelper_cloud"
 
 #Resource infomation
 module VHelper::CloudManager
-  class IaasProcess 
+  class IaasProcess
     attr_accessor :progress
     attr_accessor :results
     def initialize
@@ -117,9 +117,9 @@ module VHelper::CloudManager
       return @vhelper.delete(@cloud_provider, @cluster_definition, self)
     end
 
-    def self.delete_cluster(cluster_definition, cloud_provider, options={})
-      cloud = IaasTask.new(cluster_definition, cloud_provider)
-      if (options["wait"])
+    def self.delete_cluster(parameter, options={})
+      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+      if (options[wait])
         cloud.delete
       else
         # options["sync"] == false
@@ -130,8 +130,8 @@ module VHelper::CloudManager
       cloud
     end
 
-    def self.create_cluster(cluster_definition, cloud_provider, options={})
-      cloud = IaasTask.new(cluster_definition, cloud_provider)
+    def self.create_cluster(parameter, options={})
+      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
       if (options["wait"])
         cloud.create_and_update
       else

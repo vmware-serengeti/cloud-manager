@@ -21,7 +21,7 @@ module VHelper::CloudManager
       @dc_resource = nil
       @clusters = nil
       @vm_lock = Mutex.new
-      @deploy_vms = {} 
+      @deploy_vms = {}
       @existed_vms = {}
       @failure_vms = {}
       @need_abort = nil
@@ -79,8 +79,8 @@ module VHelper::CloudManager
     def create_and_update(cloud_provider, clusters_info, task)
       @logger.debug("enter create_and_update...")
       create_cloud_provider(cloud_provider)
-      @vm_lock.synchronize do 
-        @deploy_vms = {} 
+      @vm_lock.synchronize do
+        @deploy_vms = {}
         @existed_vms = {}
         @failure_vms = {}
       end
@@ -182,9 +182,9 @@ module VHelper::CloudManager
 
     def get_result
       result = IaasResult.new
-      @vm_lock.synchronize do 
+      @vm_lock.synchronize do
         result.running = @deploy_vms.size
-        result.finished = @existed_vms.size 
+        result.finished = @existed_vms.size
         result.failed = @failure_vms.size
         get_result_by_vms(@deploy_vms) do
         end

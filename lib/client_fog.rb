@@ -1,5 +1,5 @@
 require './cloud_item'
-require 'fog'
+require '../../fog/lib/fog'
 
 module VHelper::CloudManager
   class Fog_adapter
@@ -24,7 +24,9 @@ module VHelper::CloudManager
     end
 
     def logout
-      @connection.destroy
+      unless @connection.nil?
+        @connection.destroy
+      end
       @connection = nil
       @logger.info("Disconnect to cloud provider ")
     end
