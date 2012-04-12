@@ -7,7 +7,7 @@ module VHelper::CloudManager
       when "ut"
         return FogDummy.new(logger)
       when "fog"
-        return FogAdapter.new
+        return FogAdapter.new(logger)
       else
         return ClientDummy.new(logger)
       end
@@ -25,7 +25,7 @@ module VHelper::CloudManager
     def get_rps_by_cs_mob(cluster_mob, options={})
     end
 
-    def get_cs_by_dc_mob(dc_mob, options={})
+    def get_clusters_by_dc_mob(dc_mob, options={})
     end
 
     def get_vms_by_host_mob(vm_mob, options={})

@@ -8,7 +8,7 @@ module VHelper::CloudManager
     CS_ATTR_TO_PROP = 5
   end
   class FogDummy
-    attr_accessor:logger
+    attr_reader:logger
     DC_CONFIG_FILE = "../test/ut.dc.yaml"
     def initialize(logger)
       @logger = logger
@@ -26,7 +26,7 @@ module VHelper::CloudManager
       @logger.debug("Logout #{@vc_addr}")
     end
 
-    def get_dc_node_by_path(dc_name, options={})
+    def get_dc_mob_ref_by_path(dc_name, options={})
       @debug_dc.each do |dc|
         return dc if dc["name"] == dc_name
       end
@@ -45,7 +45,7 @@ module VHelper::CloudManager
       return cluster_mob["resource_pool"]
     end
 
-    def get_cs_by_dc_mob(dc_mob, options={})
+    def get_clusters_by_dc_mob(dc_mob, options={})
       return dc_mob["clusters"]
     end
 
@@ -61,7 +61,7 @@ module VHelper::CloudManager
       return host_mob["vms"]
     end
 
-    def get_disk_from_vm_mob(vm_mob, options={})
+    def get_disks_by_vm_mob(vm_mob, options={})
       return vm_mob["disks"]
     end
 

@@ -93,14 +93,25 @@ module VHelper::CloudManager
   class VmInfo
     attr_accessor :name
     attr_accessor :status
+    attr_accessor :hostname
     attr_accessor :host
-    attr_accessor :disks
-    attr_accessor :req_rp
-    attr_accessor :vm_spec
-    attr_accessor :vm_group
+    attr_accessor :sys_datastore #system disk's datastore
+    attr_accessor :disks     #all allocated disk
+    attr_accessor :req_rp    #wanted vm spec
+    attr_accessor :vm_spec   #existed vm spec 
+    attr_accessor :vm_group   #link to vm_group
     attr_accessor :mob
+    attr_accessor :uuid
+    attr_accessor :instance_uuid
+    attr_accessor :power_state
     attr_accessor :error_msg
+    attr_accessor :operatingsystem
+    attr_accessor :connection_state
+    attr_accessor :hypervisor
+    attr_accessor :tools_state
+    attr_accessor :tools_version
     attr_accessor :ip_address
+    attr_accessor :is_a_template
     def initialize(vm_name, host, logger, req_rp = nil)
       @lock = Mutex.new
       @disks = {}
@@ -121,6 +132,7 @@ module VHelper::CloudManager
       disk.unit_number = unit_number
       disk.datastore = nil
       disks[fullpath] = disk
+      disk
     end
 
     def delete_all_disk

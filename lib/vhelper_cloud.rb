@@ -9,7 +9,6 @@ module VHelper::CloudManager
   class VHelperCloud
     attr_reader :vc_share_datastore_patten
     attr_reader :vc_local_datastore_patten
-    attr_reader :vc_req_resource_pools
     attr_reader :vc_req_datacenter
     attr_reader :vc_req_clusters
     attr_reader :allow_mixed_datastores
@@ -46,13 +45,11 @@ module VHelper::CloudManager
 
     def create_cloud_provider(cloud_provider)
       @name = cloud_provider["name"]
-      resource_pool = cloud_provider["vc_resource_pools"]
       #@vc_req_resource_pools = resource_pool.split(',').delete_if(&:empty?)
-      @vc_req_resource_pools = [resource_pool]
       @vc_req_datacenter = cloud_provider["vc_datacenter"]
-      vc_req_cluster_string = cloud_provider["vc_clusters"]
+      vc_req_clusters= cloud_provider["vc_clusters"]
       #@vc_req_clusters = vc_req_cluster_string.split(',').delete_if(&:empty?)
-      @vc_req_clusters = [vc_req_cluster_string]
+      @vc_req_clusters = [vc_req_clusters[0]
       @vc_address = cloud_provider["vc_address"]
       @vc_username = cloud_provider["vc_username"]
       @vc_password = cloud_provider["vc_password"]
@@ -93,7 +90,7 @@ module VHelper::CloudManager
       begin
         ###########################################################
         # Connect to Cloud server
-        @logger.debug("Connect to Cloud Server...")
+        @logger.debug("Connect to Cloud Server #{@vc_address} user:#{@vc_username}/#{vc_password}...")
         @status = CLUSTER_CONNECT
         @client = ClientFactory.create(@client_name, @logger)
         @client.login(@vc_address, @vc_username, @vc_password)
@@ -111,10 +108,12 @@ module VHelper::CloudManager
         @status = CLUSTER_FETCH_INFO
         dc_resources = @resources.fetch_datacenter
 
+        File.open("dc_resource.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
         ###########################################################
         # Create existed vm groups
         @logger.debug("Create vm group from resources...")
         vm_groups_existed = create_vm_group_from_resources(dc_resources)
+        File.open("vm_groups.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
         @logger.info("Finish collect vm_group info from resources")
 
         unless vm_groups_existed.empty?
@@ -124,6 +123,8 @@ module VHelper::CloudManager
           nodifference, cluster_changes = cluster_diff(dc_resources, vm_groups_input, vm_groups_existed)
           if nodifference
             @status = CLUSTER_DONE
+          else
+            File.open("cluster_changes.yaml", 'w'){|f| YAML.dump(cluster_changes, f)} 
           end
         end
       rescue => e
@@ -146,6 +147,7 @@ module VHelper::CloudManager
           #Caculate cluster placement
           @status = CLUSTER_PLACE
           placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
+          File.open("placement.yaml", 'w'){|f| YAML.dump(placement, f)} 
 
           @status = CLUSTER_DEPLOY
           successful = cluster_deploy(cluster_changes , placement)
@@ -154,6 +156,8 @@ module VHelper::CloudManager
           @status = CLUSTER_FETCH_INFO
           dc_resources = @resources.fetch_datacenter
           #TODO add all kinds of error handlers here
+          @logger.info("reload datacenter resources from cloud")
+          File.open("dc_resource-#{cycle_num}.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
         rescue => e
           if cycle_num + 1  >= retry_num
             cluster_failed(task)

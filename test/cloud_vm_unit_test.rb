@@ -5,6 +5,7 @@ require 'openssl'
 require 'tempfile'
 require 'yaml'
 require 'erb'
+require 'pp'
 
 require '../lib/vsphere_cloud'
 require '../test/fog_dummy'
@@ -26,19 +27,22 @@ begin
 
   opt = gets.chomp
   opt = opt.to_i
+  info = {}
+  info["cluster_definition"] = cluster_req_1
+  info["cloud_provider"] = vcenter
   puts "You select #{opt}"
   case opt
   when 1 then
     p "##Test UT"
     puts("cluster_def : #{cluster_req_1}")
     puts("provider: #{vcenter}")
-    cloud = VHelper::CloudManager::IaasTask.create_cluster(cluster_req_1, vcenter, :wait => false)
+    cloud = VHelper::CloudManager::IaasTask.create_cluster(info, :wait => false)
     while !cloud.wait_for_completion()
       puts("ut process:#{cloud.get_progress}")
       sleep(1)
     end
   when 2 then #Delete Cluster
-    cloud = VHelper::CloudManager::IaasTask.delete_cluster(cluster_req_1, vcenter, :wait => false)
+    cloud = VHelper::CloudManager::IaasTask.delete_cluster(info, :wait => false)
     while !cloud.wait_for_completion()
       puts("delete ut process:#{cloud.get_progress}")
       sleep(1)

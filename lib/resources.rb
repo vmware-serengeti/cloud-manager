@@ -75,8 +75,9 @@ module VHelper::CloudManager
       attr_accessor :mob
       attr_accessor :name
 
-      attr_accessor :datacenter
-      attr_accessor :cluster
+      attr_accessor :datacenter         # this host belongs to which datacenter
+      attr_accessor :cluster            # this host belongs to which cluster
+      attr_accessor :resource_pool      # this host belongs to which resource_pool
       attr_accessor :rack_name          # rack name
       attr_accessor :share_datastores
       attr_accessor :local_datastores
@@ -86,8 +87,8 @@ module VHelper::CloudManager
       attr_accessor :free_memory
       attr_accessor :unaccounted_memory
       attr_accessor :mem_over_commit
-      attr_accessor :datastores
-      attr_accessor :vms
+      attr_accessor :datastores         #
+      attr_accessor :vms                # all vms belongs to this host
 
       def real_free_memory
         @free_memory - @unaccounted_memory * @mem_over_commit
@@ -111,7 +112,7 @@ module VHelper::CloudManager
 
     def fetch_datacenter()
       datacenter_name = @vhelper.vc_req_datacenter
-      datacenter_mob    = @client.get_dc_node_by_path(datacenter_name)
+      datacenter_mob    = @client.get_dc_mob_ref_by_path(datacenter_name)
       return nil if datacenter_mob.nil?
 
       datacenter                      = Datacenter.new
@@ -138,15 +139,18 @@ module VHelper::CloudManager
     end
 
     def fetch_clusters(datacenter)
-      cluster_mobs = @client.get_cs_by_dc_mob(datacenter.mob)
+      cluster_mobs = @client.get_clusters_by_dc_mob(datacenter.mob)
 
       cluster_names = @vhelper.vc_req_clusters
       resource_pool_names = @vhelper.vc_req_resource_pools
 
       clusters = {}
+      @logger.debug("#{cluster_mobs.pretty_inspect}")
       cluster_mobs.each do |cluster_mob|
+        @logger.debug("cluster_mob #{cluster_mob.name}")
         requested_resource_pool = resource_pool_names[0]
         cluster_resource_pool = fetch_resource_pool(cluster_mob, requested_resource_pool)
+
         next if cluster_resource_pool.nil?
 
         attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, CS_ATTR_TO_PROP)
@@ -182,7 +186,7 @@ module VHelper::CloudManager
 
         cluster.hosts = fetch_hosts(cluster)
 
-        clusters[cluster_mob] = cluster
+        clusters[cluster.name] = cluster
       end
       clusters
     end
@@ -231,26 +235,30 @@ module VHelper::CloudManager
         @logger.debug("host:#{host.name} share datastores are #{host.share_datastores}")
         @logger.debug("host:#{host.name} local datastores are #{host.local_datastores}")
 
-        host.vms = fetch_vms(cluster, host)
-        hosts[host_mob] = host
+        host.vms = fetch_vms_by_host(cluster, host)
+        hosts[host.name] = host
       end
       hosts
     end
 
-    def fetch_vms(cluster, host)
+    def fetch_vms_by_host(cluster, host)
       vms = {}
       vm_mobs = @client.get_vms_by_host_mob(host.mob)
       return vms if vm_mobs.nil?
       vm_mobs.each do |vm_mob|
-        vm_vsphere = @client.ct_mob_ref_to_attr_hash(vm_mob, VM_ATTR_TO_PROP)
-        vm = VHelper::CloudManager::VmInfo.new(vm_vsphere["name"], host, @logger)
-        vm.mob = vm_mob
-        #TODO add fill data to vm structure
-        disk_mobs = @client.get_disk_from_vm_mob(vm_mob)
-        disk_mobs.each do |disk_mob|
-          attr = @client.ct_mob_ref_to_attr_hash(disk_mob, DK_ATTR_TO_PROP)
-          vm.disk_add(attr["size"], attr["fullname"], attr["unit_number"])
-          #TODO add disk datastore here
+        vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, VM_ATTR_TO_PROP)
+        vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], host, @logger)
+
+        #update vm info with properties
+        update_vm_with_properties(vm, vm_existed)
+        vm.host = host
+
+        #update disk info
+        disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
+        disk_attrs.each do |attr|
+          disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 
+          datastore_name = @client.get_ds_name_by_path(attr['path'])
+          disk.datastore = find_cs_datastores_by_name(cluster, datastore_name)
         end
 
         cluster.vms[vm.name] = vm
@@ -274,13 +282,20 @@ module VHelper::CloudManager
         datastore.free_space        = attr["freeSpace"]
         datastore.total_space       = attr["maxSpace"]
         datastore.unaccounted_space = 0
-        datastores[datastore_mob] = datastore
+        datastores[datastore.name] = datastore
       end
       datastores
     end
+
     def isMatched?(name, match_pattern)
-      #TODO match_pattern is a array
+      #TODO match_pattern is an array
       true
+    end
+
+    def find_cs_datastores_by_name(cluster, name)
+      datastore = cluster.share_datastores[name]
+      return datastore if datastore
+      cluster.local_datastores[name]
     end
   end
 end
