@@ -1,10 +1,3 @@
-require './cloud_item'
-require './resources'
-require './client'
-require './vm_group'
-require './cluster_diff'
-require './cloud_placement'
-
 module VHelper::CloudManager
   class VHelperCloud
     attr_reader :vc_share_datastore_patten
@@ -48,11 +41,10 @@ module VHelper::CloudManager
       #@vc_req_resource_pools = resource_pool.split(',').delete_if(&:empty?)
       @vc_req_datacenter = cloud_provider["vc_datacenter"]
       vc_req_clusters= cloud_provider["vc_clusters"]
-      #@vc_req_clusters = vc_req_cluster_string.split(',').delete_if(&:empty?)
-      @vc_req_clusters = [vc_req_clusters[0]
-      @vc_address = cloud_provider["vc_address"]
-      @vc_username = cloud_provider["vc_username"]
-      @vc_password = cloud_provider["vc_password"]
+      @vc_req_clusters = vc_req_clusters[0]
+      @vc_address = cloud_provider["vc_addr"]
+      @vc_username = cloud_provider["vc_user"]
+      @vc_password = cloud_provider["vc_pwd"]
       @vc_share_datastore_patten = cloud_provider["vc_share_datastore_patten"]
       @vc_local_datastore_patten = cloud_provider["vc_local_datastore_patten"]
       @client_name = cloud_provider["cloud_adapter"] || "fog"

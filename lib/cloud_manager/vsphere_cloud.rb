@@ -1,9 +1,3 @@
-require "./cloud_item"
-require "./cloud_placement"
-require "./cloud_deploy"
-require "./client"
-require "./vhelper_cloud"
-
 #Resource infomation
 module VHelper::CloudManager
   class IaasProcess
@@ -71,14 +65,17 @@ module VHelper::CloudManager
     # Get info from caller
     def wait_for_completion()
       @output_lock.synchronize do
+        sleep(1)
         unless @finished.nil?
-          @logger.debug("finished")
           result = @vhelper.get_result 
           return result[1]
         end
-        @logger.debug("Do not finished! #{@finished}")
-        return nil
       end
+      nil
+    end
+
+    def finish?
+      return !@finished.nil?
     end
 
     def get_result
@@ -115,32 +112,6 @@ module VHelper::CloudManager
     def delete
       @logger.debug("call cloud.delete...")
       return @vhelper.delete(@cloud_provider, @cluster_definition, self)
-    end
-
-    def self.delete_cluster(parameter, options={})
-      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-      if (options[wait])
-        cloud.delete
-      else
-        # options["sync"] == false
-        Thread.new do
-          cloud.delete
-        end
-      end
-      cloud
-    end
-
-    def self.create_cluster(parameter, options={})
-      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-      if (options["wait"])
-        cloud.create_and_update
-      else
-        # options["sync"] == false
-        Thread.new do
-          cloud.create_and_update
-        end
-      end
-      cloud
     end
 
   end

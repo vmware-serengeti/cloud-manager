@@ -1,5 +1,3 @@
-require './cloud_item'
-require './utils'
 module VHelper::CloudManager
   class VHelperCloud
     def cluster_deploy(cluster_changes, vm_placement, options={})

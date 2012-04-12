@@ -7,12 +7,13 @@ require 'yaml'
 require 'erb'
 require 'pp'
 
-require '../lib/vsphere_cloud'
-require '../test/fog_dummy'
+require './spec/config'
+require 'cloud_manager'
+require './spec/fog_dummy'
 
-VC_CONFIG_FILE = "../test/ut.vc.yaml"
-DC_DEF_CONFIG_FILE_1 = "../test/ut.dc_def1.yaml"
-DC_DEF_CONFIG_FILE_2 = "../test/ut.dc_def2.yaml"
+VC_CONFIG_FILE = "./spec/ut.vc.yaml"
+DC_DEF_CONFIG_FILE_1 = "./spec/ut.dc_def1.yaml"
+DC_DEF_CONFIG_FILE_2 = "./spec/ut.dc_def2.yaml"
 vcenter = YAML.load(File.open(VC_CONFIG_FILE))
 cluster_req_1 = YAML.load(File.open(DC_DEF_CONFIG_FILE_1))
 cluster_req_2 = YAML.load(File.open(DC_DEF_CONFIG_FILE_2))
@@ -36,7 +37,7 @@ begin
     p "##Test UT"
     puts("cluster_def : #{cluster_req_1}")
     puts("provider: #{vcenter}")
-    cloud = VHelper::CloudManager::IaasTask.create_cluster(info, :wait => false)
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.wait_for_completion()
       puts("ut process:#{cloud.get_progress}")
       sleep(1)

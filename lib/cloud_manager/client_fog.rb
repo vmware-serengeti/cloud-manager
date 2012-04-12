@@ -1,5 +1,4 @@
-require './cloud_item'
-require '../../fog/lib/fog'
+require '../fog/lib/fog'
 
 module VHelper::CloudManager
   class FogAdapter

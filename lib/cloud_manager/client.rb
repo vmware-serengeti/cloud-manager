@@ -1,5 +1,3 @@
-require './client_fog'
-require '../test/fog_dummy'
 module VHelper::CloudManager
   class ClientFactory
     def self.create(name, logger)

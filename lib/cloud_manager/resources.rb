@@ -1,5 +1,3 @@
-require './cloud_item'
-
 module VHelper::CloudManager
   class Resources
     class Datacenter
