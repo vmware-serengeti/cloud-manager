@@ -1,7 +1,7 @@
 ---
-- name: testDC
+- name: DatacenterCF
   mob:  dc-1
-  clusters: 
+  clusters:
   - name: Cluster1
     mob: cs1
     resource_pool:

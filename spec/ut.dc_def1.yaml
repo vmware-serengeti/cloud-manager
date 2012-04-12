@@ -1,6 +1,6 @@
 ---
-- name: test_vhelper_cluster
-  channel_id: provsion",
+- name: vhelper
+  channel_id: provsion
   groups:
   - name: group1
     template_id: template id
