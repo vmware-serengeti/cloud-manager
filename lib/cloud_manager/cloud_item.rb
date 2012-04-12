@@ -30,19 +30,19 @@ module VHelper::CloudManager
     attr_accessor :disk_type
     attr_accessor :disk_size
     attr_accessor :rack_id
-    attr_accessor :vm_template
+    attr_accessor :template_id
     attr_accessor :affinity
     def initialize(rp=nil, template_id=nil)
       if rp
         @cpu = rp["cpu"] || 1
         @mem = rp["ram"] || 512
         # FIXME disks only use the first storage info
-        @disk_size=  rp["storage"][0]["size"] || 0
-        @disk_type = rp["storage"][0]["type"] || 0
+        @disk_size=  rp["storage"]["size"] || 0
+        @disk_type = rp["storage"]["type"] || 0
         @affinity = rp["affinity"] || "none"
-        @vm_template = template_id
+        @template_id = template_id
         if rp["template_id"]
-          @vm_template = rp["template_id"]
+          @template_id = rp["template_id"]
         end
         @rack_id = nil
       end
@@ -102,12 +102,16 @@ module VHelper::CloudManager
     attr_accessor :name
     attr_accessor :status
     attr_accessor :host_name
-    attr_accessor :sys_datastore #system disk's datastore
+    attr_accessor :host_mob
+    attr_accessor :template_id
+
+    attr_accessor :sys_datastore_moid #system disk's datastore
     attr_accessor :disks     #all allocated disk
     attr_accessor :req_rp    #wanted vm spec
     attr_accessor :vm_spec   #existed vm spec 
     attr_accessor :vm_group   #link to vm_group
     attr_accessor :mob
+    attr_accessor :resource_pool_moid
 
     attr_accessor :uuid
     attr_accessor :instance_uuid
@@ -133,11 +137,11 @@ module VHelper::CloudManager
     attr_accessor :flavor_id
     attr_accessor :image_id
 
-    def state; power_state end
-    def dns_name; hostname end
-    def public_ip_address; ipaddress end
-    def private_ip_address; ipaddress end
-    def instance_uuid; id end
+    def state; @power_state end
+    def dns_name; @hostname end
+    def public_ip_address; @ip_address end
+    def private_ip_address; @ip_address end
+    def instance_uuid; @instance_uuid end
 
     def initialize(vm_name, logger, req_rp = nil)
       @lock = Mutex.new

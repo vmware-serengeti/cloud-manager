@@ -38,10 +38,10 @@ begin
     p "##Test UT"
     puts("cluster_def : #{cluster_req_1}")
     puts("provider: #{vcenter}")
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
     while !cloud.wait_for_completion()
-      puts("ut process:#{cloud.get_progress}")
-      sleep(1)
+      puts("ut process:#{cloud.get_progress.pretty_inspect}")
+      sleep(5)
     end
   when 2 then #Delete Cluster
     cloud = VHelper::CloudManager::IaasTask.delete_cluster(info, :wait => false)

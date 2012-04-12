@@ -3,47 +3,59 @@ module VHelper::CloudManager
     def cluster_deploy(cluster_changes, vm_placement, options={})
       #TODO add placement code here
 
-      thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
+      thread_pool = nil
+      @logger.debug("enter cluster_deploy")
+      #thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
+      @logger.debug("created thread pool")
       #Begin to parallel deploy vms
-      vm_deploy(thread_pool, cluster_changes) do |vm|
-        #TODO add change code here
-        @logger.info("changing vm #{vm.name}")
-        vm.status = VM_STATE_DONE
-        vm_finish(vm)
-      end
-      @logger.info("Finish all changes")
-
+#      vm_deploy(thread_pool, cluster_changes) do |vm|
+#        #TODO add change code here
+#        @logger.info("changing vm #{vm.pretty_inspect}")
+#        vm.status = VM_STATE_DONE
+#        vm_finish(vm)
+#      end
+#      @logger.info("Finish all changes")
       vm_deploy(thread_pool, vm_placement) do |vm|
-        @logger.info("placing vm #{vm.name}")
+        @logger.info("placing vm aa#{vm.pretty_inspect}")
         vm_begin_create(vm)
         vm.status = VM_STATE_CLONE
         vm_clone(vm, :poweron => false)
+        @logger.debug("finish clone")
+
+        vm_poweroff(vm)
 
         vm.status = VM_STATE_RECONFIG
-        reconfigure_vm_disk(vm)
+        vm_reconfigure_disk(vm)
+        @logger.debug("finish reconfigure")
 
         vm.status = VM_STATE_POWER_ON
         vm_poweron(vm)
+        @logger.debug("finish poweron")
 
         vm.status = VM_STATE_DONE
         vm_finish(vm)
+
+        @logger.debug("finish")
       end
       @logger.info("Finish all deployments")
       "finished"
     end
 
     def vm_deploy(thread_pool, group_placement, options={})
-      group_placement.each do |group_change|
-        thread_pool.wrap do |pool|
-          group_placement.each do |vm|
-            pool.process do
+      group_placement.each do |group|
+        @logger.debug("enter groups: #{group.pretty_inspect}")
+        #thread_pool.wrap do |pool|
+          group.each do |vm|
+            @logger.debug("enter : #{vm.pretty_inspect}")
+         #   pool.process do
               begin
-                yield vm
+                yield(vm)
               rescue
                 #TODO do some warning handler here
-              end
+                raise
+         #     end
             end
-          end
+        #  end
         end
         @logger.info("##Finish change one vm_group")
       end
@@ -54,15 +66,21 @@ module VHelper::CloudManager
     end
 
     def vm_clone(vm, options={})
-      #TODO
+      @client.clone_vm(vm, options)
     end
 
     def vm_reconfigure_disk(vm, options={})
-      #TODO
+      vm.disks.each do |disk|
+        @client.vm_create_disk(vm, disk)
+      end
+    end
+
+    def vm_poweroff(vm, options={})
+      @client.vm_power_off(vm)
     end
 
     def vm_poweron(vm, options={})
-      #TODO
+      @client.vm_power_on
     end
 
     def vm_finish(vm, options={})

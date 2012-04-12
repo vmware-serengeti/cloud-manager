@@ -31,42 +31,43 @@ module VHelper::CloudManager
       @logger.info("Disconnect to cloud provider ")
     end
 
-    def clone_vm(vm)
+    def clone_vm(vm, options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
       info = {
         'path'=>vm.template_id,
         'name'=>vm.name,
         'wait'=> 1,
         'linked_clone'=>true,
-        'datastore_moid' => vm.sys_datastore.mob, #'datastore-460',
-        'rp_moid' => vm.host.resource_pool.mob, #'resgroup-509',
-        'host_moid' => vm.host.mob, #'host-456'
+        'datastore_moid' => vm.sys_datastore_moid, #'datastore-460',
+        'rp_moid' => vm.resource_pool_moid, #'resgroup-509',
+        'host_moid' => vm.host_mob, #'host-456'
+        'power_on' => false,
       }
-      vm_ref, vm_attributes, task_ref = @connection.vm_clone(info)
-      update_vm_with_properties(vm, vm_attributes)
-      # TODO add update vm's info
+      result = @connection.vm_clone(info)
+      @logger.debug("after clone: result :#{result} ")
+      update_vm_with_properties_string(vm, result["vm_attributes"])
     end
 
     # TODO add option to force hard/soft reboot
     def vm_reboot(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      task_state = @connection.vm_reboot(:instance_uuid => vm.instance_uuid)
+      task_state = @connection.vm_reboot('instance_uuid' => vm.instance_uuid)
     end
 
     def vm_power_off(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      task_state = @connection.vm_power_off(:instance_uuid => vm.instance_uuid)
+      task_state = @connection.vm_power_off('instance_uuid' => vm.instance_uuid)
       #task_state #'success', 'running', 'queued', 'error'
     end
 
     def vm_power_on(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      task_state = @connection.vm_power_on(:instance_uuid => vm.instance_uuid)
+      task_state = @connection.vm_power_on('instance_uuid' => vm.instance_uuid)
     end
 
     def vm_create_disk(vm, disk, options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      info = {:instance_uuid => vm.instance_uuid, :vmdk_path => disk.fullpath, :disk_size => disk.size}
+      info = {'instance_uuid' => vm.instance_uuid, 'vmdk_path' => disk.fullpath, 'disk_size' => disk.size}
       vm_ref, vm_attributes, vm_dev_number_increase = @connection.vm_create_disk(info)
       return vm_dev_number_increase
       # TODO add update disk and vm's info

@@ -132,14 +132,14 @@ module VHelper::CloudManager
         return
       end
 
-      retry_num = 3
+      retry_num = 1
 
       retry_num.times do |cycle_num|
         begin
           ###########################################################
           #Caculate cluster placement
           @status = CLUSTER_PLACE
-          placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
+          placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed, cluster_info)
           File.open("placement.yaml", 'w'){|f| YAML.dump(placement, f)} 
 
           @status = CLUSTER_DEPLOY
@@ -152,12 +152,12 @@ module VHelper::CloudManager
           @logger.info("reload datacenter resources from cloud")
           File.open("dc_resource-#{cycle_num}.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
         rescue => e
+          @logger.debug("#{e} - #{e.backtrace.join("\n")}")
           if cycle_num + 1  >= retry_num
             cluster_failed(task)
             raise
           end
           @logger.debug("Loop placement faild and retry #{cycle_num} loop")
-          @logger.debug("#{e} - #{e.backtrace.join("\n")}")
         end
       end
       ###########################################################
@@ -172,7 +172,7 @@ module VHelper::CloudManager
         return if result.nil?
         vm.cluster_name = result[1]
         vm.group_name = result[2]
-        yield(vm, vm_status)
+        yield(vm)
         servers << vm
       end
     end

@@ -7,7 +7,7 @@ groups:
   cpu: 1
   mem: 512
   storage:
-  - type: share
+    type: share
     size: 200
   network: CFNetwork
-  instance_num: 2
+  instance_num: 1

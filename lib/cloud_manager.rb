@@ -14,7 +14,7 @@ module VHelper::CloudManager
   class Manager
     def self.delete_cluster(parameter, options={})
       cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-      if (options[wait])
+      if (options[:wait])
         cloud.delete
       else
         # options["sync"] == false
@@ -27,7 +27,7 @@ module VHelper::CloudManager
 
     def self.create_cluster(parameter, options={})
       cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-      if (options["wait"])
+      if (options[:wait])
         cloud.create_and_update
       else
         # options["sync"] == false
