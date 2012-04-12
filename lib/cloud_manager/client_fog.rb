@@ -95,50 +95,57 @@ module VHelper::CloudManager
       return @connection.get_clusters_by_dc_mob(dc_mob_ref, options)
     end
 
+    def ct_mob_ref_to_attr_hash(mob_ref, attr_s)
+      raise "Do not login cloud server, please login first" if @connection.nil?
+      @connection.ct_mob_ref_to_attr_hash(mob_ref, attr_s)
+    end
 
     #get cluster by a given path
     def get_cs_mob_ref_by_path(path,options = {})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      return @connection.get_cs_mob_ref_by_path(path, options)
+      @connection.get_cs_mob_ref_by_path(path, options)
     end
 
     #get hosts belong to a given cluster
     def get_hosts_by_cs_mob(cs_mob_ref, options = {})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      return @connection.get_hosts_by_cs_mob(cs_mob_ref, options)
+      @connection.get_hosts_by_cs_mob(cs_mob_ref, options)
     end
 
     #get resource pools belong to a given cluster
     def get_rps_by_cs_mob(cs_mob_ref, options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      return @connection.get_rps_by_cs_mob(cs_mob_ref, options)
+      @connection.get_rps_by_cs_mob(cs_mob_ref, options)
     end
 
     #get datastore array belong to a given cluster
     def get_datastores_by_cs_mob(cs_mob_ref, options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      return @connection.get_datastores_by_cs_mob(cs_mob_ref, options)
+      @connection.get_datastores_by_cs_mob(cs_mob_ref, options)
     end
 
     #get datadstores accessible from a given host
     def get_datastores_by_host_mob(host_mob_ref,options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      return @connection.get_datastores_by_host_mob(host_mob_ref,options)
+      @connection.get_datastores_by_host_mob(host_mob_ref,options)
     end
 
     #get vm list provision from a given host
     def get_vms_by_host_mob(host_mob_ref,options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      return @connection.get_vms_by_host_mob(host_mob_ref,options)
+      @connection.get_vms_by_host_mob(host_mob_ref,options)
     end
 
     #get disk list for a specific vm
     #return a array with hash as each hash {\'path\', \'size\', \'scsi_num\'}
     def get_disks_by_vm_mob(vm_mob_ref,options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      return @connection.get_disks_by_vm_mob(vm_mob_ref,options)
+      @connection.get_disks_by_vm_mob(vm_mob_ref,options)
     end
 
+    def get_ds_name_by_path(path)
+      @connection.get_ds_name_by_path(path)
+    end
     ###################################################
     # inner use functions
     def update_vm_with_properties(vm, vm_properties)
@@ -155,6 +162,7 @@ module VHelper::CloudManager
       vm.tools_state      = vm_properties[:tools_state]
       vm.tools_version    = vm_properties[:tools_version]
       vm.is_a_template    = vm_properties[:is_a_template]
+      nil
     end
 
     ###################################################

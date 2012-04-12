@@ -110,11 +110,12 @@ module VHelper::CloudManager
 
     def fetch_datacenter()
       datacenter_name = @vhelper.vc_req_datacenter
-      datacenter_mob    = @client.get_dc_mob_ref_by_path(datacenter_name)
+      datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
       return nil if datacenter_mob.nil?
+      attr = @client.ct_mob_ref_to_attr_hash(datacenter_mob, "DC")
 
       datacenter                      = Datacenter.new
-      datacenter.mob                  = datacenter_mob
+      datacenter.mob                  = attr[:mo_ref]
       datacenter.name                 = datacenter_name
 
       @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
@@ -132,32 +133,31 @@ module VHelper::CloudManager
 
       datacenter.racks = @vhelper.racks
 
-      datacenter.clusters = fetch_clusters(datacenter)
+      datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
       datacenter
     end
 
-    def fetch_clusters(datacenter)
-      cluster_mobs = @client.get_clusters_by_dc_mob(datacenter.mob)
+    def fetch_clusters(datacenter, datacenter_mob)
+      cluster_mobs = @client.get_clusters_by_dc_mob(datacenter_mob)
 
-      cluster_names = @vhelper.vc_req_clusters
-      resource_pool_names = @vhelper.vc_req_resource_pools
+      cluster_names = @vhelper.vc_req_clusters[0]["name"]
 
       clusters = {}
       @logger.debug("#{cluster_mobs.pretty_inspect}")
       cluster_mobs.each do |cluster_mob|
-        @logger.debug("cluster_mob #{cluster_mob.name}")
-        requested_resource_pool = resource_pool_names[0]
+        @logger.debug("cluster mob:#{cluster_mob}")
+        requested_resource_pool = @vhelper.vc_req_clusters[0]["vc_rps"][0]
         cluster_resource_pool = fetch_resource_pool(cluster_mob, requested_resource_pool)
 
         next if cluster_resource_pool.nil?
 
-        attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, CS_ATTR_TO_PROP)
+        attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
         # chose cluster in cluster_names
         next unless cluster_names.include?(attr["name"])
 
         cluster                    = Cluster.new
         cluster.mem_over_commit    = @mem_over_commit
-        cluster.mob                = cluster_mob
+        cluster.mob                = attr["mo_ref"]
         cluster.name               = attr["name"]
         cluster.vms                = {}
 
@@ -182,7 +182,7 @@ module VHelper::CloudManager
         @logger.debug("share datastores are #{cluster.share_datastores} " +
                       "local datastores are #{cluster.local_datastores}")
 
-        cluster.hosts = fetch_hosts(cluster)
+        cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
         clusters[cluster.name] = cluster
       end
@@ -192,9 +192,11 @@ module VHelper::CloudManager
     def fetch_resource_pool(cluster_mob, resource_pool_name)
 
       resource_pool_mobs = @client.get_rps_by_cs_mob(cluster_mob)
+      @logger.debug("resource_pool_mobs: #{resource_pool_mobs.pretty_inspect}")
 
       resource_pool_mobs.each do |resource_pool_mob|
-        attr = @client.ct_mob_ref_to_attr_hash(resource_pool_mob, RS_ATTR_TO_PROP)
+        attr = @client.ct_mob_ref_to_attr_hash(resource_pool_mob, "RP")
+        @logger.debug("resource pool in vc :#{attr["name"]} is same as #{resource_pool_name}?")
         if attr["name"] == resource_pool_name
           return resource_pool_mob
         end
@@ -205,15 +207,15 @@ module VHelper::CloudManager
       nil
     end
 
-    def fetch_hosts(cluster)
+    def fetch_hosts(cluster, cluster_mob)
       hosts = {}
-      host_mobs = @client.get_host_by_cs_mob(cluster.mob)
+      host_mobs = @client.get_hosts_by_cs_mob(cluster_mob)
       host_mobs.each do |host_mob|
-        attr = @client.ct_mob_ref_to_attr_hash(host_mob, HS_ATTR_TO_PROP)
+        attr = @client.ct_mob_ref_to_attr_hash(host_mob, "HS")
         host                    = Host.new
         host.cluster            = cluster
         host.datacenter         = cluster.datacenter
-        host.mob                = host_mob
+        host.mob                = attr["mo_ref"]
         host.name               = attr["name"]
 
         @logger.debug("Found host: #{host.name} @ #{host.mob}")
@@ -233,22 +235,22 @@ module VHelper::CloudManager
         @logger.debug("host:#{host.name} share datastores are #{host.share_datastores}")
         @logger.debug("host:#{host.name} local datastores are #{host.local_datastores}")
 
-        host.vms = fetch_vms_by_host(cluster, host)
+        host.vms = fetch_vms_by_host(cluster, host, host_mob)
         hosts[host.name] = host
       end
       hosts
     end
 
-    def fetch_vms_by_host(cluster, host)
+    def fetch_vms_by_host(cluster, host, host_mob)
       vms = {}
-      vm_mobs = @client.get_vms_by_host_mob(host.mob)
+      vm_mobs = @client.get_vms_by_host_mob(host_mob)
       return vms if vm_mobs.nil?
       vm_mobs.each do |vm_mob|
-        vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, VM_ATTR_TO_PROP)
+        vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
         vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], host, @logger)
 
         #update vm info with properties
-        update_vm_with_properties(vm, vm_existed)
+        @client.update_vm_with_properties(vm, vm_existed)
         vm.host = host
 
         #update disk info
@@ -269,7 +271,7 @@ module VHelper::CloudManager
     def fetch_datastores(datastore_mobs, match_pattern)
       datastores = {}
       datastore_mobs.each do |datastore_mob|
-        attr = @client.ct_mob_ref_to_attr_hash(datastore_mob, DS_ATTR_TO_PROP)
+        attr = @client.ct_mob_ref_to_attr_hash(datastore_mob, "DS")
         next unless isMatched?(attr["name"], match_pattern)
         datastore                   = Datastore.new
         datastore.mob               = datastore_mob

@@ -40,12 +40,11 @@ module VHelper::CloudManager
       @name = cloud_provider["name"]
       #@vc_req_resource_pools = resource_pool.split(',').delete_if(&:empty?)
       @vc_req_datacenter = cloud_provider["vc_datacenter"]
-      vc_req_clusters= cloud_provider["vc_clusters"]
-      @vc_req_clusters = vc_req_clusters[0]
+      @vc_req_clusters = cloud_provider["vc_clusters"]
       @vc_address = cloud_provider["vc_addr"]
       @vc_username = cloud_provider["vc_user"]
       @vc_password = cloud_provider["vc_pwd"]
-      @vc_share_datastore_patten = cloud_provider["vc_share_datastore_patten"]
+      @vc_share_datastore_patten = cloud_provider["vc_shared_datastore_patten"]
       @vc_local_datastore_patten = cloud_provider["vc_local_datastore_patten"]
       @client_name = cloud_provider["cloud_adapter"] || "fog"
       @allow_mixed_datastores = nil
@@ -105,7 +104,7 @@ module VHelper::CloudManager
         # Create existed vm groups
         @logger.debug("Create vm group from resources...")
         vm_groups_existed = create_vm_group_from_resources(dc_resources)
-        File.open("vm_groups.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
+        File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
         @logger.info("Finish collect vm_group info from resources")
 
         unless vm_groups_existed.empty?
@@ -165,14 +164,14 @@ module VHelper::CloudManager
       cluster_done(task)
     end
 
-    def get_result_by_vms(vms)
+    def get_result_by_vms(servers, vms)
       vms.each_value do |vm|
-        vm_status = IaasServer.new
-        vm_status.vm_name = vm.name
         result = get_from_vm_name(vm.name)
-        vm_status.cluster_name = result[1]
-        vm_status.group_name = result[2]
+        return if result.nil?
+        vm.cluster_name = result[1]
+        vm.group_name = result[2]
         yield(vm, vm_status)
+        servers << vm
       end
     end
 
@@ -182,14 +181,15 @@ module VHelper::CloudManager
         result.running = @deploy_vms.size
         result.finished = @existed_vms.size
         result.failed = @failure_vms.size
-        get_result_by_vms(@deploy_vms) do
+        result.total = result.running + result.finished + result.failed
+        get_result_by_vms(result.servers, @deploy_vms) do |vm|
+          vm.create = false
         end
-        get_result_by_vms(@existed_vms) do
-          vm_status.create = true
-          vm_status.powered_on = vm.powerd_on
-          vm_status.ip_address = vm.ip_address
+        get_result_by_vms(result.servers, @existed_vms) do |vm|
+          vm.create = true
         end
-        get_result_by_vms(@failure_vms) do
+        get_result_by_vms(result.servers, @failure_vms) do |vm|
+          vm.create = false
           vm_status.error_code = -1
           vm_status.error_msg = vm.error_msg
         end

@@ -9,7 +9,7 @@ module VHelper::CloudManager
   end
   class FogDummy
     attr_reader:logger
-    DC_CONFIG_FILE = "../test/ut.dc.yaml"
+    DC_CONFIG_FILE = "./spec/ut.dc.yaml"
     def initialize(logger)
       @logger = logger
       @logger.debug("Enter Fog_dummy")
@@ -33,12 +33,19 @@ module VHelper::CloudManager
       nil
     end
 
+    def update_vm_with_properties(vm, vm_existed)
+    end
+
     def ct_mob_ref_to_attr_hash(mob, type, options={})
       return mob
     end
 
-    def get_host_by_cs_mob(mob, options={})
+    def get_hosts_by_cs_mob(mob, options={})
       return mob["hosts"]
+    end
+
+    def get_ds_name_by_path(path, options={})
+      return "share-ds"
     end
 
     def get_rps_by_cs_mob(cluster_mob, options={})

@@ -32,6 +32,7 @@ begin
   info["cluster_definition"] = cluster_req_1
   info["cloud_provider"] = vcenter
   puts "You select #{opt}"
+  puts "vcenter:#{vcenter}" 
   case opt
   when 1 then
     p "##Test UT"

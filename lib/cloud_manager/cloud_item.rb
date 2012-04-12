@@ -17,6 +17,7 @@ module VHelper::CloudManager
   VM_STATE_RECONFIG = "reconfiging"
   VM_STATE_DELETE = "deleting"
   VM_STATE_DONE = "finished"
+  VM_STATE_FAIL = "fails"
 
   VM_STATE_POWER_ON = "poweron..."
   VM_STATE_POWER_OFF = "poweroff..."
@@ -57,6 +58,10 @@ module VHelper::CloudManager
       return unless rp
       @name = rp["name"]
       @instances = rp["instance_num"]
+    end
+
+    def ready?
+      @status == VM_STATE_DONE 
     end
 
     def size
@@ -112,6 +117,24 @@ module VHelper::CloudManager
     attr_accessor :tools_version
     attr_accessor :ip_address
     attr_accessor :is_a_template
+    attr_accessor :cluster_name
+    attr_accessor :group_name
+    attr_accessor :create
+    
+    # for provisioning
+    attr_accessor :created_at
+    attr_accessor :availability_zone
+    attr_accessor :tags
+    attr_accessor :key_name
+    attr_accessor :flavor_id
+    attr_accessor :image_id
+
+    def state; power_state end
+    def dns_name; hostname end
+    def public_ip_address; ipaddress end
+    def private_ip_address; ipaddress end
+    def instance_uuid; id end
+
     def initialize(vm_name, host, logger, req_rp = nil)
       @lock = Mutex.new
       @disks = {}
