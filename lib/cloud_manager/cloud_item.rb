@@ -32,7 +32,7 @@ module VHelper::CloudManager
     attr_accessor :rack_id
     attr_accessor :vm_template
     attr_accessor :affinity
-    def initialize(rp=nil)
+    def initialize(rp=nil, template_id=nil)
       if rp
         @cpu = rp["cpu"] || 1
         @mem = rp["ram"] || 512
@@ -40,7 +40,10 @@ module VHelper::CloudManager
         @disk_size=  rp["storage"][0]["size"] || 0
         @disk_type = rp["storage"][0]["type"] || 0
         @affinity = rp["affinity"] || "none"
-        @vm_template = rp["template"] || "none"
+        @vm_template = template_id
+        if rp["template_id"]
+          @vm_template = rp["template_id"]
+        end
         @rack_id = nil
       end
     end
@@ -51,10 +54,10 @@ module VHelper::CloudManager
     attr_accessor :req_info  #class ResourceInfo
     attr_accessor :instances
     attr_accessor :vm_ids    #classes VmInfo
-    def initialize(logger, rp=nil)
+    def initialize(logger, rp=nil, template_id=nil)
       @logger = logger
       @vm_ids = {}
-      @req_info = ResourceInfo.new(rp)
+      @req_info = ResourceInfo.new(rp, template_id)
       return unless rp
       @name = rp["name"]
       @instances = rp["instance_num"]
@@ -92,25 +95,26 @@ module VHelper::CloudManager
     attr_accessor :fullpath
     attr_accessor :size
     attr_accessor :unit_number
-    attr_accessor :datastore
+    attr_accessor :datastore_name
   end
 
   class VmInfo
     attr_accessor :name
     attr_accessor :status
-    attr_accessor :hostname
-    attr_accessor :host
+    attr_accessor :host_name
     attr_accessor :sys_datastore #system disk's datastore
     attr_accessor :disks     #all allocated disk
     attr_accessor :req_rp    #wanted vm spec
     attr_accessor :vm_spec   #existed vm spec 
     attr_accessor :vm_group   #link to vm_group
     attr_accessor :mob
+
     attr_accessor :uuid
     attr_accessor :instance_uuid
     attr_accessor :power_state
     attr_accessor :error_msg
     attr_accessor :operatingsystem
+    attr_accessor :hostname
     attr_accessor :connection_state
     attr_accessor :hypervisor
     attr_accessor :tools_state
@@ -135,11 +139,10 @@ module VHelper::CloudManager
     def private_ip_address; ipaddress end
     def instance_uuid; id end
 
-    def initialize(vm_name, host, logger, req_rp = nil)
+    def initialize(vm_name, logger, req_rp = nil)
       @lock = Mutex.new
       @disks = {}
       @name = vm_name
-      @host = host
       @req_rp = req_rp
       @vm_group = nil
       @status = VM_STATE_BIRTH
@@ -153,7 +156,7 @@ module VHelper::CloudManager
       disk.fullpath = fullpath
       disk.size = size
       disk.unit_number = unit_number
-      disk.datastore = nil
+      disk.datastore_name = nil
       disks[fullpath] = disk
       disk
     end

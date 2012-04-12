@@ -148,7 +148,23 @@ module VHelper::CloudManager
     end
     ###################################################
     # inner use functions
-    def update_vm_with_properties(vm, vm_properties)
+    def update_vm_with_properties_string(vm, vm_properties)
+      vm.name             = vm_properties["name"]
+      vm.mob              = vm_properties["mo_ref"] #moid
+      vm.uuid             = vm_properties["uuid"]
+      vm.instance_uuid    = vm_properties["instance_uuid"]
+      vm.hostname         = vm_properties["hostname"]
+      vm.operatingsystem  = vm_properties["operatingsystem"]
+      vm.ip_address       = vm_properties["ipaddress"]
+      vm.power_state      = vm_properties["power_state"]
+      vm.connection_state = vm_properties["connection_state"]
+      vm.tools_state      = vm_properties["tools_state"]
+      vm.tools_version    = vm_properties["tools_version"]
+      vm.is_a_template    = vm_properties["is_a_template"]
+      nil
+    end
+
+def update_vm_with_properties(vm, vm_properties)
       vm.name             = vm_properties[:name]
       vm.mob              = vm_properties[:mo_ref] #moid
       vm.uuid             = vm_properties[:uuid]
@@ -158,7 +174,6 @@ module VHelper::CloudManager
       vm.ip_address       = vm_properties[:ipaddress]
       vm.power_state      = vm_properties[:power_state]
       vm.connection_state = vm_properties[:connection_state]
-      vm.hypervisor       = vm_properties[:hypervisor]
       vm.tools_state      = vm_properties[:tools_state]
       vm.tools_version    = vm_properties[:tools_version]
       vm.is_a_template    = vm_properties[:is_a_template]

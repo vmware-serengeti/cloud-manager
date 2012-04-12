@@ -1,22 +1,13 @@
 ---
-- name: vhelper
-  channel_id: provsion
-  groups:
-  - name: group1
-    template_id: template id
-    cpu: 1
-    mem: 512
-    storage:
-    - type: share
-      size: 200
-    network: CFNetwork
-
-  - name: group2
-    template_id: template id
-    cpu: 2
-    mem: 256
-    storage:
-    - type: local
-      size: 200
-    network: CFNetwork
-
+name: vhelper
+channel_id: provsion
+template_id: /Datacenters/DatacenterCF/vm/tt
+groups:
+- name: group1
+  cpu: 1
+  mem: 512
+  storage:
+  - type: share
+    size: 200
+  network: CFNetwork
+  instance_num: 2

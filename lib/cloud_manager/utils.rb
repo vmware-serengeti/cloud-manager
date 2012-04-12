@@ -35,7 +35,7 @@ module VHelper::CloudManager
       @cv = ConditionVariable.new
       @max_threads = options[:max_threads] || 1
       @available_threads = @max_threads
-      @logger = options["logger"]
+      @logger = options[:logger]
       @boom = nil
       @original_thread = Thread.current
       @threads = []

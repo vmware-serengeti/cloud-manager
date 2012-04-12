@@ -11,5 +11,5 @@ vc_clusters:
     - resource_pool1
 vc_shared_datastore_patten: share
 vc_local_datastare_patten: local
-cloud_adapter: ut
+cloud_adapter: fog
 

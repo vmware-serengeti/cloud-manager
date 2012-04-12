@@ -3,7 +3,7 @@ module VHelper::CloudManager
     def cluster_deploy(cluster_changes, vm_placement, options={})
       #TODO add placement code here
 
-      thread_pool = ThreadPool.new(:max_threads => 32)
+      thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
       #Begin to parallel deploy vms
       vm_deploy(thread_pool, cluster_changes) do |vm|
         #TODO add change code here
@@ -29,6 +29,7 @@ module VHelper::CloudManager
         vm_finish(vm)
       end
       @logger.info("Finish all deployments")
+      "finished"
     end
 
     def vm_deploy(thread_pool, group_placement, options={})
@@ -44,7 +45,7 @@ module VHelper::CloudManager
             end
           end
         end
-        @logger.inf("##Finish change one vm_group")
+        @logger.info("##Finish change one vm_group")
       end
     end
 

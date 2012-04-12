@@ -247,18 +247,19 @@ module VHelper::CloudManager
       return vms if vm_mobs.nil?
       vm_mobs.each do |vm_mob|
         vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
-        vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], host, @logger)
+        @logger.debug("existed vm:#{vm_existed.pretty_inspect} ")
+        vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], @logger)
 
         #update vm info with properties
-        @client.update_vm_with_properties(vm, vm_existed)
-        vm.host = host
+        @client.update_vm_with_properties_string(vm, vm_existed)
+        vm.host_name = host.name
 
         #update disk info
         disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
         disk_attrs.each do |attr|
           disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 
           datastore_name = @client.get_ds_name_by_path(attr['path'])
-          disk.datastore = find_cs_datastores_by_name(cluster, datastore_name)
+          disk.datastore_name = datastore_name
         end
 
         cluster.vms[vm.name] = vm

@@ -59,12 +59,12 @@ module VHelper::CloudManager
       "<vHelperCloud: #{@name} vc: #{@vc_address} status: #{@status} client: #{@client.inspect}>"
     end
 
-    def delete(cloud_provider, clusters_info, task)
+    def delete(cloud_provider, cluster_info, task)
       @logger.debug("enter delete ... not implement")
       #TODO add code here to delete all cluster
     end
 
-    def create_and_update(cloud_provider, clusters_info, task)
+    def create_and_update(cloud_provider, cluster_info, task)
       @logger.debug("enter create_and_update...")
       create_cloud_provider(cloud_provider)
       @vm_lock.synchronize do
@@ -74,8 +74,7 @@ module VHelper::CloudManager
       end
       #FIXME we only support one cluster, currently
 
-      @logger.debug("#{clusters_info.inspect}")
-      cluster_info = clusters_info[0]
+      @logger.debug("#{cluster_info.inspect}")
       @logger.debug("Begin vHelper work...")
 
       begin
@@ -93,19 +92,22 @@ module VHelper::CloudManager
         # Create inputed vm_group from vhelper input
         @logger.debug("Create vm group from vhelper input...")
         vm_groups_input = create_vm_group_from_vhelper_input(cluster_info)
+        File.open("vm_groups_input.yaml", 'w'){|f| YAML.dump(vm_groups_input, f)} 
         vm_groups_existed = {}
         cluster_changes = []
         dc_resources = {}
         @status = CLUSTER_FETCH_INFO
         dc_resources = @resources.fetch_datacenter
 
-        File.open("dc_resource.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
+        File.open("dc_resource-first.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
         ###########################################################
         # Create existed vm groups
-        @logger.debug("Create vm group from resources...")
-        vm_groups_existed = create_vm_group_from_resources(dc_resources)
-        File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
-        @logger.info("Finish collect vm_group info from resources")
+        
+        # TODO later
+        #@logger.debug("Create vm group from resources...")
+        #vm_groups_existed = create_vm_group_from_resources(dc_resources)
+        #File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
+        #@logger.info("Finish collect vm_group info from resources")
 
         unless vm_groups_existed.empty?
           ###########################################################

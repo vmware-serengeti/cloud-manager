@@ -8,12 +8,12 @@ module VHelper::CloudManager
       return /vh-([\w\s\d-]+)\.([\w\s\d-]+)\.([\d]+)/.match(vm_name)
     end
 
-    def create_vm_group_from_vhelper_input(vhelper_info)
+    def create_vm_group_from_vhelper_input(cluster_info)
       vm_groups = {}
-      @logger.debug("vhelper: #{vhelper_info}")
-      vhelper_groups = vhelper_info["groups"]
+      @logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
+      vhelper_groups = cluster_info["groups"]
       vhelper_groups.each do |vm_group_req|
-        vm_group = VmGroupInfo.new(@logger, vm_group_req)
+        vm_group = VmGroupInfo.new(@logger, vm_group_req, cluster_info["template_id"])
         vm_groups[vm_group.name] = vm_group
       end
       @logger.debug("vhelper_group:#{vm_groups}")
