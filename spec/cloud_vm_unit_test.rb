@@ -11,8 +11,8 @@ require './spec/config'
 require 'cloud_manager'
 require './spec/fog_dummy'
 
-VC_CONFIG_FILE = "./spec/ut.vc.yaml"
-DC_DEF_CONFIG_FILE_1 = "./spec/ut.dc_def1.yaml"
+VC_CONFIG_FILE = "./spec/ut.wdc.yaml"
+DC_DEF_CONFIG_FILE_1 = "./spec/ut.wdc_def.yaml"
 DC_DEF_CONFIG_FILE_2 = "./spec/ut.dc_def2.yaml"
 vcenter = YAML.load(File.open(VC_CONFIG_FILE))
 cluster_req_1 = YAML.load(File.open(DC_DEF_CONFIG_FILE_1))

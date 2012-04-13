@@ -68,16 +68,15 @@ module VHelper::CloudManager
     def vm_create_disk(vm, disk, options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
       info = {'instance_uuid' => vm.instance_uuid, 'vmdk_path' => disk.fullpath, 'disk_size' => disk.size}
-      vm_ref, vm_attributes, vm_dev_number_increase = @connection.vm_create_disk(info)
-      return vm_dev_number_increase
+      result = @connection.vm_create_disk(info)
       # TODO add update disk and vm's info
     end
 
     # needs vm mobid to get the properties of this vm
-    def update_vm_properties_by_vm_mob(vm_mob)
+    def update_vm_properties_by_vm_mob(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      vm_properties = @connection.get_vm_properties(vm_mob)
-      update_vm_with_properties(vm, vm_properties)
+      vm_properties = @connection.get_vm_properties(vm.mob)
+      update_vm_with_properties_string(vm, vm_properties)
       #TODO add update vm spec info
     end
 
@@ -165,23 +164,7 @@ module VHelper::CloudManager
       nil
     end
 
-def update_vm_with_properties(vm, vm_properties)
-      vm.name             = vm_properties[:name]
-      vm.mob              = vm_properties[:mo_ref] #moid
-      vm.uuid             = vm_properties[:uuid]
-      vm.instance_uuid    = vm_properties[:instance_uuid]
-      vm.hostname         = vm_properties[:hostname]
-      vm.operatingsystem  = vm_properties[:operatingsystem]
-      vm.ip_address       = vm_properties[:ipaddress]
-      vm.power_state      = vm_properties[:power_state]
-      vm.connection_state = vm_properties[:connection_state]
-      vm.tools_state      = vm_properties[:tools_state]
-      vm.tools_version    = vm_properties[:tools_version]
-      vm.is_a_template    = vm_properties[:is_a_template]
-      nil
-    end
-
-    ###################################################
+   ###################################################
     # implement later
     def vm_attach_disk(vm, disk, options={})
     end
@@ -199,74 +182,4 @@ def update_vm_with_properties(vm, vm_properties)
     end
   end
 end
-
-=begin
-(1) For VM
-VM_ATTR_TO_PROP = {
-  :id,
-  :name,
-  :mo_ref, #moid
-  :uuid,
-  :instance_uuid,
-  :hostname,
-  :operatingsystem,
-  :ipaddress,
-  :power_state,
-  :connection_state,
-  :hypervisor,
-  :tools_state,
-  :tools_version,
-  :is_a_template
-}
-
-#(2) For Datacenter
-DC_ATTR_TO_PROP = {
-  :id,
-  :name,
-  :mo_ref, #moid
-}
-
-#3 Cluster
-CS_ATTR_TO_PROP = {
-  :id,
-  :name,
-  :mo_ref, #moid
-  :eff_mem,
-  :max_mem
-}
-
-#4 Datastore
-DS_ATTR_TO_PROP = {
-  :id,
-  :name,
-  :mo_ref, #moid
-  :freeSpace,
-  :maxSpace,
-}
-
-#5 Resource_pool
-RP_ATTR_TO_PROP = {
-  :id,
-  :name,
-  :mo_ref, #moid
-  :limit_cpu,
-  :limit_mem,
-  :shares,
-  :used_cpu,
-  :host_used_mem,
-  :guest_used_mem
-}
-
-#6 For Host
-HS_ATTR_TO_PROP = {
-  :id,
-  :name,
-  :mo_ref, #moid
-  :total_memory,
-  :cpu_num,
-  :cpu_mhz,
-  :used_cpu,
-  :used_mem
-}
-=end
 

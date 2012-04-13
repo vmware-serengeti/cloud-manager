@@ -22,16 +22,22 @@ module VHelper::CloudManager
         vm_clone(vm, :poweron => false)
         @logger.debug("finish clone")
 
-        vm_poweroff(vm)
-
+        @logger.debug("mob: #{vm.mob}")
         vm.status = VM_STATE_RECONFIG
         vm_reconfigure_disk(vm)
         @logger.debug("finish reconfigure")
 
         vm.status = VM_STATE_POWER_ON
         vm_poweron(vm)
-        @logger.debug("finish poweron")
+        @logger.debug("finish poweron, wait ip address")
 
+        @logger.debug("mob: #{vm.mob}")
+        while (!vm.ip_address)
+          sleep(5)
+          @logger.debug("11mob: #{vm.mob}")
+          @client.update_vm_properties_by_vm_mob(vm)
+          @logger.debug("ip: #{vm.ip_address}")
+        end
         vm.status = VM_STATE_DONE
         vm_finish(vm)
 
@@ -70,7 +76,7 @@ module VHelper::CloudManager
     end
 
     def vm_reconfigure_disk(vm, options={})
-      vm.disks.each do |disk|
+      vm.disks.each_value do |disk|
         @client.vm_create_disk(vm, disk)
       end
     end
@@ -80,7 +86,7 @@ module VHelper::CloudManager
     end
 
     def vm_poweron(vm, options={})
-      @client.vm_power_on
+      @client.vm_power_on(vm)
     end
 
     def vm_finish(vm, options={})

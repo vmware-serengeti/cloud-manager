@@ -29,10 +29,10 @@ module VHelper::CloudManager
       end
     end
 
-    def deploying_vm_move_to_existed(vm)
+    def deploying_vm_move_to_existed(vm, options={})
       @vm_lock.synchronize do
-        @deploy_vms.delete(vm)
         @existed_vms[vm.name] = vm
+        @deploy_vms.delete(vm)
       end
     end
 
