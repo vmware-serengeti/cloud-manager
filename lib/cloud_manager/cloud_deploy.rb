@@ -5,7 +5,7 @@ module VHelper::CloudManager
 
       thread_pool = nil
       @logger.debug("enter cluster_deploy")
-      thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
+      #thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
       @logger.debug("created thread pool")
       #Begin to parallel deploy vms
 #      vm_deploy(thread_pool, cluster_changes) do |vm|
@@ -55,18 +55,18 @@ module VHelper::CloudManager
     def vm_deploy(thread_pool, group_placement, options={})
       group_placement.each do |group|
         @logger.debug("enter groups: #{group.pretty_inspect}")
-        thread_pool.wrap do |pool|
+        #thread_pool.wrap do |pool|
           group.each do |vm|
             @logger.debug("enter : #{vm.pretty_inspect}")
-            pool.process do
+        #    pool.process do
               begin
                 yield(vm)
               rescue
                 #TODO do some warning handler here
                 raise
               end
-            end
-          end
+        #    end
+        #  end
         end
         @logger.info("##Finish change one vm_group")
       end
