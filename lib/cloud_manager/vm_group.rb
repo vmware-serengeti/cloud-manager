@@ -1,7 +1,7 @@
 module VHelper::CloudManager
   class VHelperCloud
     def gen_vm_name(cluster_name, group_name, num)
-      return "#{cluster_name}.#{group_name}.#{num}"
+      return "#{cluster_name}-#{group_name}-#{num}"
     end
 
     def get_from_vm_name(vm_name)
