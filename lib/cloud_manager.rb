@@ -37,5 +37,18 @@ module VHelper::CloudManager
       end
       cloud
     end
+
+    def self.query_cluster(parameter, options={})
+      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+      if (options[:wait])
+        cloud.query
+      else
+        # options["sync"] == false
+        Thread.new do
+          cloud.query
+        end
+      end
+      cloud
+    end
   end
 end

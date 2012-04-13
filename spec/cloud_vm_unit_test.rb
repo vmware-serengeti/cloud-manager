@@ -43,9 +43,10 @@ begin
     puts("provider: #{vcenter}")
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
     while !cloud.wait_for_completion()
-      puts("ut process:#{cloud.get_progress.pretty_inspect}")
+      puts("ut process:#{cloud.get_progress.progress}")
       sleep(5)
     end
+    puts("ut finished")
   when 2 then
     puts "##Test WDC"
     vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
@@ -56,7 +57,10 @@ begin
     puts("provider: #{vcenter}")
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.wait_for_completion()
-      puts("ut process:#{cloud.get_progress.pretty_inspect}")
+      progress = cloud.get_progress
+      puts("ut process:#{progress.progress}")
+      puts("ut process:#{progress.results}")
+      puts("ut process:#{progress.progress}")
       sleep(5)
     end
   when 2 then #Delete Cluster
@@ -65,7 +69,7 @@ begin
       puts("delete ut process:#{cloud.get_progress}")
       sleep(1)
     end
-  when 10 then #DEL all vh-XXXX vm
+  when 10 then #DEL all XXXX vm
   when 11 then #Show All vm
   when 100 then #show YAML file
     p "## Test ut.dc.yaml\n"

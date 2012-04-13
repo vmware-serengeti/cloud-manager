@@ -247,7 +247,7 @@ module VHelper::CloudManager
       vm_mobs = @client.get_vms_by_host_mob(host_mob)
       return vms if vm_mobs.nil?
       vm_mobs.each do |vm_mob|
-        @logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
+        #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
         vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
         vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], @logger)
 
@@ -256,8 +256,8 @@ module VHelper::CloudManager
         vm.host_name = host.name
 
         #update disk info
-        @logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
-        @logger.debug("vm_:#{vm.pretty_inspect}")
+        #@logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
+        #@logger.debug("vm_:#{vm.pretty_inspect}")
         disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
         disk_attrs.each do |attr|
           disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 

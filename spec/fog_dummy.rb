@@ -43,6 +43,10 @@ module VHelper::CloudManager
       vm.ip_address = "1.1.1.1"
     end
 
+    def update_vm_properties_by_vm_mob(vm)
+      vm.ip_address = "1.1.1.1"
+    end
+
     def ct_mob_ref_to_attr_hash(mob, type, options={})
       return mob
     end

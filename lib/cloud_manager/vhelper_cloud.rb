@@ -70,6 +70,31 @@ module VHelper::CloudManager
       #TODO add code here to delete all cluster
     end
 
+    def prepare_working(cluster_info)
+      ###########################################################
+      # Connect to Cloud server
+      @logger.debug("Connect to Cloud Server #{@vc_address} user:#{@vc_username}/#{vc_password}...")
+      @status = CLUSTER_CONNECT
+      @client = ClientFactory.create(@client_name, @logger)
+      @client.login(@vc_address, @vc_username, @vc_password)
+
+      @logger.debug("Create Resources ...")
+      @resources = Resources.new(@client, self)
+
+      ###########################################################
+      # Create inputed vm_group from vhelper input
+      @logger.debug("Create vm group from vhelper input...")
+      vm_groups_input = create_vm_group_from_vhelper_input(cluster_info)
+      File.open("vm_groups_input.yaml", 'w'){|f| YAML.dump(vm_groups_input, f)} 
+      vm_groups_existed = {}
+      dc_resources = {}
+      @status = CLUSTER_FETCH_INFO
+      dc_resources = @resources.fetch_datacenter
+
+      File.open("dc_resource-first.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
+      [dc_resources, vm_groups_existed, vm_groups_input]
+    end
+
     def create_and_update(cloud_provider, cluster_info, task)
       @logger.debug("enter create_and_update...")
       create_cloud_provider(cloud_provider)
@@ -82,30 +107,10 @@ module VHelper::CloudManager
 
       #@logger.debug("#{cluster_info.inspect}")
       @logger.debug("Begin vHelper work...")
+      cluster_changes = []
 
       begin
-        ###########################################################
-        # Connect to Cloud server
-        @logger.debug("Connect to Cloud Server #{@vc_address} user:#{@vc_username}/#{vc_password}...")
-        @status = CLUSTER_CONNECT
-        @client = ClientFactory.create(@client_name, @logger)
-        @client.login(@vc_address, @vc_username, @vc_password)
-
-        @logger.debug("Create Resources ...")
-        @resources = Resources.new(@client, self)
-
-        ###########################################################
-        # Create inputed vm_group from vhelper input
-        @logger.debug("Create vm group from vhelper input...")
-        vm_groups_input = create_vm_group_from_vhelper_input(cluster_info)
-        File.open("vm_groups_input.yaml", 'w'){|f| YAML.dump(vm_groups_input, f)} 
-        vm_groups_existed = {}
-        cluster_changes = []
-        dc_resources = {}
-        @status = CLUSTER_FETCH_INFO
-        dc_resources = @resources.fetch_datacenter
-
-        File.open("dc_resource-first.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
+        dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
         ###########################################################
         # Create existed vm groups
         
@@ -115,19 +120,18 @@ module VHelper::CloudManager
         File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
         @logger.info("Finish collect vm_group info from resources")
 
-=begin
         unless vm_groups_existed.empty?
           ###########################################################
           #Checking and do difference
           @status = CLUSTER_UPDATE
           nodifference, cluster_changes = cluster_diff(dc_resources, vm_groups_input, vm_groups_existed)
           if nodifference
+            @logger.info("No difference here")
             @status = CLUSTER_DONE
           else
             File.open("cluster_changes.yaml", 'w'){|f| YAML.dump(cluster_changes, f)} 
           end
         end
-=end
       rescue => e
         @logger.debug("Prepare working failed.")
         @logger.debug("#{e} - #{e.backtrace.join("\n")}")
@@ -183,7 +187,6 @@ module VHelper::CloudManager
         vm.cluster_name = result[1]
         vm.group_name = result[2]
         yield(vm)
-        @logger.debug("vm::#{vm.pretty_inspect}")
         servers << vm
       end
     end
@@ -207,8 +210,17 @@ module VHelper::CloudManager
           vm_status.error_msg = vm.error_msg
         end
       end
-      @logger.debug("result: #{result.pretty_inspect}")
+      if result.total> 0
+        return [result.finished*100/result.total, result]
+      end
       [0, result]
+    end
+
+    def query(cloud_provider, cluster_info, task)
+      @logger.debug("enter query...")
+      create_cloud_provider(cloud_provider)
+      dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
+      return get_result
     end
 
     def cluster_failed(task)

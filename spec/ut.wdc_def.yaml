@@ -10,4 +10,4 @@ groups:
     type: share
     size: 200
   network: CFNetwork
-  instance_num: 2
+  instance_num: 5

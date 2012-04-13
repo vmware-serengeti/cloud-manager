@@ -12,61 +12,81 @@ module VHelper::CloudManager
 #        #TODO add change code here
 #        @logger.info("changing vm #{vm.pretty_inspect}")
 #        vm.status = VM_STATE_DONE
-#        vm_finish(vm)
-#      end
-#      @logger.info("Finish all changes")
-      vm_deploy(thread_pool, vm_placement) do |vm|
-        vm.status = VM_STATE_CLONE
-        if @existed_vms[vm.name].nil?
+      #        vm_finish(vm)
+      #      end
+      #      @logger.info("Finish all changes")
+      vm_placement.each do |group|
+        vm_deploy_group_threads(group) do |vm|
+          vm.status = VM_STATE_CLONE
+          next unless @existed_vms[vm.name].nil?
           vm_begin_create(vm)
           begin
             vm_clone(vm, :poweron => false)
           rescue => e
             @logger.debug("#{e}")
+            #FIXME only handle duplicated issue.
             next
           end
-          @logger.debug("finish clone")
+          @logger.debug("#{vm.name} finish clone")
 
           vm.status = VM_STATE_RECONFIG
           vm_reconfigure_disk(vm)
-          @logger.debug("finish reconfigure")
+          @logger.debug("#{vm.name} finish reconfigure")
 
           vm.status = VM_STATE_POWER_ON
           vm_poweron(vm)
-          @logger.debug("finish poweron")
-        else
-          vm = @existed_vms[vm.name]
+          vm_finish(vm)
+          @logger.debug("#{vm.name} finish poweron")
         end
-
-        @logger.debug("wait ip address")
-        while (vm.ip_address.nil? || vm.ip_address.empty?)
-          sleep(5)
-          @client.update_vm_properties_by_vm_mob(vm)
-          @logger.debug("ip: #{vm.ip_address}")
-        end
-        vm.status = VM_STATE_DONE
-        vm_finish(vm)
-        @logger.debug("finish")
       end
+
+      @logger.debug("wait all existed vms' ip address")
+      wait_thread = []
+      @existed_vms.each_value do |vm|
+        wait_thread << Thread.new(vm) do |vm|
+          while (vm.ip_address.nil? || vm.ip_address.empty?)
+            sleep(5)
+            @client.update_vm_properties_by_vm_mob(vm)
+            @logger.debug("ip: #{vm.ip_address}")
+          end
+          vm.status = VM_STATE_DONE
+          @logger.debug("finish")
+        end
+      end
+
+      wait_thread.each do |t|
+        t.join
+      end
+
       @logger.info("Finish all deployments")
       "finished"
     end
 
-    def vm_deploy(thread_pool, group_placement, options={})
-      group_placement.each do |group|
-        @logger.debug("enter groups: #{group.pretty_inspect}")
-        #thread_pool.wrap do |pool|
-          group.each do |vm|
-            @logger.debug("enter : #{vm.pretty_inspect}")
-        #    pool.process do
-              begin
-                yield(vm)
-              rescue
-                #TODO do some warning handler here
-                raise
-              end
-        #    end
-        #  end
+    def vm_deploy_group_threads(group, options={})
+      work_thread = []
+      group.each do |vm|
+        work_thread << Thread.new(vm) do |vm|
+          yield vm
+        end
+      end
+      work_thread.each do |t|
+        t.join
+      end
+      @logger.info("##Finish change one vm_group")
+    end
+ 
+    def vm_deploy_group_pool(thread_pool, group, options={})
+      thread_pool.wrap do |pool|
+        group.each do |vm|
+          @logger.debug("enter : #{vm.pretty_inspect}")
+          pool.process do
+            begin
+              yield(vm)
+            rescue
+              #TODO do some warning handler here
+              raise
+            end
+          end
         end
         @logger.info("##Finish change one vm_group")
       end

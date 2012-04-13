@@ -6,7 +6,7 @@ module VHelper::CloudManager
       @logger.debug("")
       changes = []
 
-      return ["different", changes]
+      return [nil, changes]
     end
 
     ####################################################################
