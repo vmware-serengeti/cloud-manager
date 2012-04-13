@@ -80,7 +80,7 @@ module VHelper::CloudManager
       end
       #FIXME we only support one cluster, currently
 
-      @logger.debug("#{cluster_info.inspect}")
+      #@logger.debug("#{cluster_info.inspect}")
       @logger.debug("Begin vHelper work...")
 
       begin
