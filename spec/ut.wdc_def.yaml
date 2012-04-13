@@ -1,0 +1,13 @@
+---
+name: vhelper
+channel_id: provsion
+template_id: /Datacenters/Datacenter2012/vm/hadoop-node-template
+groups:
+- name: group1
+  cpu: 1
+  mem: 512
+  storage:
+    type: share
+    size: 200
+  network: CFNetwork
+  instance_num: 2

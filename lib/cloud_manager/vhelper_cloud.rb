@@ -183,6 +183,7 @@ module VHelper::CloudManager
         vm.cluster_name = result[1]
         vm.group_name = result[2]
         yield(vm)
+        @logger.debug("vm::#{vm.pretty_inspect}")
         servers << vm
       end
     end

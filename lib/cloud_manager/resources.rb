@@ -257,6 +257,7 @@ module VHelper::CloudManager
 
         #update disk info
         @logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
+        @logger.debug("vm_:#{vm.pretty_inspect}")
         disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
         disk_attrs.each do |attr|
           disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 
