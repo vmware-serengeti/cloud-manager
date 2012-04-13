@@ -12,43 +12,29 @@ require 'lib/cloud_manager/vsphere_cloud'
 
 module VHelper::CloudManager
   class Manager
-    def self.delete_cluster(parameter, options={})
+    def self.cluster_helper(parameter, options={})
       cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
       if (options[:wait])
-        cloud.delete
+        return yield cloud
       else
         # options["sync"] == false
         Thread.new do
-          cloud.delete
+          yield cloud
         end
       end
       cloud
+    end
+
+    def self.delete_cluster(parameter, options={})
+      cluster_helper(parameter, options) { |cloud| cloud.delete }
     end
 
     def self.create_cluster(parameter, options={})
-      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-      if (options[:wait])
-        cloud.create_and_update
-      else
-        # options["sync"] == false
-        Thread.new do
-          cloud.create_and_update
-        end
-      end
-      cloud
+      cluster_helper(parameter, options) { |cloud| cloud.create_and_update }
     end
 
-    def self.query_cluster(parameter, options={})
-      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-      if (options[:wait])
-        cloud.query
-      else
-        # options["sync"] == false
-        Thread.new do
-          cloud.query
-        end
-      end
-      cloud
+    def self.list_vms_cluster(parameter, options={})
+      cluster_helper(parameter, :wait=>true) { |cloud| cloud.list_vms }
     end
   end
 end

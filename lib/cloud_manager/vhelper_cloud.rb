@@ -92,7 +92,13 @@ module VHelper::CloudManager
       dc_resources = @resources.fetch_datacenter
 
       File.open("dc_resource-first.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
+      @logger.debug("Create vm group from resources...")
+      vm_groups_existed = create_vm_group_from_resources(dc_resources)
+      File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
+      @logger.info("Finish collect vm_group info from resources")
+
       [dc_resources, vm_groups_existed, vm_groups_input]
+
     end
 
     def create_and_update(cloud_provider, cluster_info, task)
@@ -114,12 +120,6 @@ module VHelper::CloudManager
         ###########################################################
         # Create existed vm groups
         
-        # TODO later
-        @logger.debug("Create vm group from resources...")
-        vm_groups_existed = create_vm_group_from_resources(dc_resources)
-        File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
-        @logger.info("Finish collect vm_group info from resources")
-
         unless vm_groups_existed.empty?
           ###########################################################
           #Checking and do difference
@@ -178,6 +178,7 @@ module VHelper::CloudManager
       # Cluster deploy successfully
       @status = CLUSTER_DONE
       cluster_done(task)
+      get_result[1]
     end
 
     def get_result_by_vms(servers, vms)
@@ -210,17 +211,15 @@ module VHelper::CloudManager
           vm_status.error_msg = vm.error_msg
         end
       end
-      if result.total> 0
-        return [result.finished*100/result.total, result]
-      end
+      return [result.finished*100/result.total, result] if result.total> 0
       [0, result]
     end
 
-    def query(cloud_provider, cluster_info, task)
-      @logger.debug("enter query...")
+    def list_vms(cloud_provider, cluster_info, task)
+      @logger.debug("enter list_vms...")
       create_cloud_provider(cloud_provider)
       dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
-      return get_result
+      get_result[1].servers
     end
 
     def cluster_failed(task)

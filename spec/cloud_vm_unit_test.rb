@@ -63,12 +63,21 @@ begin
       puts("ut process:#{progress.progress}")
       sleep(5)
     end
-  when 2 then #Delete Cluster
+  when 3 then #Delete Cluster
     cloud = VHelper::CloudManager::IaasTask.delete_cluster(info, :wait => false)
     while !cloud.wait_for_completion()
       puts("delete ut process:#{cloud.get_progress}")
       sleep(1)
     end
+  when 4 then #List vms in Cluster
+    vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
+    cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
+    info["cluster_definition"] = cluster_req_1
+    info["cloud_provider"] = vcenter
+    puts("cluster_def : #{cluster_req_1}")
+    puts("provider: #{vcenter}")
+    result = VHelper::CloudManager::Manager.list_vms_cluster(info)
+    puts("##result:#{result.pretty_inspect}")
   when 10 then #DEL all XXXX vm
   when 11 then #Show All vm
   when 100 then #show YAML file

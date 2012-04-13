@@ -104,6 +104,11 @@ module VHelper::CloudManager
       end
     end
 
+    def list_vms
+      @logger.debug("call cloud.list_vms...")
+      return @vhelper.list_vms(@cloud_provider, @cluster_definition, self)
+    end
+
     def create_and_update
       @logger.debug("call cloud.create_and_update ...")
       return @vhelper.create_and_update(@cloud_provider, @cluster_definition, self)
