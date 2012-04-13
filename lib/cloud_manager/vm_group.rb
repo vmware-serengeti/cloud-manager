@@ -1,11 +1,11 @@
 module VHelper::CloudManager
   class VHelperCloud
     def gen_vm_name(cluster_name, group_name, num)
-      return "#{cluster_name}-#{group_name}-#{num}"
+      return "#{cluster_name}.#{group_name}.#{num}"
     end
 
     def get_from_vm_name(vm_name)
-      return /([\w\s\d]+)\-([\w\s\d]+)([\d]+)/.match(vm_name)
+      return /([\w\s\d]+)\-([\w\s\d]+)\-([\d]+)/.match(vm_name)
     end
 
     def create_vm_group_from_vhelper_input(cluster_info)

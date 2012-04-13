@@ -207,6 +207,7 @@ module VHelper::CloudManager
           vm_status.error_msg = vm.error_msg
         end
       end
+      @logger.debug("result: #{result.pretty_inspect}")
       [0, result]
     end
 
