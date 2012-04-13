@@ -99,6 +99,7 @@ module VHelper::CloudManager
   end
 
   class VmInfo
+    attr_accessor :id
     attr_accessor :name
     attr_accessor :status
     attr_accessor :host_name
@@ -141,7 +142,7 @@ module VHelper::CloudManager
     def dns_name; @hostname end
     def public_ip_address; @ip_address end
     def private_ip_address; @ip_address end
-    def instance_uuid; @instance_uuid end
+    def ipaddress; ip_address end
 
     def initialize(vm_name, logger, req_rp = nil)
       @lock = Mutex.new
@@ -168,6 +169,15 @@ module VHelper::CloudManager
     def delete_all_disk
       #seem no work to do
     end
+
+    def wait_for(&block)
+      instance_eval(&block)
+    end
+
+    def ready?
+      !! ip_address
+    end
+
   end
 
   class VHelperCloud
