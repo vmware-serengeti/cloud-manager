@@ -29,6 +29,12 @@ module VHelper::CloudManager
       end
     end
 
+    def add_existed_vm(vm)
+      @vm_lock.synchronize do
+        @existed_vms[vm.name] = vm
+      end
+    end
+
     def deploying_vm_move_to_existed(vm, options={})
       @vm_lock.synchronize do
         @existed_vms[vm.name] = vm
@@ -104,11 +110,12 @@ module VHelper::CloudManager
         # Create existed vm groups
         
         # TODO later
-        #@logger.debug("Create vm group from resources...")
-        #vm_groups_existed = create_vm_group_from_resources(dc_resources)
-        #File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
-        #@logger.info("Finish collect vm_group info from resources")
+        @logger.debug("Create vm group from resources...")
+        vm_groups_existed = create_vm_group_from_resources(dc_resources)
+        File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
+        @logger.info("Finish collect vm_group info from resources")
 
+=begin
         unless vm_groups_existed.empty?
           ###########################################################
           #Checking and do difference
@@ -120,6 +127,7 @@ module VHelper::CloudManager
             File.open("cluster_changes.yaml", 'w'){|f| YAML.dump(cluster_changes, f)} 
           end
         end
+=end
       rescue => e
         @logger.debug("Prepare working failed.")
         @logger.debug("#{e} - #{e.backtrace.join("\n")}")
@@ -138,10 +146,12 @@ module VHelper::CloudManager
         begin
           ###########################################################
           #Caculate cluster placement
+          @logger.debug("Begin placement")
           @status = CLUSTER_PLACE
           placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed, cluster_info)
           File.open("placement.yaml", 'w'){|f| YAML.dump(placement, f)} 
 
+          @logger.debug("Begin deploy")
           @status = CLUSTER_DEPLOY
           successful = cluster_deploy(cluster_changes , placement)
           break if successful

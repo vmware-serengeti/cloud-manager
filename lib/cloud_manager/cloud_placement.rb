@@ -1,7 +1,7 @@
 module VHelper::CloudManager
   class VHelperCloud
     def cluster_placement(dc_resource, vm_groups_input, vm_groups_existed, cluster_info)
-      vm_placement = [[]]
+      vm_placement = []
       if vm_groups_existed.size > 0
         #TODO add changed placement logical
       end

@@ -161,10 +161,10 @@ module VHelper::CloudManager
         cluster.name               = attr["name"]
         cluster.vms                = {}
 
-        @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
+        #@logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
         cluster.resource_pool_moid    = cluster_resource_pool_attr["mo_ref"]
-        @logger.debug("cluster rp:#{cluster_resource_pool_attr["mo_ref"]}")
+        #@logger.debug("cluster rp:#{cluster_resource_pool_attr["mo_ref"]}")
         cluster.datacenter            = datacenter
         cluster.share_datastores      = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
                                                          datacenter.share_datastore_pattern)
@@ -180,8 +180,8 @@ module VHelper::CloudManager
         #        "local are: #{local_datastore_names.pretty_inspect} \n , " +
         #  "please use allow_mixed_datastores director configuration parameter to allow this")
         #end
-        @logger.debug("share datastores are #{cluster.share_datastores} " +
-                      "local datastores are #{cluster.local_datastores}")
+        #@logger.debug("share datastores are #{cluster.share_datastores} " +
+        #              "local datastores are #{cluster.local_datastores}")
 
         cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
@@ -233,8 +233,8 @@ module VHelper::CloudManager
         host.local_datastores = fetch_datastores(host.datastores,
                                                  host.datacenter.local_datastore_pattern)
 
-        @logger.debug("host:#{host.name} share datastores are #{host.share_datastores}")
-        @logger.debug("host:#{host.name} local datastores are #{host.local_datastores}")
+        #@logger.debug("host:#{host.name} share datastores are #{host.share_datastores}")
+        #@logger.debug("host:#{host.name} local datastores are #{host.local_datastores}")
 
         host.vms = fetch_vms_by_host(cluster, host, host_mob)
         hosts[host.name] = host
@@ -280,7 +280,7 @@ module VHelper::CloudManager
         datastore.mob               = attr["mo_ref"]
         datastore.name              = attr["name"]
 
-        @logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
+        #@logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
 
         datastore.free_space        = attr["freeSpace"]
         datastore.total_space       = attr["maxSpace"]

@@ -84,7 +84,7 @@ module VHelper::CloudManager
 
     def get_progress
       progress = IaasProcess.new
-      result, percent = @vhelper.get_result
+      percent, result = @vhelper.get_result
       progress.progress = percent
       progress.results = result
       return progress
