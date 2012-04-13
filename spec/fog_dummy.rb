@@ -33,7 +33,14 @@ module VHelper::CloudManager
       nil
     end
 
-    def update_vm_with_properties(vm, vm_existed)
+    def vm_power_on(vm)
+    end
+
+    def clone_vm(vm, options={})
+    end
+
+    def update_vm_with_properties_string(vm, vm_existed)
+      vm.ip_address = "1.1.1.1"
     end
 
     def ct_mob_ref_to_attr_hash(mob, type, options={})

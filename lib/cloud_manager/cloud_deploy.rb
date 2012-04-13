@@ -16,13 +16,11 @@ module VHelper::CloudManager
 #      end
 #      @logger.info("Finish all changes")
       vm_deploy(thread_pool, vm_placement) do |vm|
-        @logger.info("placing vm aa#{vm.pretty_inspect}")
         vm_begin_create(vm)
         vm.status = VM_STATE_CLONE
         vm_clone(vm, :poweron => false)
         @logger.debug("finish clone")
 
-        @logger.debug("mob: #{vm.mob}")
         vm.status = VM_STATE_RECONFIG
         vm_reconfigure_disk(vm)
         @logger.debug("finish reconfigure")
@@ -31,10 +29,8 @@ module VHelper::CloudManager
         vm_poweron(vm)
         @logger.debug("finish poweron, wait ip address")
 
-        @logger.debug("mob: #{vm.mob}")
         while (!vm.ip_address)
           sleep(5)
-          @logger.debug("11mob: #{vm.mob}")
           @client.update_vm_properties_by_vm_mob(vm)
           @logger.debug("ip: #{vm.ip_address}")
         end
