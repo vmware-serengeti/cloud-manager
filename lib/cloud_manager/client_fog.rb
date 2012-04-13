@@ -75,7 +75,9 @@ module VHelper::CloudManager
     # needs vm mobid to get the properties of this vm
     def update_vm_properties_by_vm_mob(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
+      @logger.debug("pro-vm_mob:#{vm.mob}")
       vm_properties = @connection.get_vm_properties(vm.mob)
+      @logger.debug("pro:#{vm_properties.pretty_inspect}")
       update_vm_with_properties_string(vm, vm_properties)
       #TODO add update vm spec info
     end

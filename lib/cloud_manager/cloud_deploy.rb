@@ -34,9 +34,12 @@ module VHelper::CloudManager
           vm.status = VM_STATE_POWER_ON
           vm_poweron(vm)
           @logger.debug("finish poweron")
+        else
+          vm = @existed_vms[vm.name]
         end
+
         @logger.debug("wait ip address")
-        while (!vm.ip_address)
+        while (vm.ip_address.nil? || vm.ip_address.empty?)
           sleep(5)
           @client.update_vm_properties_by_vm_mob(vm)
           @logger.debug("ip: #{vm.ip_address}")
