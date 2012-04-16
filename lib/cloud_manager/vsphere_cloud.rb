@@ -95,6 +95,10 @@ module VHelper::CloudManager
       @logger.debug("Do not implement abort function")
     end
 
+    def release_connection
+      @vhelper.release_connection
+    end
+
     #############################################
     # Set info from worker thread
     def set_finish(finish)

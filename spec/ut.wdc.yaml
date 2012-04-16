@@ -8,7 +8,7 @@ vc_clusters:
   - name: cluster-fog
     vc_rps: 
     - resource_pool1
-vc_shared_datastore_patten: share
-vc_local_datastare_patten: local
+vc_shared_datastore_patten: [Enclosure]
+vc_local_datastore_patten: [local]
 cloud_adapter: fog
 

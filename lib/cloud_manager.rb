@@ -13,14 +13,19 @@ require 'lib/cloud_manager/vsphere_cloud'
 module VHelper::CloudManager
   class Manager
     def self.cluster_helper(parameter, options={})
-      cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-      if (options[:wait])
-        return yield cloud
-      else
-        # options["sync"] == false
-        Thread.new do
+      cloud = nil
+      begin
+        cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+        if (options[:wait])
           yield cloud
+        else
+          # options["sync"] == false
+          Thread.new do
+            yield cloud
+          end
         end
+      ensure
+        cloud.release_connection if cloud
       end
       cloud
     end
@@ -34,7 +39,13 @@ module VHelper::CloudManager
     end
 
     def self.list_vms_cluster(parameter, options={})
-      cluster_helper(parameter, :wait=>true) { |cloud| cloud.list_vms }
+      cloud = nil
+      begin
+        cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+        return cloud.list_vms
+      ensure
+        cloud.release_connection if cloud
+      end
     end
   end
 end

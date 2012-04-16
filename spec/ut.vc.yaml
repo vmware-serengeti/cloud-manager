@@ -9,7 +9,8 @@ vc_clusters:
   - name: Cluster1
     vc_rps: 
     - resource_pool1
-vc_shared_datastore_patten: share
-vc_local_datastare_patten: local
+    - resource_pool2
+vc_shared_datastore_patten: [share]
+vc_local_datastore_patten: [local]
 cloud_adapter: ut
 

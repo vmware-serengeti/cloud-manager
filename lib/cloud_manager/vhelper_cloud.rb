@@ -66,14 +66,33 @@ module VHelper::CloudManager
     end
 
     def delete(cloud_provider, cluster_info, task)
-      @logger.debug("enter delete ... not implement")
+      @logger.debug("enter delete cluster ... ")
+      create_cloud_provider(cloud_provider)
+      dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
+      dc_resources.clusters.each_value { |cluster|
+        cluster.vms.each_value { |vm|
+          @logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
+          result = get_from_vm_name(vm.name)
+          next unless result
+          cluster = result[1]
+          group_name = result[2]
+          num = result[3]
+          @logger.debug("vm split to #{cluster}::#{group_name}::#{num}")
+          if cluster_info["name"] == cluster 
+            @logger.debug("delete vm : #{vm.name}")
+            @client.vm_destroy(vm)
+          end
+        }
+      }
+      cluster_done(task)
+      @logger.debug("delete all vm's")
       #TODO add code here to delete all cluster
     end
 
     def prepare_working(cluster_info)
       ###########################################################
       # Connect to Cloud server
-      @logger.debug("Connect to Cloud Server #{@vc_address} user:#{@vc_username}/#{vc_password}...")
+      @logger.debug("Connect to Cloud Server #{@client_name} #{@vc_address} user:#{@vc_username}/#{vc_password}...")
       @status = CLUSTER_CONNECT
       @client = ClientFactory.create(@client_name, @logger)
       @client.login(@vc_address, @vc_username, @vc_password)
@@ -84,12 +103,12 @@ module VHelper::CloudManager
       ###########################################################
       # Create inputed vm_group from vhelper input
       @logger.debug("Create vm group from vhelper input...")
-      vm_groups_input = create_vm_group_from_vhelper_input(cluster_info)
+      vm_groups_input = create_vm_group_from_vhelper_input(cluster_info, @vc_req_datacenter)
       File.open("vm_groups_input.yaml", 'w'){|f| YAML.dump(vm_groups_input, f)} 
       vm_groups_existed = {}
       dc_resources = {}
       @status = CLUSTER_FETCH_INFO
-      dc_resources = @resources.fetch_datacenter
+      dc_resources = @resources.fetch_datacenter(@vc_req_datacenter)
 
       File.open("dc_resource-first.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
       @logger.debug("Create vm group from resources...")
@@ -98,7 +117,13 @@ module VHelper::CloudManager
       @logger.info("Finish collect vm_group info from resources")
 
       [dc_resources, vm_groups_existed, vm_groups_input]
+    end
 
+    def release_connection
+      if @client
+        @client.logout
+        @client = nil
+      end
     end
 
     def create_and_update(cloud_provider, cluster_info, task)
@@ -178,7 +203,6 @@ module VHelper::CloudManager
       # Cluster deploy successfully
       @status = CLUSTER_DONE
       cluster_done(task)
-      get_result[1]
     end
 
     def get_result_by_vms(servers, vms)

@@ -7,65 +7,56 @@
     resource_pool:
     - name: resource_pool1
       mob: rs1
-    datastores:
+      shares: 1000
+      host_used_mem: 1000
+      guest_used_mem: 1000
+      limit_mem: 16000
+    - name: resource_pool2
+      mob: rs2
+      shares: 2000
+      host_used_mem: 1000
+      guest_used_mem: 1000
+      limit_mem: 16000
+    datastores: &id1  #Size is KB
     - name: share-ds
       mob: share-ds1
-      freeSpace: 1000000
-      maxSpace: 2000000
+      freeSpace: 210000000
+      maxSpace: 400000000
+    - name: share-dsA
+      mob: share-ds2
+      freeSpace: 200000000
+      maxSpace: 300000000
+    - name: share-dsB
+      mob: share-ds3
+      freeSpace: 160000000
+      maxSpace: 200000000
+
     hosts:
     - name: host1
       mob: hs1
       cpu: 1 
       mem: 4096
-      datastores:
-      - name: share-ds
-        mob: share-ds1
-        freeSpace: 1000000
-        maxSpace: 2000000
+      used_mem: 1200
+      cpu_limit: 9000
+      total_memory: 10000
+      datastores: *id1
 
     - name: host2
       mob: hs2
       cpu: 4 
       mem: 16000
-      datastores:
-      - name: share-ds
-        mob: share-ds1
-        freeSpace: 1000000
-        maxSpace: 2000000
+      used_mem: 1300
+      total_memory: 12000
+      cpu_limit: 8000
+      datastores: *id1
 
     - name: host3
       mob: hs3
       cpu: 2 
       mem: 10000
-      datastores:
-      - name: share-ds
-        mob: share-ds1
-        freeSpace: 1000000
-        maxSpace: 2000000
-      vms:
-      - name: vh-testDC.Cluster1.1
-        disks:
-          - size: 100
-            fullname: localdisk/vh-testDC.Cluster1.host3.1/local-disk-1.vmdk
-            unit_number: 0
-          - size: 200
-            fullname: localdisk/vh-testDC.Cluster1.host3.1/local-disk-2.vmdk
-            unit_number: 1
-          
+      used_mem: 1100
+      total_memory: 16000
+      cpu_limit: 10000
+      datastores: *id1
 
-  - name: Cluster2
-    mob: cs2
-    resource_pool:
-    - name: resource_pool2
-      mob: rs2
-    hosts:
-    - name: host4
-      mob: hs4
-      cpu: 2 
-      mem: 10000
-      datastores:
-      - name: share-ds
-        mob: share-ds1
-        freeSpace: 1000000
-        maxSpace: 2000000
 

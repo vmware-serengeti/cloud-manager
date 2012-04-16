@@ -12,9 +12,12 @@ module VHelper::CloudManager
     DC_CONFIG_FILE = "./spec/ut.dc.yaml"
     def initialize(logger)
       @logger = logger
+      @ip_start = 2
       @logger.debug("Enter Fog_dummy")
       @debug_dc = YAML.load(File.open(DC_CONFIG_FILE))
       @logger.debug("Debug DC : #{@debug_dc}")
+      @lock = Mutex.new
+      @vm_prop = {}
     end
 
     def login(vc_addr, vc_user, vc_pass)
@@ -23,7 +26,7 @@ module VHelper::CloudManager
     end
 
     def logout
-      @logger.debug("Logout #{@vc_addr}")
+      @logger.debug("##Logout #{@vc_addr}")
     end
 
     def get_dc_mob_ref_by_path(dc_name, options={})
@@ -33,18 +36,46 @@ module VHelper::CloudManager
       nil
     end
 
+    def vm_destroy(vm)
+      @logger.debug("destroy #{vm.name}")
+      @vm_prop.delete(vm.name)
+    end
+
     def vm_power_on(vm)
+      @logger.debug("power on #{vm.name}")
+      vm.power_state = "power on"
     end
 
     def clone_vm(vm, options={})
+      @logger.debug("clone vm#{vm.name}")
+      vm.power_state = (options[:power_on] == true)? "power on":"power off"
     end
 
-    def update_vm_with_properties_string(vm, vm_existed)
-      vm.ip_address = "1.1.1.1"
+    def update_vm_with_properties_string(vm, vm_properties)
+      vm.name             = vm_properties["name"]
+      vm.mob              = vm_properties["mo_ref"] #moid
+      vm.uuid             = vm_properties["uuid"]
+      vm.instance_uuid    = vm_properties["instance_uuid"]
+      vm.hostname         = vm_properties["hostname"]
+      vm.operatingsystem  = vm_properties["operatingsystem"]
+      vm.ip_address       = vm_properties["ipaddress"]
+      vm.power_state      = vm_properties["power_state"]
+      vm.connection_state = vm_properties["connection_state"]
+      vm.tools_state      = vm_properties["tools_state"]
+      vm.tools_version    = vm_properties["tools_version"]
+      vm.is_a_template    = vm_properties["is_a_template"]
+      nil
     end
 
     def update_vm_properties_by_vm_mob(vm)
-      vm.ip_address = "1.1.1.1"
+      return vm if (@vm_prop.has_key?(vm.name))
+      @lock.synchronize do
+        #TODO read vm info from FILE later
+        vm.ip_address = "1.1.1.#{@ip_start}"
+        vm.mob = "vm_mob#{@ip_start}"
+        @ip_start += 1
+        @vm_prop[vm.name] = vm
+      end
     end
 
     def ct_mob_ref_to_attr_hash(mob, type, options={})

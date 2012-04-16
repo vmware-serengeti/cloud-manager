@@ -8,12 +8,14 @@ module VHelper::CloudManager
       return /([\w\s\d]+)\-([\w\s\d]+)\-([\d]+)/.match(vm_name)
     end
 
-    def create_vm_group_from_vhelper_input(cluster_info)
+    def create_vm_group_from_vhelper_input(cluster_info, datacenter_name)
       vm_groups = {}
       @logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
       vhelper_groups = cluster_info["groups"]
+      template_id = "/Datacenters/#{datacenter_name}/vm/#{cluster_info["template_id"]}"
+      @logger.debug("template_id:#{template_id}")
       vhelper_groups.each do |vm_group_req|
-        vm_group = VmGroupInfo.new(@logger, vm_group_req, cluster_info["template_id"])
+        vm_group = VmGroupInfo.new(@logger, vm_group_req, template_id)
         vm_groups[vm_group.name] = vm_group
       end
       @logger.debug("vhelper_group:#{vm_groups}")
@@ -29,8 +31,7 @@ module VHelper::CloudManager
           next unless result
           cluster = result[1]
           group_name = result[2]
-          host_name = result[3]
-          num = result[4]
+          num = result[3]
           @logger.debug("vm split to #{cluster}::#{group_name}::#{num}")
           vm_group = vm_groups[group_name]
           if vm_group.nil?

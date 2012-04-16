@@ -25,6 +25,7 @@ module VHelper::CloudManager
   LOCAL = "local"
 
   class ResourceInfo
+    DISK_CHANGE_TIMES = 1024*1024
     attr_accessor :cpu
     attr_accessor :mem
     attr_accessor :disk_type
@@ -37,7 +38,8 @@ module VHelper::CloudManager
         @cpu = rp["cpu"] || 1
         @mem = rp["ram"] || 512
         # FIXME disks only use the first storage info
-        @disk_size=  rp["storage"]["size"] || 0
+        @disk_size =  rp["storage"]["size"] || 0
+        @disk_size *= DISK_CHANGE_TIMES
         @disk_type = rp["storage"]["type"] || 0
         @affinity = rp["affinity"] || "none"
         @template_id = template_id

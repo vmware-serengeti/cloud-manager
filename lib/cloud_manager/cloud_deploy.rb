@@ -16,7 +16,7 @@ module VHelper::CloudManager
       #      end
       #      @logger.info("Finish all changes")
       vm_placement.each do |group|
-        vm_deploy_group_threads(group) do |vm|
+        vm_group_by_threads(group) do |vm|
           vm.status = VM_STATE_CLONE
           next unless @existed_vms[vm.name].nil?
           vm_begin_create(vm)
@@ -42,39 +42,38 @@ module VHelper::CloudManager
 
       @logger.debug("wait all existed vms' ip address")
       wait_thread = []
-      @existed_vms.each_value do |vm|
-        wait_thread << Thread.new(vm) do |vm|
-          while (vm.ip_address.nil? || vm.ip_address.empty?)
-            sleep(5)
-            @client.update_vm_properties_by_vm_mob(vm)
-            @logger.debug("ip: #{vm.ip_address}")
-          end
-          vm.status = VM_STATE_DONE
-          @logger.debug("finish")
+      vm_map_by_threads(@existed_vms) do |vm|
+        while (vm.ip_address.nil? || vm.ip_address.empty?)
+          @client.update_vm_properties_by_vm_mob(vm)
+          @logger.debug("#{vm.name} ip: #{vm.ip_address}")
+          sleep(4)
         end
-      end
-
-      wait_thread.each do |t|
-        t.join
+        vm.status = VM_STATE_DONE
+        @logger.debug("#{vm.name}: done")
       end
 
       @logger.info("Finish all deployments")
       "finished"
     end
 
-    def vm_deploy_group_threads(group, options={})
+    def vm_map_by_threads(map, options={})
       work_thread = []
-      group.each do |vm|
-        work_thread << Thread.new(vm) do |vm|
-          yield vm
-        end
+      map.each_value do |vm|
+        work_thread << Thread.new(vm) { |vm| yield vm }
       end
-      work_thread.each do |t|
-        t.join
-      end
+      work_thread.each { |t| t.join }
       @logger.info("##Finish change one vm_group")
     end
- 
+
+    def vm_group_by_threads(group, options={})
+      work_thread = []
+      group.each do |vm|
+        work_thread << Thread.new(vm) { |vm| yield vm }
+      end
+      work_thread.each { |t| t.join }
+      @logger.info("##Finish change one vm_group")
+    end
+
     def vm_deploy_group_pool(thread_pool, group, options={})
       thread_pool.wrap do |pool|
         group.each do |vm|

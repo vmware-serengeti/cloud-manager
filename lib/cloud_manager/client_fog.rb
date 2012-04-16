@@ -2,6 +2,7 @@ require '../fog/lib/fog'
 
 module VHelper::CloudManager
   class FogAdapter
+    DISK_SIZE_TIMES = 1024
     attr_reader :logger
     def initialize(logger)
       @logger = logger
@@ -15,17 +16,18 @@ module VHelper::CloudManager
             :vsphere_server => vc_addr,
             :vsphere_username => vc_user,
             :vsphere_password => vc_pass,
-            :vsphere_expected_pubkey_hash => '1bf5e752376a33c278ed2d2ee7e1fed8739ee7f24c233b89fed2fe69535646db'}
+       #     :vsphere_expected_pubkey_hash => '1bf5e752376a33c278ed2d2ee7e1fed8739ee7f24c233b89fed2fe69535646db'
+        }
 
           connection = Fog::Compute.new(info)
-          @logger.info("Connect to cloud provider: #{cloud_server}")
+          @logger.info("Use Fog, connect to cloud provider: #{cloud_server}, #{connection}")
           @connection = connection
       end
     end
 
     def logout
       unless @connection.nil?
-        @connection.destroy
+        #destroy @connection
       end
       @connection = nil
       @logger.info("Disconnect to cloud provider ")
@@ -48,6 +50,11 @@ module VHelper::CloudManager
       update_vm_with_properties_string(vm, result["vm_attributes"])
     end
 
+    def vm_destroy(vm)
+      raise "Do not login cloud server, please login first" if @connection.nil?
+      task_state = @connection.vm_destroy('instance_uuid' =>vm.instance_uuid)
+    end
+
     # TODO add option to force hard/soft reboot
     def vm_reboot(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
@@ -67,7 +74,7 @@ module VHelper::CloudManager
 
     def vm_create_disk(vm, disk, options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
-      info = {'instance_uuid' => vm.instance_uuid, 'vmdk_path' => disk.fullpath, 'disk_size' => disk.size}
+      info = {'instance_uuid' => vm.instance_uuid, 'vmdk_path' => disk.fullpath, 'disk_size' => disk.size / DISK_SIZE_TIMES }
       result = @connection.vm_create_disk(info)
       # TODO add update disk and vm's info
     end

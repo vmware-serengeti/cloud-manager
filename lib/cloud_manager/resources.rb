@@ -36,6 +36,7 @@ module VHelper::CloudManager
       attr_accessor :name
       attr_accessor :datacenter
       attr_accessor :resource_pool_moid
+      attr_accessor :resource_pools
       attr_accessor :hosts
       attr_accessor :share_datastores
       attr_accessor :local_datastores
@@ -58,6 +59,9 @@ module VHelper::CloudManager
     class ResourcePool
       attr_accessor :mob
       attr_accessor :name
+      attr_accessor :shares
+      attr_accessor :host_used_mem
+      attr_accessor :guest_used_mem
       attr_accessor :total_memory       #MB
       attr_accessor :free_memory
       attr_accessor :unaccounted_memory
@@ -65,7 +69,7 @@ module VHelper::CloudManager
         @free_memory - @unaccounted_memory * @mem_over_commit
       end
       def inspect
-        "<Host: #{@mob} / #{@name}, #{@real_free_memory}>"
+        "<Resource Pool: #{@mob} / #{@name}, #{@real_free_memory}>"
       end
     end
 
@@ -87,6 +91,10 @@ module VHelper::CloudManager
       attr_accessor :mem_over_commit
       attr_accessor :datastores         #
       attr_accessor :vms                # all vms belongs to this host
+      attr_accessor :used_mem
+      attr_accessor :used_cpu
+      attr_accessor :place_share_datastores
+      attr_accessor :place_local_datastores
 
       def real_free_memory
         @free_memory - @unaccounted_memory * @mem_over_commit
@@ -108,10 +116,12 @@ module VHelper::CloudManager
       @mem_over_commit  = mem_over_commit
     end
 
-    def fetch_datacenter()
-      datacenter_name = @vhelper.vc_req_datacenter
+    def fetch_datacenter(datacenter_name)
       datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
-      return nil if datacenter_mob.nil?
+      if datacenter_mob.nil?
+        @logger.debug("Do not find the datacenter: #{datacenter_name}")
+        raise "Do not find the datacenter: #{datacenter_name}"
+      end
       attr = @client.ct_mob_ref_to_attr_hash(datacenter_mob, "DC")
 
       datacenter                      = Datacenter.new
@@ -121,16 +131,10 @@ module VHelper::CloudManager
       @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
       raise "Missing share_datastore_pattern in director config" if @vhelper.vc_share_datastore_patten.nil?
-      datacenter.share_datastore_pattern    = Regexp.new(@vhelper.vc_share_datastore_patten)
-
-      local_regex = @vhelper.vc_local_datastore_patten
-      local_regex = "" if local_regex.nil?
-      @logger.debug("Local Regex: #{local_regex}")
-
-      datacenter.local_datastore_pattern = Regexp.new(local_regex)
+      datacenter.share_datastore_pattern    = @vhelper.vc_share_datastore_patten
+      datacenter.local_datastore_pattern = @vhelper.vc_local_datastore_patten
 
       datacenter.allow_mixed_datastores = @vhelper.allow_mixed_datastores
-
       datacenter.racks = @vhelper.racks
 
       datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
@@ -146,30 +150,28 @@ module VHelper::CloudManager
       @logger.debug("#{cluster_mobs.pretty_inspect}")
       cluster_mobs.each do |cluster_mob|
         @logger.debug("cluster mob:#{cluster_mob}")
-        requested_resource_pool = @vhelper.vc_req_clusters[0]["vc_rps"][0]
-        cluster_resource_pool_attr = fetch_resource_pool(cluster_mob, requested_resource_pool)
-
-        next if cluster_resource_pool_attr.nil?
+        resource_pool_names = @vhelper.vc_req_clusters[0]["vc_rps"]
+        resource_pools = fetch_resource_pool(cluster_mob, resource_pool_names)
+        next if resource_pools.empty?
 
         attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
         # chose cluster in cluster_names
         next unless cluster_names.include?(attr["name"])
 
-        cluster                    = Cluster.new
-        cluster.mem_over_commit    = @mem_over_commit
-        cluster.mob                = attr["mo_ref"]
-        cluster.name               = attr["name"]
-        cluster.vms                = {}
+        cluster                     = Cluster.new
+        cluster.mem_over_commit     = @mem_over_commit
+        cluster.mob                 = attr["mo_ref"]
+        cluster.name                = attr["name"]
+        cluster.vms                 = {}
 
         #@logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
-        cluster.resource_pool_moid    = cluster_resource_pool_attr["mo_ref"]
-        #@logger.debug("cluster rp:#{cluster_resource_pool_attr["mo_ref"]}")
-        cluster.datacenter            = datacenter
-        cluster.share_datastores      = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
-                                                         datacenter.share_datastore_pattern)
-        cluster.local_datastores      = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
-                                                         datacenter.local_datastore_pattern)
+        cluster.resource_pools      = resource_pools
+        cluster.datacenter          = datacenter
+        cluster.share_datastores    = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
+                                                       datacenter.share_datastore_pattern)
+        cluster.local_datastores    = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
+                                                       datacenter.local_datastore_pattern)
 
         # make sure share_datastores and local_datastores are mutually exclusive
         #share_datastore_names = cluster.share_datastores.map { |ds| ds.name }
@@ -190,22 +192,31 @@ module VHelper::CloudManager
       clusters
     end
 
-    def fetch_resource_pool(cluster_mob, resource_pool_name)
-
+    def fetch_resource_pool(cluster_mob, resource_pool_names)
       resource_pool_mobs = @client.get_rps_by_cs_mob(cluster_mob)
       @logger.debug("resource_pool_mobs: #{resource_pool_mobs.pretty_inspect}")
+      resource_pools = {}
 
       resource_pool_mobs.each do |resource_pool_mob|
         attr = @client.ct_mob_ref_to_attr_hash(resource_pool_mob, "RP")
-        @logger.debug("resource pool in vc :#{attr["name"]} is same as #{resource_pool_name}?")
-        if attr["name"] == resource_pool_name
-          return attr
+        @logger.debug("resource pool in vc :#{attr["name"]} is in #{resource_pool_names}?")
+        if resource_pool_names.include?(attr["name"])
+          rp = ResourcePool.new
+          rp.mob            = attr["mo_ref"]
+          rp.name           = attr["name"]
+          rp.shares         = attr["shares"]
+          rp.host_used_mem  = attr["host_used_mem"]
+          rp.guest_used_mem = attr["guest_used_mem"]
+          rp.total_memory   = attr["limit_mem"]
+          rp.free_memory    = rp.total_memory - rp.host_used_mem - rp.guest_used_mem
+          rp.unaccounted_memory = 0
+          resource_pools[rp.mob] = rp
         end
       end
 
       # Get list of resource pools under this cluster
-      @logger.info("Could not find requested resource pool #{resource_pool_name} under cluster #{cluster_mob}")
-      nil
+      @logger.info("Could not find requested resource pool #{resource_pool_names} under cluster #{cluster_mob}") if resource_pools.empty?
+      resource_pools
     end
 
     def fetch_hosts(cluster, cluster_mob)
@@ -224,7 +235,10 @@ module VHelper::CloudManager
         host.datastores         = @client.get_datastores_by_host_mob(host_mob)
         host.total_memory       = attr["total_memory"]
         host.cpu_limit          = attr["cpu_limit"].to_i
+        host.used_mem           = attr["used_mem"].to_i
+        host.used_cpu           = attr["used_cpu"].to_i
         host.mem_over_commit    = @mem_over_commit
+        host.free_memory        = host.total_memory.to_i - host.used_mem.to_i
         host.unaccounted_memory = 0
 
         host.share_datastores = fetch_datastores(host.datastores,
@@ -272,11 +286,12 @@ module VHelper::CloudManager
     end
 
     # OK finished
-    def fetch_datastores(datastore_mobs, match_pattern)
+    def fetch_datastores(datastore_mobs, match_patterns)
       datastores = {}
+      return datastores if match_patterns.nil?
       datastore_mobs.each do |datastore_mob|
         attr = @client.ct_mob_ref_to_attr_hash(datastore_mob, "DS")
-        next unless isMatched?(attr["name"], match_pattern)
+        next unless isMatched?(attr["name"], match_patterns)
         datastore                   = Datastore.new
         datastore.mob               = attr["mo_ref"]
         datastore.name              = attr["name"]
@@ -291,15 +306,47 @@ module VHelper::CloudManager
       datastores
     end
 
-    def isMatched?(name, match_pattern)
+    def isMatched?(name, match_patterns)
+      #@logger.debug("isMatched? #{name}, #{match_patterns.pretty_inspect}")
       #TODO match_pattern is an array
-      true
+      match_patterns.each { |pattern| 
+        return true if name.match(pattern) 
+      }
+      false
     end
 
     def find_cs_datastores_by_name(cluster, name)
       datastore = cluster.share_datastores[name]
       return datastore if datastore
       cluster.local_datastores[name]
+    end
+
+    def fetch_all_vms(datacenter_name, cluster_definition)
+=begin
+      datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
+      if datacenter_mob.nil?
+        @logger.debug("Do not find the datacenter: #{datacenter_name}")
+        raise "Do not find the datacenter: #{datacenter_name}"
+      end
+      cluster_mobs = @client.get_clusters_by_dc_mob(datacenter_mob)
+
+      cluster_names = @vhelper.vc_req_clusters[0]["name"]
+
+      clusters = {}
+      @logger.debug("#{cluster_mobs.pretty_inspect}")
+      cluster_mobs.each { |cluster_mob|
+        @logger.debug("cluster mob:#{cluster_mob}")
+        resource_pool_names = @vhelper.vc_req_clusters[0]["vc_rps"]
+        resource_pools = fetch_resource_pool(cluster_mob, resource_pool_names)
+        next if resource_pools.empty?
+
+        attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
+        # chose cluster in cluster_names
+        next unless cluster_names.include?(attr["name"])
+
+        vm_mobs = 
+      }     
+=end
     end
   end
 end

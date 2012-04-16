@@ -16,13 +16,36 @@ VC_CONFIG_FILE = "./spec/ut.vc.yaml"
 WDC_DEF_CONFIG_FILE_1 = "./spec/ut.wdc_def.yaml"
 DC_DEF_CONFIG_FILE_1 = "./spec/ut.dc_def1.yaml"
 DC_DEF_CONFIG_FILE_2 = "./spec/ut.dc_def2.yaml"
-vcenter = YAML.load(File.open(VC_CONFIG_FILE))
-cluster_req_1 = YAML.load(File.open(DC_DEF_CONFIG_FILE_1))
+
+def ut_test_env
+  info = {}
+  vcenter = YAML.load(File.open(VC_CONFIG_FILE))
+  cluster_req_1 = YAML.load(File.open(DC_DEF_CONFIG_FILE_1))
+  info["cluster_definition"] = cluster_req_1
+  info["cloud_provider"] = vcenter
+  puts("cluster_def : #{cluster_req_1}")
+  puts("provider: #{vcenter}")
+  info
+end
+
+def wdc_test_env
+  info = {}
+  vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
+  cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
+  info["cluster_definition"] = cluster_req_1
+  info["cloud_provider"] = vcenter
+  puts("cluster_def : #{cluster_req_1}")
+  puts("provider: #{vcenter}")
+  info
+end
 
 begin
   puts "Please input \n"
   puts "\t1-->Create in UT\n"
   puts "\t2-->Create in wdc\n"
+  puts "\t3-->Delete in UT\n"
+  puts "\t4-->Delete in wdc\n"
+  puts "\t5-->List all vm in UT\n"
   puts "\t10-->Delete all UT vm\n"
   puts "\t11-->DEL all vm-XXXX vm \n"
   puts "\t12-->show all VMs in vsPhere\n"
@@ -31,31 +54,20 @@ begin
   opt = opt.to_i
   info = {}
   puts "You select #{opt}"
-  puts "vcenter:#{vcenter}" 
   case opt
   when 1 then
     p "##Test UT"
-    vcenter = YAML.load(File.open(VC_CONFIG_FILE))
-    cluster_req_1 = YAML.load(File.open(DC_DEF_CONFIG_FILE_1))
-    info["cluster_definition"] = cluster_req_1
-    info["cloud_provider"] = vcenter
-    puts("cluster_def : #{cluster_req_1}")
-    puts("provider: #{vcenter}")
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
-    while !cloud.wait_for_completion()
+    info = ut_test_env
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
+    while !cloud.wait_for_completion
       puts("ut process:#{cloud.get_progress.progress}")
       sleep(5)
     end
     puts("ut finished")
   when 2 then
     puts "##Test WDC"
-    vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
-    cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
-    info["cluster_definition"] = cluster_req_1
-    info["cloud_provider"] = vcenter
-    puts("cluster_def : #{cluster_req_1}")
-    puts("provider: #{vcenter}")
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
+    info = wdc_test_env
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
     while !cloud.wait_for_completion()
       progress = cloud.get_progress
       puts("ut process:#{progress.progress}")
@@ -64,12 +76,22 @@ begin
       sleep(5)
     end
   when 3 then #Delete Cluster
-    cloud = VHelper::CloudManager::IaasTask.delete_cluster(info, :wait => false)
+    puts "## Delete Cluster in UT"
+    info = ut_test_env
+    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => true)
     while !cloud.wait_for_completion()
       puts("delete ut process:#{cloud.get_progress}")
       sleep(1)
     end
-  when 4 then #List vms in Cluster
+  when 4 then #Delete Cluster
+    puts "## Delete Cluster in WDC"
+    info = wdc_test_env
+    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => true)
+    while !cloud.wait_for_completion()
+      puts("delete ut process:#{cloud.get_progress}")
+      sleep(1)
+    end
+  when 5 then #List vms in Cluster
     vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
     cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
     info["cluster_definition"] = cluster_req_1
