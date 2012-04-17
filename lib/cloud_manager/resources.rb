@@ -35,7 +35,6 @@ module VHelper::CloudManager
       attr_accessor :mob
       attr_accessor :name
       attr_accessor :datacenter
-      attr_accessor :resource_pool_moid
       attr_accessor :resource_pools
       attr_accessor :hosts
       attr_accessor :share_datastores
@@ -66,7 +65,7 @@ module VHelper::CloudManager
       attr_accessor :free_memory
       attr_accessor :unaccounted_memory
       def real_free_memory
-        @free_memory - @unaccounted_memory * @mem_over_commit
+        @free_memory - @unaccounted_memory
       end
       def inspect
         "<Resource Pool: #{@mob} / #{@name}, #{@real_free_memory}>"

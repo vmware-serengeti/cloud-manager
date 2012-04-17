@@ -92,7 +92,7 @@ module VHelper::CloudManager
             vm.host_mob = host.mob
 
             vm.sys_datastore_moid = sys_datastore.mob
-            vm.resource_pool_moid = cluster.resource_pool_moid    
+            vm.resource_pool_moid = cur_rp.mob
             vm.template_id = vm_group.req_info.template_id
             used_datastores.each { |datastore|
               fullpath = "[#{datastore[:datastore].name}] #{vm_name}/data.vmdk" 
