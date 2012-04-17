@@ -50,8 +50,8 @@ module VHelper::CloudManager
       @vc_address = cloud_provider["vc_addr"]
       @vc_username = cloud_provider["vc_user"]
       @vc_password = cloud_provider["vc_pwd"]
-      @vc_share_datastore_patten = cloud_provider["vc_shared_datastore_patten"]
-      @vc_local_datastore_patten = cloud_provider["vc_local_datastore_patten"]
+      @vc_share_datastore_patten = cloud_provider["vc_shared_datastore_pattern"]
+      @vc_local_datastore_patten = cloud_provider["vc_local_datastore_pattern"]
       @client_name = cloud_provider["cloud_adapter"] || "fog"
       @allow_mixed_datastores = nil
       @racks = nil
