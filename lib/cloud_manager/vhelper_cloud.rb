@@ -112,7 +112,7 @@ module VHelper::CloudManager
 
       File.open("dc_resource-first.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
       @logger.debug("Create vm group from resources...")
-      vm_groups_existed = create_vm_group_from_resources(dc_resources)
+      vm_groups_existed = create_vm_group_from_resources(dc_resources, cluster_info["name"])
       File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
       @logger.info("Finish collect vm_group info from resources")
 

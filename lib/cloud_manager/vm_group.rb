@@ -22,17 +22,18 @@ module VHelper::CloudManager
       vm_groups
     end
 
-    def create_vm_group_from_resources(dc_res)
+    def create_vm_group_from_resources(dc_res, vhelper_cluster_name)
       vm_groups = {}
       dc_res.clusters.each_value do |cluster|
         cluster.vms.each_value do |vm|
           @logger.debug("vm :#{vm.name}")
           result = get_from_vm_name(vm.name)
           next unless result
-          cluster = result[1]
+          cluster_name = result[1]
           group_name = result[2]
           num = result[3]
-          @logger.debug("vm split to #{cluster}::#{group_name}::#{num}")
+          @logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
+          next if (cluster_name != vhelper_cluster_name)
           vm_group = vm_groups[group_name]
           if vm_group.nil?
             vm_group = VmGroupInfo.new(@logger)
