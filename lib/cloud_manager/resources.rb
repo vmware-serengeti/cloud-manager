@@ -291,7 +291,7 @@ module VHelper::CloudManager
     def fetch_datastores(datastore_mobs, match_patterns)
       datastores = {}
       return datastores if match_patterns.nil?
-      datastore_mobs.each do |datastore_mob|
+      datastore_mobs.each { |datastore_mob|
         attr = @client.ct_mob_ref_to_attr_hash(datastore_mob, "DS")
         next unless isMatched?(attr["name"], match_patterns)
         datastore                   = Datastore.new
@@ -304,7 +304,7 @@ module VHelper::CloudManager
         datastore.total_space       = attr["maxSpace"]
         datastore.unaccounted_space = 0
         datastores[datastore.name] = datastore
-      end
+      }
       datastores
     end
 

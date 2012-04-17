@@ -38,16 +38,19 @@ module VHelper::CloudManager
 
     def vm_destroy(vm)
       @logger.debug("destroy #{vm.name}")
+      sleep(4)
       @vm_prop.delete(vm.name)
     end
 
     def vm_power_on(vm)
       @logger.debug("power on #{vm.name}")
+      sleep(4)
       vm.power_state = "power on"
     end
 
     def clone_vm(vm, options={})
       @logger.debug("clone vm#{vm.name}")
+      sleep(8)
       vm.power_state = (options[:power_on] == true)? "power on":"power off"
     end
 
@@ -69,6 +72,7 @@ module VHelper::CloudManager
 
     def update_vm_properties_by_vm_mob(vm)
       return vm if (@vm_prop.has_key?(vm.name))
+      sleep(1)
       @lock.synchronize do
         #TODO read vm info from FILE later
         vm.ip_address = "1.1.1.#{@ip_start}"

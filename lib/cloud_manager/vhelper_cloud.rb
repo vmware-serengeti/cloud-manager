@@ -16,30 +16,34 @@ module VHelper::CloudManager
       @deploy_vms = {}
       @existed_vms = {}
       @failure_vms = {}
+      @preparing_vms = {}
       @need_abort = nil
 
       @status = CLUSTER_BIRTH
       @rs_lock = Mutex.new
       @client = nil
+      @success = false
+      @finished = false
     end
 
     def add_deploying_vm(vm)
-      @vm_lock.synchronize do
+      @vm_lock.synchronize {
         @deploy_vms[vm.name] = vm
-      end
+        @preparing_vms.delete(vm.name)
+      }
     end
 
     def add_existed_vm(vm)
-      @vm_lock.synchronize do
+      @vm_lock.synchronize {
         @existed_vms[vm.name] = vm
-      end
+      }
     end
 
     def deploying_vm_move_to_existed(vm, options={})
-      @vm_lock.synchronize do
+      @vm_lock.synchronize {
         @existed_vms[vm.name] = vm
         @deploy_vms.delete(vm)
-      end
+      }
     end
 
     def create_cloud_provider(cloud_provider)
@@ -71,7 +75,7 @@ module VHelper::CloudManager
       dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
       dc_resources.clusters.each_value { |cluster|
         vm_map_by_threads(cluster.vms) { |vm|
-          @logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
+          #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
           result = get_from_vm_name(vm.name)
           next unless result
           cluster_name = result[1]
@@ -104,16 +108,18 @@ module VHelper::CloudManager
       # Create inputed vm_group from vhelper input
       @logger.debug("Create vm group from vhelper input...")
       vm_groups_input = create_vm_group_from_vhelper_input(cluster_info, @vc_req_datacenter)
-      File.open("vm_groups_input.yaml", 'w'){|f| YAML.dump(vm_groups_input, f)} 
+
+      log_obj_to_file(vm_groups_input, 'vm_groups_input')
       vm_groups_existed = {}
       dc_resources = {}
       @status = CLUSTER_FETCH_INFO
       dc_resources = @resources.fetch_datacenter(@vc_req_datacenter)
 
-      File.open("dc_resource-first.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
+      log_obj_to_file(dc_resources, 'dc_resource-first')
       @logger.debug("Create vm group from resources...")
       vm_groups_existed = create_vm_group_from_resources(dc_resources, cluster_info["name"])
-      File.open("vm_groups_existed.yaml", 'w'){|f| YAML.dump(vm_groups_existed, f)} 
+      log_obj_to_file(vm_groups_existed, 'vm_groups_existed')
+
       @logger.info("Finish collect vm_group info from resources")
 
       [dc_resources, vm_groups_existed, vm_groups_input]
@@ -125,14 +131,19 @@ module VHelper::CloudManager
       @client = nil
     end
 
+    def log_obj_to_file(obj, str)
+      File.open("#{str}.yaml", 'w'){|f| YAML.dump(obj, f)} 
+    end
+
     def create_and_update(cloud_provider, cluster_info, task)
       @logger.debug("enter create_and_update...")
       create_cloud_provider(cloud_provider)
-      @vm_lock.synchronize do
+      @vm_lock.synchronize {
         @deploy_vms = {}
         @existed_vms = {}
+        @preparing_vms = {}
         @failure_vms = {}
-      end
+      }
       #FIXME we only support one cluster, currently
 
       #@logger.debug("#{cluster_info.inspect}")
@@ -153,7 +164,7 @@ module VHelper::CloudManager
             @logger.info("No difference here")
             @status = CLUSTER_DONE
           else
-            File.open("cluster_changes.yaml", 'w'){|f| YAML.dump(cluster_changes, f)} 
+            log_obj_to_file(cluster_changes, 'cluster_changes')
           end
         end
       rescue => e
@@ -177,7 +188,7 @@ module VHelper::CloudManager
           @logger.debug("Begin placement")
           @status = CLUSTER_PLACE
           placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed, cluster_info)
-          File.open("placement.yaml", 'w'){|f| YAML.dump(placement, f)} 
+          log_obj_to_file(placement, 'placement')
 
           @logger.debug("Begin deploy")
           @status = CLUSTER_DEPLOY
@@ -188,7 +199,8 @@ module VHelper::CloudManager
           dc_resources = @resources.fetch_datacenter
           #TODO add all kinds of error handlers here
           @logger.info("reload datacenter resources from cloud")
-          File.open("dc_resource-#{cycle_num}.yaml", 'w'){|f| YAML.dump(dc_resources, f)} 
+
+          log_obj_to_file(dc_resources, "dc_resource-#{cycle_num}")
         rescue => e
           @logger.debug("#{e} - #{e.backtrace.join("\n")}")
           if cycle_num + 1  >= retry_num
@@ -204,56 +216,63 @@ module VHelper::CloudManager
       cluster_done(task)
     end
 
-    def get_result_by_vms(servers, vms)
+    def get_result_by_vms(servers, vms, options={})
       vms.each_value { |vm|
         result = get_from_vm_name(vm.name)
         return if result.nil?
         vm.cluster_name = result[1]
         vm.group_name = result[2]
-        yield(vm)
+        vm.created = options[:created]
         servers << vm
       }
     end
 
     def get_result
       result = IaasResult.new
-      @vm_lock.synchronize do
+      @vm_lock.synchronize {
+        result.waiting = @preparing_vms.size
         result.running = @deploy_vms.size
-        result.finished = @existed_vms.size
+        result.success = @existed_vms.size
         result.failed = @failure_vms.size
-        result.total = result.running + result.finished + result.failed
-        get_result_by_vms(result.servers, @deploy_vms) do |vm|
-          vm.create = false
-        end
-        get_result_by_vms(result.servers, @existed_vms) do |vm|
-          vm.create = true
-        end
-        get_result_by_vms(result.servers, @failure_vms) do |vm|
-          vm.create = false
-          vm_status.error_code = -1
-          vm_status.error_msg = vm.error_msg
-        end
-      end
-      return [result.finished*100/result.total, result] if result.total> 0
-      [0, result]
+        result.succeed = @success && result.failed <= 0
+        result.total = result.waiting + result.running + result.running + result.failed
+        get_result_by_vms(result.servers, @deploy_vms, :created => false) 
+        get_result_by_vms(result.servers, @existed_vms, :created => true)
+        get_result_by_vms(result.servers, @failure_vms, :created => false)
+      }
+      result
+    end
+
+    def get_progress
+      progress = IaasProcess.new
+      progress.result = get_result
+      progress.status = @status
+      progress.finished = @finished
+      progress.progress = 0
+      progress.progress = ((progress.result.success+progress.result.failed) *100/progress.result.total) if progress.result.total> 0
+      progress
     end
 
     def list_vms(cloud_provider, cluster_info, task)
       @logger.debug("enter list_vms...")
       create_cloud_provider(cloud_provider)
       dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
-      get_result[1].servers
+      get_result.servers
     end
 
     def cluster_failed(task)
       @logger.debug("Enter Cluster_failed")
       task.set_finish("failed")
+      @success = false
+      @finished = true
     end
 
     def cluster_done(task)
       @logger.debug("Enter cluster_done")
       # TODO finish cluster information
       task.set_finish("success")
+      @success = true
+      @finished = true
     end
 
   end

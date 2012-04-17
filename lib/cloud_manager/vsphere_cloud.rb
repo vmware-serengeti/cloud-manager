@@ -2,40 +2,23 @@
 module VHelper::CloudManager
   class IaasProcess
     attr_accessor :progress
-    attr_accessor :results
+    attr_accessor :result
+    attr_accessor :finished
+    attr_accessor :status
     def initialize
       @progress = 0
+      @finished = false
+      @status = "birth"
       @results = nil
     end
   end
 
-  class IaasServer
-    attr_accessor :error_code
-    attr_accessor :error_msg
-    attr_accessor :vm_name
-    attr_accessor :cluster_name
-    attr_accessor :group_name
-    attr_accessor :created
-    attr_accessor :powered_on
-    attr_accessor :ip_address
-
-    def initialize
-      @error_code = 0
-      @error_msg = "No Error"
-      @vm_name = ""
-      @cluster_name = ""
-      @group_name = ""
-      @created = false
-      @powered_on = false
-      @ip_address = ""
-    end
-  end
-
   class IaasResult
+    attr_accessor :succeed
     attr_accessor :success
-    attr_accessor :finished
     attr_accessor :running
     attr_accessor :failed
+    attr_accessor :waiting
     attr_accessor :total
     attr_accessor :servers
 
@@ -79,15 +62,11 @@ module VHelper::CloudManager
     end
 
     def get_result
-      return @vhelper.get_result[1]
+      return @vhelper.get_result
     end
 
     def get_progress
-      progress = IaasProcess.new
-      percent, result = @vhelper.get_result
-      progress.progress = percent
-      progress.results = result
-      return progress
+      return @vhelper.get_progress
     end
 
     def abort

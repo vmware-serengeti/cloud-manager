@@ -130,7 +130,7 @@ module VHelper::CloudManager
     attr_accessor :is_a_template
     attr_accessor :cluster_name
     attr_accessor :group_name
-    attr_accessor :create
+    attr_accessor :created
     
     # for provisioning
     attr_accessor :created_at

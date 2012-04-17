@@ -45,7 +45,7 @@ module VHelper::CloudManager
 
       @logger.debug("wait all existed vms' ip address")
       wait_thread = []
-      vm_map_by_threads(@existed_vms) do |vm|
+      vm_map_by_threads(@existed_vms) { |vm|
         while (vm.ip_address.nil? || vm.ip_address.empty?)
           @client.update_vm_properties_by_vm_mob(vm)
           @logger.debug("#{vm.name} ip: #{vm.ip_address}")
@@ -53,7 +53,7 @@ module VHelper::CloudManager
         end
         vm.status = VM_STATE_DONE
         @logger.debug("#{vm.name}: done")
-      end
+      }
 
       @logger.info("Finish all deployments")
       "finished"
@@ -78,20 +78,20 @@ module VHelper::CloudManager
     end
 
     def vm_deploy_group_pool(thread_pool, group, options={})
-      thread_pool.wrap do |pool|
-        group.each do |vm|
+      thread_pool.wrap { |pool|
+        group.each { |vm|
           @logger.debug("enter : #{vm.pretty_inspect}")
-          pool.process do
+          pool.process {
             begin
               yield(vm)
             rescue
               #TODO do some warning handler here
               raise
             end
-          end
-        end
+          }
         @logger.info("##Finish change one vm_group")
-      end
+        }
+      }
     end
 
     def vm_begin_create(vm, options={})
@@ -103,9 +103,7 @@ module VHelper::CloudManager
     end
 
     def vm_reconfigure_disk(vm, options={})
-      vm.disks.each_value do |disk|
-        @client.vm_create_disk(vm, disk)
-      end
+      vm.disks.each_value { |disk| @client.vm_create_disk(vm, disk)}
     end
 
     def vm_poweroff(vm, options={})

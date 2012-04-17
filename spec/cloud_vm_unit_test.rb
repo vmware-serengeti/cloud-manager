@@ -61,7 +61,7 @@ begin
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.wait_for_completion
       puts("ut process:#{cloud.get_progress.progress}")
-      sleep(5)
+      sleep(1)
     end
     puts("ut finished")
   when 2 then

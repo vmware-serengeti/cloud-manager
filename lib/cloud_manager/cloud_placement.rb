@@ -102,6 +102,7 @@ module VHelper::CloudManager
             vm.error_msg = nil
             break
           end
+          @vm_lock.synchronize { @preparing_vms[vm.name] = vm }
           group_place << vm
           if hosts.empty?
             #NO resource for this vm_group
