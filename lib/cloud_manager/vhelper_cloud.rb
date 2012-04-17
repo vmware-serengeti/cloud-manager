@@ -120,10 +120,9 @@ module VHelper::CloudManager
     end
 
     def release_connection
-      if @client
-        @client.logout
-        @client = nil
-      end
+      return if @client.nil?
+      @client.logout
+      @client = nil
     end
 
     def create_and_update(cloud_provider, cluster_info, task)
@@ -206,14 +205,14 @@ module VHelper::CloudManager
     end
 
     def get_result_by_vms(servers, vms)
-      vms.each_value do |vm|
+      vms.each_value { |vm|
         result = get_from_vm_name(vm.name)
         return if result.nil?
         vm.cluster_name = result[1]
         vm.group_name = result[2]
         yield(vm)
         servers << vm
-      end
+      }
     end
 
     def get_result

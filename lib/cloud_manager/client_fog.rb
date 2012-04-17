@@ -2,7 +2,7 @@ require '../fog/lib/fog'
 
 module VHelper::CloudManager
   class FogAdapter
-    DISK_SIZE_TIMES = 1024
+    DISK_SIZE_TIMES = 1
     attr_reader :logger
     def initialize(logger)
       @logger = logger

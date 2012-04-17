@@ -8,15 +8,18 @@ module VHelper::CloudManager
       #thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
       @logger.debug("created thread pool")
       #Begin to parallel deploy vms
-#      vm_deploy(thread_pool, cluster_changes) do |vm|
-#        #TODO add change code here
-#        @logger.info("changing vm #{vm.pretty_inspect}")
-#        vm.status = VM_STATE_DONE
-      #        vm_finish(vm)
-      #      end
-      #      @logger.info("Finish all changes")
-      vm_placement.each do |group|
-        vm_group_by_threads(group) do |vm|
+      cluster_changes.each { |group|
+        vm_group_by_threads(group) { |vm|
+          #TODO add change code here
+          @logger.info("changing vm #{vm.pretty_inspect}")
+          vm.status = VM_STATE_DONE
+          vm_finish(vm)
+        }
+      } 
+      @logger.info("Finish all changes")
+
+      vm_placement.each { |group|
+        vm_group_by_threads(group) { |vm|
           vm.status = VM_STATE_CLONE
           next unless @existed_vms[vm.name].nil?
           vm_begin_create(vm)
@@ -37,8 +40,8 @@ module VHelper::CloudManager
           vm_poweron(vm)
           vm_finish(vm)
           @logger.debug("#{vm.name} finish poweron")
-        end
-      end
+        }
+      }
 
       @logger.debug("wait all existed vms' ip address")
       wait_thread = []

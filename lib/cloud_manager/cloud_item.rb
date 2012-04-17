@@ -25,7 +25,7 @@ module VHelper::CloudManager
   LOCAL = "local"
 
   class ResourceInfo
-    DISK_CHANGE_TIMES = 1024*1024
+    DISK_CHANGE_TIMES = 1024
     attr_accessor :cpu
     attr_accessor :mem
     attr_accessor :disk_type

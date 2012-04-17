@@ -20,16 +20,16 @@
     datastores: &id1  #Size is KB
     - name: share-ds
       mob: share-ds1
-      freeSpace: 210000000
-      maxSpace: 400000000
+      freeSpace: 210000
+      maxSpace: 400000
     - name: share-dsA
       mob: share-ds2
-      freeSpace: 200000000
-      maxSpace: 300000000
+      freeSpace: 200000
+      maxSpace: 300000
     - name: share-dsB
       mob: share-ds3
-      freeSpace: 160000000
-      maxSpace: 200000000
+      freeSpace: 160000
+      maxSpace: 200000
 
     hosts:
     - name: host1
@@ -58,5 +58,4 @@
       total_memory: 16000
       cpu_limit: 10000
       datastores: *id1
-
 
