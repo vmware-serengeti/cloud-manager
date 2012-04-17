@@ -74,11 +74,11 @@ module VHelper::CloudManager
           @logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
           result = get_from_vm_name(vm.name)
           next unless result
-          cluster = result[1]
+          cluster_name = result[1]
           group_name = result[2]
           num = result[3]
-          @logger.debug("vm split to #{cluster}::#{group_name}::#{num}")
-          if cluster_info["name"] == cluster 
+          #@logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
+          if cluster_info["name"] == cluster_name
             @logger.debug("delete vm : #{vm.name}")
             @client.vm_destroy(vm)
           end
