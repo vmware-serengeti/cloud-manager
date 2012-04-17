@@ -62,7 +62,7 @@ module VHelper::CloudManager
       attr_accessor :shares
       attr_accessor :host_used_mem
       attr_accessor :guest_used_mem
-      attr_accessor :total_memory       #MB
+      attr_accessor :limit_mem#MB
       attr_accessor :free_memory
       attr_accessor :unaccounted_memory
       def real_free_memory
@@ -207,9 +207,12 @@ module VHelper::CloudManager
           rp.shares         = attr["shares"]
           rp.host_used_mem  = attr["host_used_mem"]
           rp.guest_used_mem = attr["guest_used_mem"]
-          rp.total_memory   = attr["limit_mem"]
-          rp.free_memory    = rp.total_memory - rp.host_used_mem - rp.guest_used_mem
+          rp.limit_mem      = attr["limit_mem"]
+          if rp.limit_mem.to_i != -1
+            rp.free_memory    = rp.limit_mem - rp.host_used_mem - rp.guest_used_mem
+          end
           rp.unaccounted_memory = 0
+          @logger.debug("rp: #{rp.name} => #{attr}")
           resource_pools[rp.mob] = rp
         end
       end

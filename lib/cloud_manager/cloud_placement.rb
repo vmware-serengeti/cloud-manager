@@ -10,12 +10,21 @@ module VHelper::CloudManager
 
       #TODO add placement logical here
       cluster = dc_resource.clusters.values.first
+      resource_pools = cluster.resource_pools
 
       @logger.debug("#{cluster.hosts.pretty_inspect}")
       vm_groups_input.each_value { |vm_group|
         hosts = cluster.hosts.values
         @logger.debug("#{hosts.class},#{hosts.pretty_inspect}")
         #hosts.shuffle!
+
+        cur_rp = nil
+        resource_pools.each_value { |rp|
+          next if rp.limit_mem != -1 && (rp.real_free_memory < vm_group.req_info.mem)
+          cur_rp = rp
+          break
+        }
+        raise "No resources for placement!" if cur_rp.nil?
 
         hosts.each { |host|
           host.place_share_datastores = host.share_datastores.values
@@ -77,6 +86,7 @@ module VHelper::CloudManager
               next
             end
 
+            cur_rp.unaccounted_memory += req_mem
             host.unaccounted_memory += req_mem
             vm.host_name = host.name 
             vm.host_mob = host.mob

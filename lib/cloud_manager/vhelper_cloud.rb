@@ -70,7 +70,7 @@ module VHelper::CloudManager
       create_cloud_provider(cloud_provider)
       dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
       dc_resources.clusters.each_value { |cluster|
-        cluster.vms.each_value { |vm|
+        vm_map_by_threads(cluster.vms) { |vm|
           @logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
           result = get_from_vm_name(vm.name)
           next unless result
