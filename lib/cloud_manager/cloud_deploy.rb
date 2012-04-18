@@ -102,6 +102,7 @@ module VHelper::CloudManager
     end
 
     def vm_begin_create(vm, options={})
+      @logger.debug("move prepare to deploy :#{vm.name}")
       add_deploying_vm(vm)
     end
 

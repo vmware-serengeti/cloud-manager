@@ -35,6 +35,7 @@ module VHelper::CloudManager
     end
 
     def add_existed_vm(vm)
+      @logger.debug("Add existed vm")
       @vm_lock.synchronize {
         @existed_vms[vm.name] = vm
       }
@@ -48,6 +49,7 @@ module VHelper::CloudManager
     end
 
     def deploying_vm_move_to_existed(vm, options={})
+      @logger.debug("deploy to existed vm")
       @vm_lock.synchronize {
         @deploy_vms.delete(vm.name)
         @existed_vms[vm.name] = vm
@@ -104,6 +106,7 @@ module VHelper::CloudManager
     def prepare_working(cluster_info)
       ###########################################################
       # Connect to Cloud server
+      @cluster_name = cluster_info["name"]
       @logger.debug("Connect to Cloud Server #{@client_name} #{@vc_address} user:#{@vc_username}/#{vc_password}...")
       @status = CLUSTER_CONNECT
       @client = ClientFactory.create(@client_name, @logger)
@@ -244,10 +247,10 @@ module VHelper::CloudManager
         result.deploy = @deploy_vms.size
         result.waiting_start = @existed_vms.size
         result.success = @finished_vms.size
-        result.failed = @failure_vms.size
-        result.succeed = @success && result.failed <= 0
+        result.failure = @failure_vms.size
+        result.succeed = @success && result.failure <= 0
         result.running = result.deploy + result.waiting + result.waiting_start
-        result.total = result.waiting_start + result.success + result.waiting + result.running + result.failed
+        result.total = result.running + result.success + result.failure
         get_result_by_vms(result.servers, @deploy_vms, :created => false) 
         get_result_by_vms(result.servers, @existed_vms, :created => true)
         get_result_by_vms(result.servers, @failure_vms, :created => false)
@@ -258,11 +261,12 @@ module VHelper::CloudManager
 
     def get_progress
       progress = IaasProcess.new
+      progress.cluster_name = @cluster_name
       progress.result = get_result
       progress.status = @status
       progress.finished = @finished
       progress.progress = 0
-      progress.progress = ((progress.result.success+progress.result.failed) *100/progress.result.total) if progress.result.total> 0
+      progress.progress = ((progress.result.success+progress.result.failure) *100/progress.result.total) if progress.result.total> 0
       progress
     end
 

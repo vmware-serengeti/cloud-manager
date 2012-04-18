@@ -108,6 +108,7 @@ module VHelper::CloudManager
             vm.error_msg = nil
             break
           end
+          @logger.debug("Add #{vm.name} to preparing vms")
           @vm_lock.synchronize { @preparing_vms[vm.name] = vm }
           group_place << vm
           if vm.error_msg

@@ -1,6 +1,7 @@
 #Resource infomation
 module VHelper::CloudManager
   class IaasProcess
+    attr_accessor :cluster_name
     attr_accessor :progress
     attr_accessor :result
     attr_accessor :finished
@@ -21,7 +22,7 @@ module VHelper::CloudManager
     attr_accessor :success
     attr_accessor :running
     attr_accessor :deploy
-    attr_accessor :failed
+    attr_accessor :failure
     attr_accessor :waiting
     attr_accessor :waiting_start
     attr_accessor :total
@@ -38,7 +39,7 @@ module VHelper::CloudManager
       @servers = []
     end
     def inspect
-      msg = "total:#{total} sucess:#{success} failed:#{failed} running:#{running} [waiting:#{waiting} waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
+      msg = "total:#{total} sucess:#{success} failed:#{failure} running:#{running} [waiting:#{waiting} waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
       servers.each {|vm| msg<<vm.inspect}
       msg
     end
@@ -69,7 +70,7 @@ module VHelper::CloudManager
       nil
     end
 
-    def finish?
+    def finishd?
       return !@finished.nil?
     end
 
