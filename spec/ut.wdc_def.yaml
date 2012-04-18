@@ -1,12 +1,12 @@
 ---
 name: vhelper
 channel_id: provsion
-template_id: centos58-x64
-#template_id: centos-5.7-template
+#template_id: centos58-x64
+template_id: centos-5.7-template
 groups:
 - name: NameNode 
   cpu: 2
-  memory: 512
+  memory: 1024
   storage:
     type: share
     size: 20

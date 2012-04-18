@@ -65,10 +65,6 @@ module VHelper::CloudManager
       @instances = rp["instance_num"]
     end
 
-    def ready?
-      @status == VM_STATE_DONE 
-    end
-
     def size
       vm_ids.size
     end
@@ -141,8 +137,12 @@ module VHelper::CloudManager
     attr_accessor :flavor_id
     attr_accessor :image_id
 
+    def get_error_msg
+      return "OK" if @error_msg.nil?
+      "ERR: #{error_msg}"
+    end
     def inspect
-      "name:#{@name} host:#{@hostname} ip:#{@ip_address} created:#{@created} state:#{@power_state} err:#{@error_msg}\n"
+      "name:#{@name} host:#{@hostname} ip:#{@ip_address} status:#{@status} created:#{@created} state:#{@power_state} #{@error_msg}\n"
     end
 
     def state; @power_state end
@@ -182,9 +182,9 @@ module VHelper::CloudManager
     end
 
     def ready?
-      !! ip_address
+      @status == VM_STATE_DONE 
+    #  !ip_address.to_s.empty?
     end
-
   end
 
   class VHelperCloud

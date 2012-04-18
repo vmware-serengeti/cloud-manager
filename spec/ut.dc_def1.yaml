@@ -13,7 +13,7 @@ groups:
   instance_num: 2
 - name: group1
   cpu: 2
-  mem: 2048
+  mem: 1024
   storage:
     type: share
     size: 20    #SIZE in GB

@@ -8,8 +8,8 @@
     - name: resource_pool1
       mob: rs1
       shares: 1000
-      host_used_mem: 0
-      guest_used_mem: 0
+      host_used_mem: 1000
+      guest_used_mem: 1000
       limit_mem: 16000
     - name: resource_pool2
       mob: rs2
