@@ -185,6 +185,7 @@ module VHelper::CloudManager
       end
       if @status == CLUSTER_DONE
         cluster_done(task)
+        @logger.info("No work need to do!")
         return
       end
 

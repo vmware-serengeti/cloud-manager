@@ -26,7 +26,7 @@ module VHelper::CloudManager
           begin
             vm_clone(vm, :poweron => false)
           rescue => e
-            @logger.debug("#{e}")
+            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
             #FIXME only handle duplicated issue.
             next
           end

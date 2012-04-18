@@ -5,9 +5,9 @@ vc_addr: 10.117.37.17
 vc_user: administrator
 vc_pwd: 1234abcd
 vc_datacenter: DatacenterCF
-vc_clusters: 
+vc_clusters:
   - name: Cluster1
-    vc_rps: 
+    vc_rps:
     - resource_pool1
     - resource_pool2
 vc_shared_datastore_pattern: [share]
