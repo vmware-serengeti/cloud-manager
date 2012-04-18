@@ -112,7 +112,7 @@ module VHelper::CloudManager
     attr_accessor :disks     #all allocated disk
     attr_accessor :req_rp    #wanted vm spec
     attr_accessor :vm_spec   #existed vm spec 
-    attr_accessor :vm_group   #link to vm_group
+    attr_accessor :vm_group  #link to vm_group
     attr_accessor :mob
     attr_accessor :resource_pool_moid
 
@@ -120,6 +120,7 @@ module VHelper::CloudManager
     attr_accessor :instance_uuid
     attr_accessor :power_state
     attr_accessor :error_msg
+    attr_accessor :error_code
     attr_accessor :operatingsystem
     attr_accessor :hostname
     attr_accessor :connection_state

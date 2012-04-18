@@ -59,7 +59,7 @@ begin
     p "##Test UT"
     info = ut_test_env
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
-    while !cloud.wait_for_completion
+    while !cloud.finished?
       progress = cloud.get_progress
       puts("ut process:#{progress.inspect}")
       sleep(1)
@@ -71,7 +71,7 @@ begin
     puts "##Test WDC"
     info = wdc_test_env
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
-    while !cloud.wait_for_completion()
+    while !cloud.finished?
       progress = cloud.get_progress
       puts("ut process:#{progress.inspect}")
       sleep(4)
@@ -80,7 +80,7 @@ begin
     puts "## Delete Cluster in UT"
     info = ut_test_env
     cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => true)
-    while !cloud.wait_for_completion()
+    while !cloud.finished?
       puts("delete ut process:#{cloud.get_progress}")
       sleep(1)
     end
@@ -88,7 +88,7 @@ begin
     puts "## Delete Cluster in WDC"
     info = wdc_test_env
     cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => false)
-    while !cloud.wait_for_completion()
+    while !cloud.finished?
       puts("delete ut process:#{cloud.get_progress.inspect}")
       sleep(1)
     end

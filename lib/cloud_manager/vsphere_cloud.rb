@@ -62,15 +62,15 @@ module VHelper::CloudManager
     # Get info from caller
     def wait_for_completion()
       @output_lock.synchronize do
-        sleep(1)
-        unless @finished.nil?
-          return @vhelper.get_result 
+        while !finished?
+          sleep(1)
         end
+        return @vhelper.get_result 
       end
       nil
     end
 
-    def finishd?
+    def finished?
       return !@finished.nil?
     end
 

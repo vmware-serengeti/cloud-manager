@@ -16,7 +16,7 @@ groups:
   mem: 2048
   storage:
     type: share
-    size: 200    #SIZE in GB
+    size: 20    #SIZE in GB
   network: CFNetwork
   instance_num: 5
 - name: group2
@@ -24,6 +24,6 @@ groups:
   mem: 2048
   storage:
     type: share
-    size: 400
+    size: 40
   network: CFNetwork
   instance_num: 5
