@@ -20,12 +20,17 @@ module VHelper::CloudManager
 
       vm_placement.each { |group|
         vm_group_by_threads(group) { |vm|
-          vm.status = VM_STATE_CLONE
           next unless @existed_vms[vm.name].nil?
+          if (!vm.error_msg.nil?)
+            @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
+            next
+          end
+          vm.status = VM_STATE_CLONE
           vm_begin_create(vm)
           begin
             vm_clone(vm, :poweron => false)
           rescue => e
+            @logger.debug("clone failed")
             @logger.debug("#{e} - #{e.backtrace.join("\n")}")
             #FIXME only handle duplicated issue.
             next
@@ -101,6 +106,7 @@ module VHelper::CloudManager
     end
 
     def vm_clone(vm, options={})
+      @logger.debug("cpu:#{vm.req_rp.cpu} mem:#{vm.req_rp.mem}")
       @client.clone_vm(vm, options)
     end
 

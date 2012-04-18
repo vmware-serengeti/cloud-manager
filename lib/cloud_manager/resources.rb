@@ -169,8 +169,11 @@ module VHelper::CloudManager
         cluster.datacenter          = datacenter
         cluster.share_datastores    = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
                                                        datacenter.share_datastore_pattern)
+        @logger.debug("warning: no matched sharestores in cluster:#{cluster.name}") if cluster.share_datastores.empty?
+
         cluster.local_datastores    = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
                                                        datacenter.local_datastore_pattern)
+        @logger.debug("warning: no matched sharestores in cluster:#{cluster.name}") if cluster.share_datastores.empty?
 
         # make sure share_datastores and local_datastores are mutually exclusive
         #share_datastore_names = cluster.share_datastores.map { |ds| ds.name }
@@ -245,9 +248,11 @@ module VHelper::CloudManager
 
         host.share_datastores = fetch_datastores(host.datastores,
                                                  host.datacenter.share_datastore_pattern)
+        @logger.debug("warning: no matched sharestores in host:#{host.name}") if host.share_datastores.empty?
 
         host.local_datastores = fetch_datastores(host.datastores,
                                                  host.datacenter.local_datastore_pattern)
+        @logger.debug("warning: no matched localstores in host:#{host.name}") if host.share_datastores.empty?
 
         #@logger.debug("host:#{host.name} share datastores are #{host.share_datastores}")
         #@logger.debug("host:#{host.name} local datastores are #{host.local_datastores}")

@@ -37,6 +37,7 @@ module VHelper::CloudManager
           vm_name = gen_vm_name(cluster_info["name"], vm_group.name, num)
           @logger.debug("vm_name: #{vm_name}")
           vm = VHelper::CloudManager::VmInfo.new(vm_name, @logger)
+          vm.host_name = nil
           while !hosts.empty? 
             hosts.rotate!
             host = hosts[0]
@@ -44,7 +45,7 @@ module VHelper::CloudManager
             @logger.debug("host :#{host}")
             req_mem = vm_group.req_info.mem
             if host.real_free_memory < req_mem
-              @logger.debug("#{host.name} haven't enough memory for #{vm_name} req:#{req_mem}, host has :#{host.real_free_space}")
+              @logger.debug("#{host.name} haven't enough memory for #{vm_name} req:#{req_mem}, host has :#{host.real_free_space}.")
               hosts.shift
               next
             end
@@ -81,19 +82,24 @@ module VHelper::CloudManager
             end
             if req_size > 0
               #TODO no disk space for this vm
-              vm.error_msg = "No enough disk for #{vm_name}"
+              vm.error_msg = "No enough disk for #{vm_name}."
+              @logger.debug("ERROR: #{vm.error_msg}")
               hosts.shift
               next
             end
 
             cur_rp.unaccounted_memory += req_mem
             host.unaccounted_memory += req_mem
-            vm.host_name = host.name 
-            vm.host_mob = host.mob
+
+            vm.host_name  = host.name 
+            vm.host_mob   = host.mob
+            vm.req_rp     = vm_group.req_info
 
             vm.sys_datastore_moid = sys_datastore.mob
             vm.resource_pool_moid = cur_rp.mob
             vm.template_id = vm_group.req_info.template_id
+            @logger.debug("vm.template_id:#{vm.template_id}")
+
             used_datastores.each { |datastore|
               fullpath = "[#{datastore[:datastore].name}] #{vm_name}/data.vmdk" 
               datastore[:datastore].unaccounted_space += datastore[:size].to_i
@@ -104,9 +110,10 @@ module VHelper::CloudManager
           end
           @vm_lock.synchronize { @preparing_vms[vm.name] = vm }
           group_place << vm
-          if hosts.empty?
+          if vm.error_msg
             #NO resource for this vm_group
-            vm.error_msg << ". And the group also has no resources to alloced"
+            vm.error_msg << "The group also has no resources to alloced"
+            @logger.debug("vm can not get resources :#{vm.error_msg} ")
           end
         }
         vm_placement << group_place

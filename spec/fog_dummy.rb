@@ -10,11 +10,13 @@ module VHelper::CloudManager
   class FogDummy
     attr_reader:logger
     DC_CONFIG_FILE = "./spec/ut.dc.yaml"
+    DC_WORK_FILE = "./spec/ut.dc-working.yaml"
     def initialize(logger)
       @logger = logger
       @ip_start = 2
       @logger.debug("Enter Fog_dummy")
       @debug_dc = YAML.load(File.open(DC_CONFIG_FILE))
+      @work_dc = YAML.load(File.open(DC_WORK_FILE))
       @logger.debug("Debug DC : #{@debug_dc}")
       @lock = Mutex.new
       @vm_prop = {}

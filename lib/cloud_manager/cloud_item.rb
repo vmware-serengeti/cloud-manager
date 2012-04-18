@@ -37,16 +37,15 @@ module VHelper::CloudManager
     def initialize(rp=nil, template_id=nil)
       if rp
         @cpu = rp["cpu"] || 1
-        @mem = rp["ram"] || 512
+        @mem = rp["memory"] || 512
         # FIXME disks only use the first storage info
         @disk_size =  rp["storage"]["size"] || 0
         @disk_size *= DISK_CHANGE_TIMES
-        @disk_type = rp["storage"]["type"] || 0
+        @disk_type = rp["storage"]["type"] 
+        @disk_type = 'shared' if @disk_type != 'local'
         @affinity = rp["affinity"] || "none"
         @template_id = template_id
-        if rp["template_id"]
-          @template_id = rp["template_id"]
-        end
+        @template_id = rp["template_id"]if rp["template_id"]
         @rack_id = nil
       end
     end

@@ -1,19 +1,20 @@
 ---
 name: vhelper
 channel_id: provsion
-template_id: hadoop-node-template
+template_id: centos58-x64
+#template_id: centos-5.7-template
 groups:
 - name: NameNode 
-  cpu: 1
-  mem: 512
+  cpu: 2
+  memory: 512
   storage:
     type: share
     size: 20
   network: CFNetwork
-  instance_num: 4
+  instance_num: 1
 - name: DataNode
   cpu: 1
-  mem: 2048
+  memory: 2048
   storage:
     type: share
     size: 30

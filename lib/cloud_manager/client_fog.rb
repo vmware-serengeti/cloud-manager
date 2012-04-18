@@ -44,6 +44,8 @@ module VHelper::CloudManager
         'rp_moid' => vm.resource_pool_moid, #'resgroup-509',
         'host_moid' => vm.host_mob, #'host-456'
         'power_on' => false,
+        'cpu' => vm.req_rp.cpu,
+        'memory' => vm.req_rp.mem,
       }
       result = @connection.vm_clone(info)
       @logger.debug("after clone: result :#{result} ")

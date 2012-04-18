@@ -92,6 +92,8 @@ begin
       puts("delete ut process:#{cloud.get_progress.inspect}")
       sleep(1)
     end
+    p "Finish delete"
+    puts("delete ut process:#{cloud.get_progress.inspect}")
   when 5 then #List vms in Cluster
     vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
     cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
