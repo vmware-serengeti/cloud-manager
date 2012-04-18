@@ -9,6 +9,7 @@ module VHelper::CloudManager
   CLUSTER_UPDATE = "updating"
   CLUSTER_PLACE = "placing"
   CLUSTER_DEPLOY = "deploying"
+  CLUSTER_WAIT_START = "waiting start"
   CLUSTER_DELETE = "deleting"
   CLUSTER_DONE = "done"
 
@@ -139,6 +140,10 @@ module VHelper::CloudManager
     attr_accessor :key_name
     attr_accessor :flavor_id
     attr_accessor :image_id
+
+    def inspect
+      "name:#{@name} host:#{@hostname} ip:#{@ip_address} created:#{@created} state:#{@power_state} err:#{@error_msg}\n"
+    end
 
     def state; @power_state end
     def dns_name; @hostname end

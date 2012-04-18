@@ -15,6 +15,7 @@ module VHelper::CloudManager
       @vm_lock = Mutex.new
       @deploy_vms = {}
       @existed_vms = {}
+      @finished_vms = {}
       @failure_vms = {}
       @preparing_vms = {}
       @need_abort = nil
@@ -39,10 +40,17 @@ module VHelper::CloudManager
       }
     end
 
+    def existed_vm_move_to_finish(vm, options={})
+      @vm_lock.synchronize {
+        @existed_vms.delete(vm.name)
+        @finished_vms[vm.name] = vm
+      }
+    end
+
     def deploying_vm_move_to_existed(vm, options={})
       @vm_lock.synchronize {
+        @deploy_vms.delete(vm.name)
         @existed_vms[vm.name] = vm
-        @deploy_vms.delete(vm)
       }
     end
 
@@ -143,6 +151,7 @@ module VHelper::CloudManager
         @existed_vms = {}
         @preparing_vms = {}
         @failure_vms = {}
+        @finished_vms = {}
       }
       #FIXME we only support one cluster, currently
 
@@ -231,14 +240,17 @@ module VHelper::CloudManager
       result = IaasResult.new
       @vm_lock.synchronize {
         result.waiting = @preparing_vms.size
-        result.running = @deploy_vms.size
-        result.success = @existed_vms.size
+        result.deploy = @deploy_vms.size
+        result.waiting_start = @existed_vms.size
+        result.success = @finished_vms.size
         result.failed = @failure_vms.size
         result.succeed = @success && result.failed <= 0
-        result.total = result.waiting + result.running + result.running + result.failed
+        result.running = result.deploy + result.waiting + result.waiting_start
+        result.total = result.waiting_start + result.success + result.waiting + result.running + result.failed
         get_result_by_vms(result.servers, @deploy_vms, :created => false) 
         get_result_by_vms(result.servers, @existed_vms, :created => true)
         get_result_by_vms(result.servers, @failure_vms, :created => false)
+        get_result_by_vms(result.servers, @finished_vms, :created => true)
       }
       result
     end

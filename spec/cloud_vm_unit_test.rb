@@ -60,20 +60,21 @@ begin
     info = ut_test_env
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.wait_for_completion
-      puts("ut process:#{cloud.get_progress.progress}")
+      progress = cloud.get_progress
+      puts("ut process:#{progress.inspect}")
       sleep(1)
     end
     puts("ut finished")
+    progress = cloud.get_progress
+    puts("ut process:#{progress.inspect}")
   when 2 then
     puts "##Test WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.wait_for_completion()
       progress = cloud.get_progress
-      puts("ut process:#{progress.progress}")
-      puts("ut process:#{progress.results}")
-      puts("ut process:#{progress.progress}")
-      sleep(5)
+      puts("ut process:#{progress.inspect}")
+      sleep(4)
     end
   when 3 then #Delete Cluster
     puts "## Delete Cluster in UT"
@@ -86,9 +87,9 @@ begin
   when 4 then #Delete Cluster
     puts "## Delete Cluster in WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => true)
+    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => false)
     while !cloud.wait_for_completion()
-      puts("delete ut process:#{cloud.get_progress}")
+      puts("delete ut process:#{cloud.get_progress.inspect}")
       sleep(1)
     end
   when 5 then #List vms in Cluster

@@ -9,7 +9,10 @@ module VHelper::CloudManager
       @progress = 0
       @finished = false
       @status = "birth"
-      @results = nil
+      @result = ""
+    end
+    def inspect
+      "#{@progress}%, finished ?#{@finished}, #{@status}, servers:\n#{result.inspect}"
     end
   end
 
@@ -17,8 +20,10 @@ module VHelper::CloudManager
     attr_accessor :succeed
     attr_accessor :success
     attr_accessor :running
+    attr_accessor :deploy
     attr_accessor :failed
     attr_accessor :waiting
+    attr_accessor :waiting_start
     attr_accessor :total
     attr_accessor :servers
 
@@ -27,7 +32,15 @@ module VHelper::CloudManager
       @finished = 0
       @failed = 0
       @total = 0
+      @deploy = 0
+      @waiting = 0
+      @waiting_start = 0
       @servers = []
+    end
+    def inspect
+      msg = "total:#{total} sucess:#{success} failed:#{failed} running:#{running} [waiting:#{waiting} waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
+      servers.each {|vm| msg<<vm.inspect}
+      msg
     end
   end
 
@@ -50,8 +63,7 @@ module VHelper::CloudManager
       @output_lock.synchronize do
         sleep(1)
         unless @finished.nil?
-          result = @vhelper.get_result 
-          return result[1]
+          return @vhelper.get_result 
         end
       end
       nil

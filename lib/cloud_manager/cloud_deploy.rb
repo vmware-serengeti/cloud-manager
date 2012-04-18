@@ -13,9 +13,9 @@ module VHelper::CloudManager
           #TODO add change code here
           @logger.info("changing vm #{vm.pretty_inspect}")
           vm.status = VM_STATE_DONE
-          vm_finish(vm)
+          vm_finish_deploy(vm)
         }
-      } 
+      }
       @logger.info("Finish all changes")
 
       vm_placement.each { |group|
@@ -38,13 +38,14 @@ module VHelper::CloudManager
 
           vm.status = VM_STATE_POWER_ON
           vm_poweron(vm)
-          vm_finish(vm)
+          vm_finish_deploy(vm)
           @logger.debug("#{vm.name} finish poweron")
         }
       }
 
       @logger.debug("wait all existed vms' ip address")
       wait_thread = []
+      @status = CLUSTER_WAIT_START
       vm_map_by_threads(@existed_vms) { |vm|
         while (vm.ip_address.nil? || vm.ip_address.empty?)
           @client.update_vm_properties_by_vm_mob(vm)
@@ -52,6 +53,7 @@ module VHelper::CloudManager
           sleep(4)
         end
         vm.status = VM_STATE_DONE
+        vm_finish(vm)
         @logger.debug("#{vm.name}: done")
       }
 
@@ -114,9 +116,12 @@ module VHelper::CloudManager
       @client.vm_power_on(vm)
     end
 
-    def vm_finish(vm, options={})
+    def vm_finish_deploy(vm, options={})
       deploying_vm_move_to_existed(vm, options)
-      #TODO
+    end
+
+    def vm_finish(vm, options={})
+      existed_vm_move_to_finish(vm, options)
     end
 
     ###################################
