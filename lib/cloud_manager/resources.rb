@@ -306,7 +306,7 @@ module VHelper::CloudManager
         datastore.mob               = attr["mo_ref"]
         datastore.name              = attr["name"]
 
-        #@logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
+        @logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
 
         datastore.free_space        = attr["freeSpace"]
         datastore.total_space       = attr["maxSpace"]
@@ -317,11 +317,12 @@ module VHelper::CloudManager
     end
 
     def isMatched?(name, match_patterns)
-      #@logger.debug("isMatched? #{name}, #{match_patterns.pretty_inspect}")
+      @logger.debug("isMatched? #{name}, #{match_patterns.pretty_inspect}")
       #TODO match_pattern is an array
       match_patterns.each { |pattern| 
         return true if name.match(pattern) 
       }
+      @logger.debug("Not Match? ")
       false
     end
 

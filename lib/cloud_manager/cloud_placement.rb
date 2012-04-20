@@ -100,6 +100,7 @@ module VHelper::CloudManager
           end
           vm = VHelper::CloudManager::VmInfo.new(vm_name, @logger)
           vm.host_name = nil
+          hosts.rotate!
           loop_hosts(hosts) { |host|
             req_mem = vm_group.req_info.mem
             #@logger.debug("req mem #{req_mem}  ===> host :#{host.inspect}")

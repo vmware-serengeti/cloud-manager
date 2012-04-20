@@ -18,7 +18,7 @@
       guest_used_mem: 1000
       limit_mem: 16000
     datastores: &id1  #Size is KB
-    - name: share-ds
+    - name: tta-ds
       mob: share-ds1
       freeSpace: 210000
       maxSpace: 400000

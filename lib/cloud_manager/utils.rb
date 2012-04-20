@@ -6,13 +6,12 @@ module VHelper::CloudManager
     end
 
     def get_from_vm_name(vm_name, options={})
-#      cluster_name = options.has_key?(:cluster_name) ? options[:cluster_name]: '[\w\s\d]+'
-#      group_name = options.has_key?(:group_name) ? options[:group_name]: '[\w\s\d]+'
-#      @logger.debug("cluster_name:#{cluster_name} group_name:#{group_name}")
-#      match_string = "(#{cluster_name})#{VM_SPLIT_SIGN}(#{group_name})#{VM_SPLIT_SIGN}([\d]+)"
-#      @logger.debug("Match String:#{match_string}")
-#      return /#{match_string}/.match(vm_name)
-      return /([\w\s\d]+)\-([\w\s\d]+)\-([\d]+)/.match(vm_name)
+      return /([\w\s\d]+)#{VM_SPLIT_SIGN}([\w\s\d]+)#{VM_SPLIT_SIGN}([\d]+)/.match(vm_name)
+    end
+
+    def Logger
+      @@self_logger = Logger.new if @@self_logger.nil?
+      @@self_logger
     end
   end
 
@@ -21,16 +20,14 @@ module VHelper::CloudManager
       puts "initiated logger"
     end
     def info(msg)
-      puts "INFO: #{msg2str(msg)}"
+      puts ("INFO: #{msg2str(msg)}")
     end
 
     def debug(msg)
-      puts "DEBUG: #{msg2str(msg)}"
+      puts ("DEBUG: #{msg2str(msg)}")
     end
 
-    def inspect
-      "<Cloud-manager-Logger>"
-    end
+    def inspect; "<Cloud-manager-Logger>" end
 
     def msg2str(msg)
       case msg

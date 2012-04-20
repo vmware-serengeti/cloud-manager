@@ -53,13 +53,11 @@ module VHelper::CloudManager
     def initialize(cluster_definition, cloud_provider)
       @cluster_definition = cluster_definition
       @cloud_provider = cloud_provider
-      @logger = Logger.new
+      @logger = Logger.new()
       @vhelper = VHelper::CloudManager::VHelperCloud.new(@logger, @cluster_definition)
 
       @output_lock = Mutex.new
       @finished = nil
-
-      #at_exit { @client.logout }
     end
 
     #############################################
@@ -74,26 +72,18 @@ module VHelper::CloudManager
       nil
     end
 
-    def finished?
-      return !@finished.nil?
-    end
+    def finished?; !@finished.nil? end
 
-    def get_result
-      return @vhelper.get_result
-    end
+    def get_result; @vhelper.get_result end
 
-    def get_progress
-      return @vhelper.get_progress
-    end
+    def get_progress; @vhelper.get_progress end
 
     def abort
       @vhelper.need_abort = true
       @logger.debug("Do not implement abort function")
     end
 
-    def release_connection
-      @vhelper.release_connection
-    end
+    def release_connection; @vhelper.release_connection end
 
     #############################################
     # Set info from worker thread
@@ -118,7 +108,5 @@ module VHelper::CloudManager
       @logger.debug("call cloud.delete...")
       return @vhelper.delete(@cloud_provider, @cluster_definition, self)
     end
-
   end
 end
-

@@ -41,13 +41,13 @@ module VHelper::CloudManager
     def vm_power_on(vm)
       @logger.debug("power on #{vm.name}")
       dummy_sleep(4)
-      vm.power_state = "power on"
+      vm.power_state = "poweredOn"
     end
 
     def clone_vm(vm, options={})
       @logger.debug("clone vm#{vm.name}")
       dummy_sleep(8)
-      vm.power_state = (options[:power_on] == true)? "power on":"power off"
+      vm.power_state = (options[:power_on] == true)? "poweredOn":"poweredOff"
       return unless @write_to_dc 
     end
 
