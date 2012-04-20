@@ -20,7 +20,11 @@ module VHelper::CloudManager
 
       vm_placement.each { |group|
         vm_group_by_threads(group) { |vm|
-          next unless @existed_vms[vm.name].nil?
+          unless @existed_vms[vm.name].nil?
+            # Existed VM is same as will be deployed?
+            @vm_lock.synchronize {@preparing_vms.delete(vm.name)}
+            next
+          end
           if (!vm.error_msg.nil?)
             @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
             next

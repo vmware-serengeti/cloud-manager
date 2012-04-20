@@ -76,6 +76,9 @@ begin
       puts("ut process:#{progress.inspect}")
       sleep(4)
     end
+    puts("ut finished")
+    progress = cloud.get_progress
+    puts("ut process:#{progress.inspect}")
   when 3 then #Delete Cluster
     puts "## Delete Cluster in UT"
     info = ut_test_env

@@ -1,4 +1,21 @@
 module VHelper::CloudManager
+  class VHelperCloud
+    VM_SPLIT_SIGN = '-'
+    def gen_vm_name(cluster_name, group_name, num)
+      return "#{cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"
+    end
+
+    def get_from_vm_name(vm_name, options={})
+#      cluster_name = options.has_key?(:cluster_name) ? options[:cluster_name]: '[\w\s\d]+'
+#      group_name = options.has_key?(:group_name) ? options[:group_name]: '[\w\s\d]+'
+#      @logger.debug("cluster_name:#{cluster_name} group_name:#{group_name}")
+#      match_string = "(#{cluster_name})#{VM_SPLIT_SIGN}(#{group_name})#{VM_SPLIT_SIGN}([\d]+)"
+#      @logger.debug("Match String:#{match_string}")
+#      return /#{match_string}/.match(vm_name)
+      return /([\w\s\d]+)\-([\w\s\d]+)\-([\d]+)/.match(vm_name)
+    end
+  end
+
   class Logger
     def initialize()
       puts "initiated logger"

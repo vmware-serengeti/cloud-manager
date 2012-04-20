@@ -1,13 +1,5 @@
 module VHelper::CloudManager
   class VHelperCloud
-    def gen_vm_name(cluster_name, group_name, num)
-      return "#{cluster_name}-#{group_name}-#{num}"
-    end
-
-    def get_from_vm_name(vm_name)
-      return /([\w\s\d]+)\-([\w\s\d]+)\-([\d]+)/.match(vm_name)
-    end
-
     def create_vm_group_from_vhelper_input(cluster_info, datacenter_name)
       vm_groups = {}
       @logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
@@ -27,7 +19,7 @@ module VHelper::CloudManager
       dc_res.clusters.each_value do |cluster|
         cluster.vms.each_value do |vm|
           @logger.debug("vm :#{vm.name}")
-          result = get_from_vm_name(vm.name)
+          result = get_from_vm_name(vm.name) 
           next unless result
           cluster_name = result[1]
           group_name = result[2]

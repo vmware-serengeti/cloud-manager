@@ -59,6 +59,21 @@ module VHelper::CloudManager
       }
     end
 
+    def hosts_prepare_in_cluster (cluster)
+      hosts = cluster.hosts.values
+      #@logger.debug("#{hosts.class},#{hosts.pretty_inspect}")
+      hosts.shuffle!
+
+      hosts.each { |host|
+        host.place_share_datastores = host.share_datastores.values
+        host.place_local_datastores = host.local_datastores.values
+        host.place_share_datastores.shuffle!
+        host.place_local_datastores.shuffle!
+      }
+
+      hosts
+    end
+
     def cluster_placement(dc_resource, vm_groups_input, vm_groups_existed, cluster_info)
       vm_placement = []
       if vm_groups_existed.size > 0
@@ -69,34 +84,28 @@ module VHelper::CloudManager
       cluster = dc_resource.clusters.values.first
       resource_pools = cluster.resource_pools
 
-      @logger.debug("#{cluster.hosts.pretty_inspect}")
       vm_groups_input.each_value { |vm_group|
-        hosts = cluster.hosts.values
-        #@logger.debug("#{hosts.class},#{hosts.pretty_inspect}")
-        hosts.shuffle!
-
         #Check and find suitable resource_pool
         cur_rp = get_suitable_resource_pool(resource_pools, vm_group.req_info)
         raise "No resources for placement!" if cur_rp.nil?
 
-        hosts.each { |host|
-          host.place_share_datastores = host.share_datastores.values
-          host.place_local_datastores = host.local_datastores.values
-          host.place_share_datastores.shuffle!
-          host.place_local_datastores.shuffle!
-        }
-
+        hosts = hosts_prepare_in_cluster(cluster)
         group_place = []
         vm_group.instances.times { |num|
           vm_name = gen_vm_name(cluster_info["name"], vm_group.name, num)
           @logger.debug("vm_name: #{vm_name}")
+          if (@existed_vms.has_key?(vm_name))
+            @logger.debug("do not support change existed VM's setting")
+            next
+          end
           vm = VHelper::CloudManager::VmInfo.new(vm_name, @logger)
           vm.host_name = nil
           loop_hosts(hosts) { |host|
             req_mem = vm_group.req_info.mem
             #@logger.debug("req mem #{req_mem}  ===> host :#{host.inspect}")
             if host.real_free_memory < req_mem
-              @logger.debug("#{host.name} haven't enough memory for #{vm_name} req:#{req_mem}, host has :#{host.real_free_memory}.")
+              vm.error_msg = "#{host.name} haven't enough memory for #{vm_name} req:#{req_mem}, host has :#{host.real_free_memory}."
+              @logger.debug(vm.error_msg)
               next
             end
             #The host is suitable for this VM
@@ -106,20 +115,19 @@ module VHelper::CloudManager
             sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
 
             if sys_datastore.nil?
-              @logger.debug("can not find suitable sys datastore in host #{host.name}.")
+              vm.error_msg = "can not find suitable sys datastore in host #{host.name}."
+              @logger.debug("#{vm.error_msg}")
               next
             end
             @logger.debug("get sys datastore :#{sys_datastore.name}")
 
             #Get the datastore for this vm
-
             req_size = vm_group.req_info.disk_size
             used_datastores = get_suitable_datastores(host.place_share_datastores, req_size)
             if used_datastores.empty?
               #TODO no disk space for this vm
               vm.error_msg = "No enough disk for #{vm_name}."
               @logger.debug("ERROR: #{vm.error_msg}")
-              # Remove this host
               next
             end
             #Find suitable Host and datastores
@@ -145,6 +153,7 @@ module VHelper::CloudManager
 
       vm_placement
     end
+
     def loop_hosts(hosts)
       while (!hosts.empty?)
         if !yield hosts[0]

@@ -88,14 +88,10 @@ module VHelper::CloudManager
           #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
           result = get_from_vm_name(vm.name)
           next unless result
-          cluster_name = result[1]
-          group_name = result[2]
-          num = result[3]
-          #@logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
-          if cluster_info["name"] == cluster_name
-            @logger.debug("delete vm : #{vm.name}")
-            @client.vm_destroy(vm)
-          end
+          next unless (result[1] == @cluster_name)
+          #@logger.debug("vm split to #{@cluster_name}::#{result[2]}::#{result[3]}")
+          @logger.debug("delete vm : #{vm.name}")
+          @client.vm_destroy(vm)
         }
       }
       cluster_done(task)
@@ -232,8 +228,8 @@ module VHelper::CloudManager
     def get_result_by_vms(servers, vms, options={})
       vms.each_value { |vm|
         result = get_from_vm_name(vm.name)
-        return if result.nil?
-        vm.cluster_name = result[1]
+        next unless result.nil?
+        vm.cluster_name = @cluster_name
         vm.group_name = result[2]
         vm.created = options[:created]
         servers << vm

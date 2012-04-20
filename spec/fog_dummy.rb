@@ -1,12 +1,4 @@
 module VHelper::CloudManager
-  class Resources
-    RS_ATTR_TO_PROP = 0
-    DS_ATTR_TO_PROP = 1
-    HS_ATTR_TO_PROP = 2
-    DK_ATTR_TO_PROP = 3
-    VM_ATTR_TO_PROP = 4
-    CS_ATTR_TO_PROP = 5
-  end
   class FogDummy
     attr_reader:logger
     DC_CONFIG_FILE = "./spec/ut.dc.yaml"
@@ -31,28 +23,26 @@ module VHelper::CloudManager
       @logger.debug("##Logout #{@vc_addr}")
     end
 
-    def get_dc_mob_ref_by_path(dc_name, options={})
-      @debug_dc.each do |dc|
-        return dc if dc["name"] == dc_name
-      end
-      nil
+    def dummy_sleep(n)
+      time = (rand * n) + n/2 + 1
+      sleep(time.to_i)
     end
 
     def vm_destroy(vm)
       @logger.debug("destroy #{vm.name}")
-      sleep(4)
+      dummy_sleep(4)
       @vm_prop.delete(vm.name)
     end
 
     def vm_power_on(vm)
       @logger.debug("power on #{vm.name}")
-      sleep(4)
+      dummy_sleep(4)
       vm.power_state = "power on"
     end
 
     def clone_vm(vm, options={})
       @logger.debug("clone vm#{vm.name}")
-      sleep(8)
+      dummy_sleep(8)
       vm.power_state = (options[:power_on] == true)? "power on":"power off"
     end
 
@@ -74,7 +64,7 @@ module VHelper::CloudManager
 
     def update_vm_properties_by_vm_mob(vm)
       return vm if (@vm_prop.has_key?(vm.name))
-      sleep(1)
+      dummy_sleep(1)
       @lock.synchronize do
         #TODO read vm info from FILE later
         vm.ip_address = "1.1.1.#{@ip_start}"
@@ -84,41 +74,22 @@ module VHelper::CloudManager
       end
     end
 
-    def ct_mob_ref_to_attr_hash(mob, type, options={})
-      return mob
+    def get_dc_mob_ref_by_path(dc_name, options={})
+      @debug_dc.each { |dc|
+        return dc if dc["name"] == dc_name
+      }
+      nil
     end
 
-    def get_hosts_by_cs_mob(mob, options={})
-      return mob["hosts"]
-    end
-
-    def get_ds_name_by_path(path, options={})
-      return "share-ds"
-    end
-
-    def get_rps_by_cs_mob(cluster_mob, options={})
-      return cluster_mob["resource_pool"]
-    end
-
-    def get_clusters_by_dc_mob(dc_mob, options={})
-      return dc_mob["clusters"]
-    end
-
-    def get_datastores_by_cs_mob(cluster_mob, options={})
-      return cluster_mob["datastores"]
-    end
-
-    def get_datastores_by_host_mob(host_mob, options={})
-      return host_mob["datastores"]
-    end
-
-    def get_vms_by_host_mob(host_mob, options={})
-      return host_mob["vms"]
-    end
-
-    def get_disks_by_vm_mob(vm_mob, options={})
-      return vm_mob["disks"]
-    end
+    def ct_mob_ref_to_attr_hash(mob, type, options={}) mob end
+    def get_hosts_by_cs_mob(mob, options={}) mob["hosts"] end
+    def get_ds_name_by_path(path, options={}) "share-ds" end
+    def get_rps_by_cs_mob(cluster_mob, options={}) cluster_mob["resource_pool"] end
+    def get_clusters_by_dc_mob(dc_mob, options={}); dc_mob["clusters"]; end
+    def get_datastores_by_cs_mob(cluster_mob, options={}); cluster_mob["datastores"]; end
+    def get_datastores_by_host_mob(host_mob, options={}); host_mob["datastores"]; end
+    def get_vms_by_host_mob(host_mob, options={}) host_mob["vms"] end
+    def get_disks_by_vm_mob(vm_mob, options={}) vm_mob["disks"] end
 
     def vm_reboot(vm, options={})
     end
