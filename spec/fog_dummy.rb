@@ -8,10 +8,11 @@ module VHelper::CloudManager
       @ip_start = 2
       @logger.debug("Enter Fog_dummy")
       @debug_dc = YAML.load(File.open(DC_CONFIG_FILE))
-      @pm = YAML.load(File.open(DC_WORK_FILE))
+      @pm = YAML.load(File.open(WORK_FILE))
       @logger.debug("Debug DC : #{@debug_dc}")
       @lock = Mutex.new
       @debugSleep = @pm['debugSleep']
+      @write_to_dc = @pm['WriteBack_DC']
       @vm_prop = {}
     end
 
@@ -47,6 +48,7 @@ module VHelper::CloudManager
       @logger.debug("clone vm#{vm.name}")
       dummy_sleep(8)
       vm.power_state = (options[:power_on] == true)? "power on":"power off"
+      return unless @write_to_dc 
     end
 
     def update_vm_with_properties_string(vm, vm_properties)

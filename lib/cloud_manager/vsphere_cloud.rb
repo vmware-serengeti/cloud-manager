@@ -54,7 +54,7 @@ module VHelper::CloudManager
       @cluster_definition = cluster_definition
       @cloud_provider = cloud_provider
       @logger = Logger.new
-      @vhelper = VHelper::CloudManager::VHelperCloud.new(@logger)
+      @vhelper = VHelper::CloudManager::VHelperCloud.new(@logger, @cluster_definition)
 
       @output_lock = Mutex.new
       @finished = nil

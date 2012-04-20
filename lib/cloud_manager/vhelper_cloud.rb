@@ -8,7 +8,7 @@ module VHelper::CloudManager
     attr_reader :racks
     attr_reader :need_abort
 
-    def initialize(logger)
+    def initialize(logger, cluster_info)
       @logger = logger
       @dc_resource = nil
       @clusters = nil
@@ -19,6 +19,7 @@ module VHelper::CloudManager
       @failure_vms = {}
       @preparing_vms = {}
       @need_abort = nil
+      @cluster_name = cluster_info["name"]
 
       @status = CLUSTER_BIRTH
       @rs_lock = Mutex.new
@@ -102,7 +103,7 @@ module VHelper::CloudManager
     def prepare_working(cluster_info)
       ###########################################################
       # Connect to Cloud server
-      @cluster_name = cluster_info["name"]
+      #@cluster_name = cluster_info["name"]
       @logger.debug("Connect to Cloud Server #{@client_name} #{@vc_address} user:#{@vc_username}/#{vc_password}...")
       @status = CLUSTER_CONNECT
       @client = ClientFactory.create(@client_name, @logger)
