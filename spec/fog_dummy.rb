@@ -2,16 +2,16 @@ module VHelper::CloudManager
   class FogDummy
     attr_reader:logger
     DC_CONFIG_FILE = "./spec/ut.dc.yaml"
-    DC_WORK_FILE = "./spec/ut.dc-working.yaml"
+    WORK_FILE = "./spec/ut.test.yaml"
     def initialize(logger)
       @logger = logger
       @ip_start = 2
       @logger.debug("Enter Fog_dummy")
       @debug_dc = YAML.load(File.open(DC_CONFIG_FILE))
-      @work_dc = YAML.load(File.open(DC_WORK_FILE))
+      @pm = YAML.load(File.open(DC_WORK_FILE))
       @logger.debug("Debug DC : #{@debug_dc}")
       @lock = Mutex.new
-      #@debugSleep = @debug_dc['debugSleep']
+      @debugSleep = @pm['debugSleep']
       @vm_prop = {}
     end
 
@@ -25,8 +25,10 @@ module VHelper::CloudManager
     end
 
     def dummy_sleep(n)
-      time = (rand * n) + n/2 + 1
-      sleep(time.to_i)
+      if @debugSleep
+        time = (rand * n) + n/2 + 1
+        sleep(time.to_i)
+      end
     end
 
     def vm_destroy(vm)

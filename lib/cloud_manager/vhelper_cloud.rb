@@ -228,7 +228,7 @@ module VHelper::CloudManager
     def get_result_by_vms(servers, vms, options={})
       vms.each_value { |vm|
         result = get_from_vm_name(vm.name)
-        next unless result.nil?
+        next if result.nil?
         vm.cluster_name = @cluster_name
         vm.group_name = result[2]
         vm.created = options[:created]
