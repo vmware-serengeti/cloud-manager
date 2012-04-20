@@ -12,6 +12,7 @@ module VHelper::CloudManager
       @status = "birth"
       @result = ""
     end
+    def finished? ;@finished end
     def inspect
       "#{@progress}%, finished ?#{@finished}, #{@status}, servers:\n#{result.inspect}"
     end
@@ -38,6 +39,9 @@ module VHelper::CloudManager
       @waiting_start = 0
       @servers = []
     end
+
+    def succeed? ; @succeed end
+
     def inspect
       msg = "total:#{total} sucess:#{success} failed:#{failure} running:#{running} [waiting:#{waiting} waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
       servers.each {|vm| msg<<vm.inspect}

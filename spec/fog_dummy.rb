@@ -11,6 +11,7 @@ module VHelper::CloudManager
       @work_dc = YAML.load(File.open(DC_WORK_FILE))
       @logger.debug("Debug DC : #{@debug_dc}")
       @lock = Mutex.new
+      #@debugSleep = @debug_dc['debugSleep']
       @vm_prop = {}
     end
 
