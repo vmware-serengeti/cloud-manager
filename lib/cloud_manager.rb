@@ -7,8 +7,10 @@ require "lib/cloud_manager/cloud_placement"
 require "lib/cloud_manager/cloud_deploy"
 require "lib/cloud_manager/client"
 require "lib/cloud_manager/client_fog"
-require "lib/cloud_manager/vhelper_cloud"
-require 'lib/cloud_manager/vsphere_cloud'
+require "lib/cloud_manager/IaasProgress"
+require "lib/cloud_manager/IaasResult"
+require "lib/cloud_manager/IaasTask"
+require 'lib/cloud_manager/vhelper_cloud'
 
 module VHelper::CloudManager
   class Manager

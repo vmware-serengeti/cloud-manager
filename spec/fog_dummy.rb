@@ -14,6 +14,7 @@ module VHelper::CloudManager
       @debugSleep = @pm['debugSleep']
       @write_to_dc = @pm['WriteBack_DC']
       @vm_prop = {}
+      @debug_dc_tree = nil
     end
 
     def login(vc_addr, vc_user, vc_pass)
@@ -35,6 +36,9 @@ module VHelper::CloudManager
     def vm_destroy(vm)
       @logger.debug("destroy #{vm.name}")
       dummy_sleep(4)
+      return nil unless (@vm_prop.has_key?(vm.name))
+      if @write_to_dc
+      end
       @vm_prop.delete(vm.name)
     end
 
@@ -48,6 +52,7 @@ module VHelper::CloudManager
       @logger.debug("clone vm#{vm.name}")
       dummy_sleep(8)
       vm.power_state = (options[:power_on] == true)? "poweredOn":"poweredOff"
+      @vm_prop[vm.name] = vm
       return unless @write_to_dc 
     end
 
