@@ -187,22 +187,4 @@ module VHelper::CloudManager
     end
   end
 
-  class VHelperCloud
-    attr_accessor :name
-    attr_accessor :vc_req_resource_pools
-    attr_accessor :vc_req_datacenter
-    attr_accessor :vc_req_clusters
-    attr_accessor :vc_address
-    attr_accessor :vc_username
-    attr_accessor :vc_password
-    attr_accessor :vc_share_store_patten
-    attr_accessor :vc_local_store_patten
-
-    attr_accessor :status
-    attr_accessor :clusters
-    attr_accessor :vm_groups
-    attr_accessor :vms
-
-  end
-
 end

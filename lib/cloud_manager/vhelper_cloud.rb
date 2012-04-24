@@ -1,5 +1,16 @@
 module VHelper::CloudManager
   class VHelperCloud
+    attr_accessor :name
+    attr_accessor :vc_req_resource_pools
+    attr_accessor :vc_address
+    attr_accessor :vc_username
+    attr_accessor :vc_password
+
+    attr_accessor :status
+    attr_accessor :clusters
+    attr_accessor :vm_groups
+    attr_accessor :vms
+
     attr_reader :vc_share_datastore_patten
     attr_reader :vc_local_datastore_patten
     attr_reader :vc_req_datacenter
@@ -30,6 +41,7 @@ module VHelper::CloudManager
 
     def add_deploying_vm(vm)
       @vm_lock.synchronize {
+        return if !@preparing_vms.has_key?(vm.name)
         @deploy_vms[vm.name] = vm
         @preparing_vms.delete(vm.name)
       }
@@ -44,6 +56,7 @@ module VHelper::CloudManager
 
     def existed_vm_move_to_finish(vm, options={})
       @vm_lock.synchronize {
+        return if !@existed_vms.has_key?(vm.name)
         @existed_vms.delete(vm.name)
         @finished_vms[vm.name] = vm
       }
@@ -52,6 +65,7 @@ module VHelper::CloudManager
     def deploying_vm_move_to_existed(vm, options={})
       @logger.debug("deploy to existed vm")
       @vm_lock.synchronize {
+        return if !@deploy_vms.has_key?(vm.name)
         @deploy_vms.delete(vm.name)
         @existed_vms[vm.name] = vm
       }
@@ -59,7 +73,6 @@ module VHelper::CloudManager
 
     def create_cloud_provider(cloud_provider)
       @name = cloud_provider["name"]
-      #@vc_req_resource_pools = resource_pool.split(',').delete_if(&:empty?)
       @vc_req_datacenter = cloud_provider["vc_datacenter"]
       @vc_req_clusters = cloud_provider["vc_clusters"]
       @vc_address = cloud_provider["vc_addr"]

@@ -20,11 +20,7 @@ module VHelper::CloudManager
 
       vm_placement.each { |group|
         vm_group_by_threads(group) { |vm|
-          unless @existed_vms[vm.name].nil?
-            # Existed VM is same as will be deployed?
-            @vm_lock.synchronize {@preparing_vms.delete(vm.name)}
-            next
-          end
+          # Existed VM is same as will be deployed?
           if (!vm.error_msg.nil?)
             @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
             next
@@ -45,17 +41,20 @@ module VHelper::CloudManager
           vm_reconfigure_disk(vm)
           @logger.debug("#{vm.name} finish reconfigure")
 
-          vm.status = VM_STATE_POWER_ON
-          vm_poweron(vm)
-          vm_finish_deploy(vm)
-          @logger.debug("#{vm.name} finish poweron")
         }
       }
 
-      @logger.debug("wait all existed vms' ip address")
+      @logger.debug("wait all existed vms poweron and return their ip address")
       wait_thread = []
       @status = CLUSTER_WAIT_START
       vm_map_by_threads(@existed_vms) { |vm|
+        # Power On vm
+        if vm.power_state == 'poweredOff'
+          vm.status = VM_STATE_POWER_ON
+          vm_poweron(vm)
+          vm_finish_deploy(vm)
+          @logger.debug("#{vm.name} has poweron")
+        end
         while (vm.ip_address.nil? || vm.ip_address.empty?)
           @client.update_vm_properties_by_vm_mob(vm)
           @logger.debug("#{vm.name} ip: #{vm.ip_address}")
@@ -73,7 +72,14 @@ module VHelper::CloudManager
     def vm_map_by_threads(map, options={})
       work_thread = []
       map.each_value do |vm|
-        work_thread << Thread.new(vm) { |vm| yield vm }
+        work_thread << Thread.new(vm) do |vm| 
+          begin
+            yield vm 
+          rescue => e
+            @logger.debug("vm_map threads failed")
+            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+          end
+        end
       end
       work_thread.each { |t| t.join }
       @logger.info("##Finish change one vm_group")
@@ -82,7 +88,14 @@ module VHelper::CloudManager
     def vm_group_by_threads(group, options={})
       work_thread = []
       group.each do |vm|
-        work_thread << Thread.new(vm) { |vm| yield vm }
+        work_thread << Thread.new(vm) do |vm|
+          begin
+            yield vm 
+          rescue => e
+            @logger.debug("vm_group threads failed")
+            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+          end
+        end
       end
       work_thread.each { |t| t.join }
       @logger.info("##Finish change one vm_group")
