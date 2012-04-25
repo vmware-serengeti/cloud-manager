@@ -10,13 +10,15 @@ module VHelper::CloudManager
   VM_STATE_DONE = "finished"
   VM_STATE_FAIL = "fails"
   VM_STATE_POWER_ON = "poweron..."
+  VM_STATE_WAIT_IP  = "waiting ip"
   VM_STATE_POWER_OFF = "poweroff..."
 
   VM_CREATE_PROCESS = {
     VM_STATE_BIRTH    => 0,
     VM_STATE_CLONE    => 10,
     VM_STATE_RECONFIG => 60,
-    VM_STATE_POWER_ON => 80,
+    VM_STATE_POWER_ON => 70,
+    VM_STATE_WAIT_IP  => 80,
     VM_STATE_DONE     => 100,
   }
 
@@ -86,15 +88,15 @@ module VHelper::CloudManager
     end
   end
 
-  class VmInfo
-    class DiskInfo
-      attr_accessor :type
-      attr_accessor :fullpath
-      attr_accessor :size
-      attr_accessor :unit_number
-      attr_accessor :datastore_name
-    end
+  class DiskInfo
+    attr_accessor :type
+    attr_accessor :fullpath
+    attr_accessor :size
+    attr_accessor :unit_number
+    attr_accessor :datastore_name
+  end
 
+  class VmInfo
     attr_accessor :id
     attr_accessor :name
     attr_accessor :status

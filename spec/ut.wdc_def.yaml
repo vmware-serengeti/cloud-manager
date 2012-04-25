@@ -11,7 +11,7 @@ groups:
     type: share
     size: 20
   network: CFNetwork
-  instance_num: 2
+  instance_num: 3
 - name: DataNode
   cpu: 1
   memory: 2048

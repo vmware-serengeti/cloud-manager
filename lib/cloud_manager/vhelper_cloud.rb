@@ -34,6 +34,18 @@ module VHelper::CloudManager
       CLUSTER_DELETE      => [10, 90],
       CLUSTER_DONE        => [100, 0],
     }
+    CLUSTER_LIST_PROCESS = {
+      CLUSTER_BIRTH       => [0, 1],
+      CLUSTER_CONNECT     => [1, 4],
+      CLUSTER_FETCH_INFO  => [5,95],
+      CLUSTER_DONE        => [100, 0],
+    }
+
+    CLUSTER_PROCESS = {
+      CLOUD_WORK_CREATE => CLUSTER_CREATE_PROCESS,
+      CLOUD_WORK_DELETE => CLUSTER_DELETE_PROCESS,
+      CLOUD_WORK_LIST   => CLUSTER_LIST_PROCESS,
+    }
 
     attr_accessor :name
     attr_accessor :vc_req_resource_pools
@@ -312,9 +324,6 @@ end
       result
     end
 
-    def get_create_progress
-    end
-
     def get_progress
       progress = IaasProcess.new
       progress.cluster_name = @cluster_name
@@ -322,21 +331,16 @@ end
       progress.status = @status
       progress.finished = @finished
       progress.progress = 0
-      if @action == CLOUD_WORK_CREATE 
-        progress.progress = CLUSTER_CREATE_PROCESS[@status][0]
+      case @action
+      when CLOUD_WORK_CREATE,CLOUD_WORK_DELETE, CLOUD_WORK_LIST
+        prog = CLUSTER_PROCESS[@action]
+        progress.progress = prog[@status][0]
         if (progress.result.total > 0)
-          progress.progress = CLUSTER_CREATE_PROCESS[@status][0] + 
-            CLUSTER_CREATE_PROCESS[@status][1] * progress.result.servers.inject(0){|sum, vm| sum += vm.get_create_progress} / progress.result.total / 100
+          progress.progress = prog[@status][0] + 
+            prog[@status][1] * progress.result.servers.inject(0){|sum, vm| sum += vm.get_create_progress} / progress.result.total / 100
         end
-      elsif @action == CLOUD_WORK_NONE 
+      else
         progress.progress = 100
-      elsif @action == CLOUD_WORK_DELETE
-        progress.progress = CLUSTER_DELETE_PROCESS[@status][0]
-        if (progress.result.total > 0)
-          progress.progress = CLUSTER_DELETE_PROCESS[@status][0] + 
-            CLUSTER_DELETE_PROCESS[@status][1] * progress.result.servers.inject(0){|sum, vm| sum += vm.get_create_progress} / progress.result.total / 100
-        end
-        #when CLOUD_WORK_LIST:
       end
       progress
     end

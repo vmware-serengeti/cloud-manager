@@ -13,7 +13,7 @@ module VHelper::CloudManager
     end
     def finished? ;@finished end
     def inspect
-      "#{@progress}%, finished ?#{@finished}, status:#{@status}, servers:\n#{result.inspect}"
+      "#{@progress}%, finished ? #{@finished?'yes':'no'}, status:#{@status}, servers:\n#{result.inspect}"
     end
   end
 end

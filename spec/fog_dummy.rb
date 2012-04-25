@@ -92,12 +92,19 @@ module VHelper::CloudManager
     end
 
     def ct_mob_ref_to_attr_hash(mob, type, options={}) mob end
-    def get_hosts_by_cs_mob(mob, options={}) mob["hosts"] end
+    def get_hosts_by_cs_mob(mob, options={}) 
+      dummy_sleep(1)
+      mob["hosts"]
+    end
     def get_ds_name_by_path(path, options={}) "share-ds" end
     def get_rps_by_cs_mob(cluster_mob, options={}) cluster_mob["resource_pool"] end
     def get_clusters_by_dc_mob(dc_mob, options={}); dc_mob["clusters"]; end
     def get_datastores_by_cs_mob(cluster_mob, options={}); cluster_mob["datastores"]; end
-    def get_datastores_by_host_mob(host_mob, options={}); host_mob["datastores"]; end
+    def get_datastores_by_host_mob(host_mob, options={}); 
+      dummy_sleep(1)
+      host_mob["datastores"]; 
+    end
+
     def get_vms_by_host_mob(host_mob, options={}) host_mob["vms"] end
     def get_disks_by_vm_mob(vm_mob, options={}) vm_mob["disks"] end
 

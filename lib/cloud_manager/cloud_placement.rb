@@ -1,7 +1,7 @@
 module VHelper::CloudManager
   class VHelperCloud
-    REMAIDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 10
-    HOST_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 2
+    REMAIDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 20
+    HOST_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 16
 
     def get_suitable_resource_pool(resource_pools, req_info)
       resource_pools.each_value { |rp|

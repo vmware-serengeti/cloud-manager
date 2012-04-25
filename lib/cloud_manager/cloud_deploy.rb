@@ -35,12 +35,13 @@ module VHelper::CloudManager
             #FIXME only handle duplicated issue.
             next
           end
-          @logger.debug("#{vm.name} finish clone")
+          @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
 
           vm.status = VM_STATE_RECONFIG
           vm_reconfigure_disk(vm)
           @logger.debug("#{vm.name} finish reconfigure")
 
+          vm_finish_deploy(vm)
         }
       }
 
@@ -49,12 +50,13 @@ module VHelper::CloudManager
       @status = CLUSTER_WAIT_START
       vm_map_by_threads(@existed_vms) { |vm|
         # Power On vm
+        vm.status = VM_STATE_POWER_ON
+        @logger.debug("vm:#{vm.name} power:#{vm.power_state}")
         if vm.power_state == 'poweredOff'
-          vm.status = VM_STATE_POWER_ON
           vm_poweron(vm)
-          vm_finish_deploy(vm)
           @logger.debug("#{vm.name} has poweron")
         end
+        vm.status = VM_STATE_WAIT_IP
         while (vm.ip_address.nil? || vm.ip_address.empty?)
           @client.update_vm_properties_by_vm_mob(vm)
           @logger.debug("#{vm.name} ip: #{vm.ip_address}")
