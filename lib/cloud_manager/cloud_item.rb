@@ -3,25 +3,23 @@ module VHelper::CloudManager
   STATE_FAILED = "failed"
   STATE_SUCCESS = "success"
 
-  CLUSTER_BIRTH = "birth"
-  CLUSTER_CONNECT = "connectting"
-  CLUSTER_FETCH_INFO = "fetching"
-  CLUSTER_UPDATE = "updating"
-  CLUSTER_PLACE = "placing"
-  CLUSTER_DEPLOY = "deploying"
-  CLUSTER_WAIT_START = "waiting start"
-  CLUSTER_DELETE = "deleting"
-  CLUSTER_DONE = "done"
-
   VM_STATE_BIRTH = "birth"
   VM_STATE_CLONE = "cloning"
   VM_STATE_RECONFIG = "reconfiging"
   VM_STATE_DELETE = "deleting"
   VM_STATE_DONE = "finished"
   VM_STATE_FAIL = "fails"
-
   VM_STATE_POWER_ON = "poweron..."
   VM_STATE_POWER_OFF = "poweroff..."
+
+  VM_CREATE_PROCESS = {
+    VM_STATE_BIRTH    => 0,
+    VM_STATE_CLONE    => 10,
+    VM_STATE_RECONFIG => 60,
+    VM_STATE_POWER_ON => 80,
+    VM_STATE_DONE     => 100,
+  }
+
   SHARE = "share"
   LOCAL = "local"
 
@@ -88,15 +86,15 @@ module VHelper::CloudManager
     end
   end
 
-  class DiskInfo
-    attr_accessor :type
-    attr_accessor :fullpath
-    attr_accessor :size
-    attr_accessor :unit_number
-    attr_accessor :datastore_name
-  end
-
   class VmInfo
+    class DiskInfo
+      attr_accessor :type
+      attr_accessor :fullpath
+      attr_accessor :size
+      attr_accessor :unit_number
+      attr_accessor :datastore_name
+    end
+
     attr_accessor :id
     attr_accessor :name
     attr_accessor :status
@@ -141,6 +139,7 @@ module VHelper::CloudManager
       return "OK" if @error_msg.nil?
       "ERR: #{error_msg}"
     end
+
     def inspect
       "name:#{@name} host:#{@hostname} ip:#{@ip_address} status:#{@status} created:#{@created} state:#{@power_state} #{@error_msg}\n"
     end
@@ -160,6 +159,10 @@ module VHelper::CloudManager
       @status = VM_STATE_BIRTH
       @ip_address = ""
       @error_msg = ""
+    end
+
+    def get_create_progress
+      VM_CREATE_PROCESS[@status] || 0
     end
 
     def disk_add(size, fullpath, unit_number = 0)
