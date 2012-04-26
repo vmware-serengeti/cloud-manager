@@ -73,7 +73,7 @@ module VHelper::CloudManager
     end
 
     def update_vm_properties_by_vm_mob(vm)
-      return vm if (@vm_prop.has_key?(vm.name))
+      return vm if !vm.ip_address.to_s.empty?
       dummy_sleep(1)
       @lock.synchronize do
         #TODO read vm info from FILE later

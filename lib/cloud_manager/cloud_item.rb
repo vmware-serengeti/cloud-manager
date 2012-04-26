@@ -31,6 +31,7 @@ module VHelper::CloudManager
     attr_accessor :mem
     attr_accessor :disk_type
     attr_accessor :disk_size
+    attr_accessor :disk_pattern
     attr_accessor :rack_id
     attr_accessor :template_id
     attr_accessor :affinity
@@ -40,12 +41,12 @@ module VHelper::CloudManager
         @mem = rp["memory"] || 512
         # FIXME disks only use the first storage info
         @disk_size =  rp["storage"]["size"] || 0
+        @disk_pattern = rp["storage"]["name_pattern"] 
         @disk_size *= DISK_CHANGE_TIMES
         @disk_type = rp["storage"]["type"] 
         @disk_type = 'shared' if @disk_type != 'local'
         @affinity = rp["affinity"] || "none"
-        @template_id = template_id
-        @template_id = rp["template_id"]if rp["template_id"]
+        @template_id = rp["template_id"] || template_id
         @rack_id = nil
       end
     end
@@ -54,7 +55,9 @@ module VHelper::CloudManager
   class VmGroupInfo
     attr_accessor :name
     attr_accessor :req_info  #class ResourceInfo
+    attr_reader   :vc_req
     attr_accessor :instances
+    attr_accessor :req_rps
     attr_accessor :vm_ids    #classes VmInfo
     def initialize(logger, rp=nil, template_id=nil)
       @logger = logger
@@ -63,6 +66,7 @@ module VHelper::CloudManager
       return unless rp
       @name = rp["name"]
       @instances = rp["instance_num"]
+      @req_rps = {}
     end
 
     def size
@@ -128,6 +132,9 @@ module VHelper::CloudManager
     attr_accessor :cluster_name
     attr_accessor :group_name
     attr_accessor :created
+    attr_accessor :rp_name
+    def succeed?;  ready?  end
+    def finished?; succeed? || !error_msg.to_s.empty? end
     
     # for provisioning
     attr_accessor :created_at
@@ -142,8 +149,20 @@ module VHelper::CloudManager
       "ERR: #{error_msg}"
     end
 
+    def datastores
+      data = {}
+      @disks.each_value { |disk|
+        if data.has_key?(disk.datastore_name) 
+          data[disk.datastore_name] += disk.size
+        else
+          data[disk.datastore_name] = disk.size
+        end
+      }
+      data.values
+    end
+
     def inspect
-      "name:#{@name} host:#{@hostname} ip:#{@ip_address} status:#{@status} created:#{@created} state:#{@power_state} #{@error_msg}\n"
+      "name:#{@name} host:#{@hostname} ip:#{@ip_address} status:#{@status} created:#{@created} state:#{@power_state} #{get_error_msg}\n"
     end
 
     def state; @power_state end
@@ -188,7 +207,6 @@ module VHelper::CloudManager
 
     def ready?
       @status == VM_STATE_DONE 
-    #  !ip_address.to_s.empty?
     end
   end
 

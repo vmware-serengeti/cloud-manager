@@ -57,13 +57,14 @@ module VHelper::CloudManager
     attr_accessor :clusters
     attr_accessor :vm_groups
     attr_accessor :vms
-
+    attr_reader :input_cluster_info
     attr_reader :action
 
-    attr_reader :vc_share_datastore_patten
-    attr_reader :vc_local_datastore_patten
+    attr_reader :vc_share_datastore_pattern
+    attr_reader :vc_local_datastore_pattern
     attr_reader :vc_req_datacenter
     attr_reader :vc_req_clusters
+    attr_reader :vc_req_rps
     attr_reader :allow_mixed_datastores
     attr_reader :racks
     attr_reader :need_abort
@@ -86,14 +87,10 @@ module VHelper::CloudManager
       @client = nil
       @success = false
       @finished = false
-end
+    end
 
     def add_deploying_vm(vm)
-      @vm_lock.synchronize {
-        return if !@preparing_vms.has_key?(vm.name)
-        @deploy_vms[vm.name] = vm
-        @preparing_vms.delete(vm.name)
-      }
+      mov_vm(vm, @preparing_vms, @deploy_vms)
     end
 
     def add_existed_vm(vm)
@@ -104,31 +101,40 @@ end
     end
 
     def existed_vm_move_to_finish(vm, options={})
+      mov_vm(vm, @existed_vms, @finished_vms)
+    end
+
+    def mov_vm(vm, src_vms, des_vms)
       @vm_lock.synchronize {
-        return if !@existed_vms.has_key?(vm.name)
-        @existed_vms.delete(vm.name)
-        @finished_vms[vm.name] = vm
+        return if !src_vms.has_key?(vm.name)
+        src_vms.delete(vm.name)
+        des_vms[vm.name] = vm
       }
     end
 
     def deploying_vm_move_to_existed(vm, options={})
       @logger.debug("deploy to existed vm")
-      @vm_lock.synchronize {
-        return if !@deploy_vms.has_key?(vm.name)
-        @deploy_vms.delete(vm.name)
-        @existed_vms[vm.name] = vm
-      }
+      mov_vm(vm, @deploy_vms, @existed_vms)
+    end
+
+    def req_clusters_rp_to_hash(a)
+      rps = {}
+      a.each {|v| rps[v["name"]] = v["vc_rps"]}
+      rps
     end
 
     def create_cloud_provider(cloud_provider)
       @name = cloud_provider["name"]
       @vc_req_datacenter = cloud_provider["vc_datacenter"]
       @vc_req_clusters = cloud_provider["vc_clusters"]
+      @vc_req_rps = req_clusters_rp_to_hash(@vc_req_clusters)
+      @logger.debug("Show clusters_req:#{@vc_req_rps}")
+
       @vc_address = cloud_provider["vc_addr"]
       @vc_username = cloud_provider["vc_user"]
       @vc_password = cloud_provider["vc_pwd"]
-      @vc_share_datastore_patten = cloud_provider["vc_shared_datastore_pattern"]
-      @vc_local_datastore_patten = cloud_provider["vc_local_datastore_pattern"]
+      @vc_share_datastore_pattern = cloud_provider["vc_shared_datastore_pattern"]
+      @vc_local_datastore_pattern = cloud_provider["vc_local_datastore_pattern"]
       @client_name = cloud_provider["cloud_adapter"] || "fog"
       @allow_mixed_datastores = nil
       @racks = nil
@@ -171,6 +177,7 @@ end
       # Connect to Cloud server
       #@cluster_name = cluster_info["name"]
       @logger.debug("Connect to Cloud Server #{@client_name} #{@vc_address} user:#{@vc_username}/#{vc_password}...")
+      @input_cluster_info = cluster_info
       @status = CLUSTER_CONNECT
       @client = ClientFactory.create(@client_name, @logger)
       @client.login(@vc_address, @vc_username, @vc_password)

@@ -16,12 +16,11 @@ module VHelper::CloudManager
             :vsphere_server => vc_addr,
             :vsphere_username => vc_user,
             :vsphere_password => vc_pass,
-       #     :vsphere_expected_pubkey_hash => '1bf5e752376a33c278ed2d2ee7e1fed8739ee7f24c233b89fed2fe69535646db'
         }
 
-          connection = Fog::Compute.new(info)
-          @logger.info("Use Fog, connect to cloud provider: #{cloud_server}, #{connection}")
-          @connection = connection
+        connection = Fog::Compute.new(info)
+        @logger.info("Use Fog, connect to cloud provider: #{cloud_server}, #{connection}")
+        @connection = connection
       end
     end
 

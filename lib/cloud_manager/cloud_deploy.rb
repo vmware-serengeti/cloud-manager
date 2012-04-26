@@ -3,7 +3,6 @@ module VHelper::CloudManager
     def cluster_deploy(cluster_changes, vm_placement, options={})
       #TODO add placement code here
 
-      thread_pool = nil
       @logger.debug("enter cluster_deploy")
       #thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
       @logger.debug("created thread pool")
@@ -31,7 +30,8 @@ module VHelper::CloudManager
             vm_clone(vm, :poweron => false)
           rescue => e
             @logger.debug("clone failed")
-            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+            vm.error_code = -1
+            vm.error_msg = "Clone vm:#{vm.name} failed. #{e}"
             #FIXME only handle duplicated issue.
             next
           end
@@ -41,6 +41,7 @@ module VHelper::CloudManager
           vm_reconfigure_disk(vm)
           @logger.debug("#{vm.name} finish reconfigure")
 
+          #Move deployed vm to existed queue
           vm_finish_deploy(vm)
         }
       }
@@ -62,6 +63,7 @@ module VHelper::CloudManager
           @logger.debug("#{vm.name} ip: #{vm.ip_address}")
           sleep(4)
         end
+        #TODO add ping progress to tested target vm is working
         vm.status = VM_STATE_DONE
         vm_finish(vm)
         @logger.debug("#{vm.name}: done")
