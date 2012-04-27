@@ -257,6 +257,13 @@ module VHelper::CloudManager
       host_mobs = @client.get_hosts_by_cs_mob(cluster_mob)
       group_each_by_threads(host_mobs, :callee=>"fetch hosts in cluster #{cluster.name}") { |host_mob|
         attr = @client.ct_mob_ref_to_attr_hash(host_mob, "HS")
+        connection_state   = attr["connection_state"]
+        if connection_state != 'connected'
+          @logger.debug("host #{attr["name"]} is not connected ")
+          next
+        end
+        @logger.debug("host #{attr["name"]} is connected.")
+
         host                    = Host.new
         host.cluster            = cluster
         host.datacenter         = cluster.datacenter
@@ -270,8 +277,7 @@ module VHelper::CloudManager
         host.cpu_limit          = attr["cpu_limit"].to_i
         host.used_mem           = attr["used_mem"].to_i
         host.used_cpu           = attr["used_cpu"].to_i
-        host.connection_state   = attr["connection_state"]
-        @logger.debug("host.connection_state:#{host.connection_state}")
+        host.connection_state   = connection_state
         host.mem_over_commit    = @mem_over_commit
         host.free_memory        = host.total_memory.to_i - host.used_mem.to_i
         host.unaccounted_memory = 0

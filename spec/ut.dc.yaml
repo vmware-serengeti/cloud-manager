@@ -45,6 +45,7 @@
       used_mem: 1200
       cpu_limit: 9000
       total_memory: 10000
+      connection_state: disconnected 
       datastores: *id1
 
     - name: host2
@@ -54,6 +55,7 @@
       used_mem: 1300
       total_memory: 12000
       cpu_limit: 8000
+      connection_state: connected 
       datastores: *id1
 
     - name: host3
@@ -63,6 +65,7 @@
       used_mem: 1100
       total_memory: 16000
       cpu_limit: 10000
+      connection_state: connected 
       datastores: *id1
 
   - name: Cluster2
@@ -91,6 +94,7 @@
       mem: 8192
       used_mem: 1200
       cpu_limit: 9000
+      connection_state: connected 
       total_memory: 10000
       datastores: *id2
 
@@ -100,5 +104,6 @@
       mem: 16000
       used_mem: 1300
       total_memory: 12000
+      connection_state: connected 
       cpu_limit: 8000
       datastores: *id2
