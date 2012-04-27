@@ -41,7 +41,7 @@ module VHelper::CloudManager
     end
 
     def vm_is_this_cluster?(vm_name)
-      result = get_from_vm_name(vm.name)
+      result = get_from_vm_name(vm_name)
       return false unless result
       return false unless (result[1] == @cluster_name)
       true

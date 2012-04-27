@@ -300,7 +300,7 @@ module VHelper::CloudManager
       vm_mobs.each do |vm_mob|
         #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
         vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
-        next if !@vhelper.vm_is_this_cluster(vm_existed["name"])
+        next if !@vhelper.vm_is_this_cluster?(vm_existed["name"])
 
         vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], @logger)
 
