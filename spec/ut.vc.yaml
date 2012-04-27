@@ -10,6 +10,7 @@ vc_clusters:
     vc_rps:
     - resource_pool1
     - resource_pool2
+    - resource_pool3
 vc_shared_datastore_pattern: [share, tta]
 vc_local_datastore_pattern: [local]
 cloud_adapter: ut

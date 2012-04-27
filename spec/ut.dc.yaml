@@ -17,6 +17,12 @@
       host_used_mem: 1000
       guest_used_mem: 1000
       limit_mem: 16000
+    - name: resource_pool3
+      mob: rs2
+      shares: 1500
+      host_used_mem: 1000
+      guest_used_mem: 1000
+      limit_mem: 11000
     datastores: &id1  #Size is KB
     - name: tta-ds
       mob: share-ds1

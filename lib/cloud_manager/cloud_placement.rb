@@ -56,7 +56,8 @@ module VHelper::CloudManager
       used_datastores.each { |datastore|
         fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk" 
         datastore[:datastore].unaccounted_space += datastore[:size].to_i
-        vm.disk_add(datastore[:size].to_i, fullpath)
+        disk = vm.disk_add(datastore[:size].to_i, fullpath)
+        disk.datastore_name = datastore[:datastore].name
       }
     end
 
