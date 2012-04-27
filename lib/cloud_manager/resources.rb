@@ -125,6 +125,7 @@ module VHelper::CloudManager
       end
     end
 
+    include VHelper::CloudManager::Parallel
     #########################################################
     # Begin Resource functions
     def initialize(client, vhelper, mem_over_commit = 1.0)
@@ -168,7 +169,7 @@ module VHelper::CloudManager
       clusters_req = @vhelper.vc_req_rps 
 
       clusters = {}
-      cluster_mobs.each do |cluster_mob|
+      group_each_by_threads(cluster_mobs, :callee=>"fetch cluster in datacenter #{datacenter.name}") { |cluster_mob|
         attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
         # chose cluster in cluster_names
         next unless clusters_req.key?(attr["name"])
@@ -215,7 +216,7 @@ module VHelper::CloudManager
         cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
         clusters[cluster.name] = cluster
-      end
+      }
       clusters
     end
 
@@ -254,7 +255,7 @@ module VHelper::CloudManager
     def fetch_hosts(cluster, cluster_mob)
       hosts = {}
       host_mobs = @client.get_hosts_by_cs_mob(cluster_mob)
-      host_mobs.each do |host_mob|
+      group_each_by_threads(host_mobs, :callee=>"fetch hosts in cluster #{cluster.name}") { |host_mob|
         attr = @client.ct_mob_ref_to_attr_hash(host_mob, "HS")
         host                    = Host.new
         host.cluster            = cluster
@@ -288,7 +289,7 @@ module VHelper::CloudManager
 
         host.vms = fetch_vms_by_host(cluster, host, host_mob)
         hosts[host.name] = host
-      end
+      }
       hosts
     end
 

@@ -68,7 +68,7 @@ module VHelper::CloudManager
     attr_accessor :image_id
 
     def get_error_msg
-      return "OK" if @error_msg.nil?
+      return "OK" if @error_msg.to_s.empty?
       "ERR: #{error_msg}"
     end
 

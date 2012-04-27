@@ -155,7 +155,7 @@ module VHelper::CloudManager
         dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
         @status = CLUSTER_DELETE 
         dc_resources.clusters.each_value { |cluster|
-          vm_map_by_threads(cluster.vms) { |vm|
+          map_each_by_threads(cluster.vms) { |vm|
             #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
             result = get_from_vm_name(vm.name)
             next unless result

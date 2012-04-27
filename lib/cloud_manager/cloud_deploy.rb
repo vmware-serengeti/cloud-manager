@@ -1,5 +1,7 @@
 module VHelper::CloudManager
   class VHelperCloud
+    include VHelper::CloudManager::Parallel
+
     def cluster_deploy(cluster_changes, vm_placement, options={})
       #TODO add placement code here
 
@@ -8,7 +10,7 @@ module VHelper::CloudManager
       @logger.debug("created thread pool")
       #Begin to parallel deploy vms
       cluster_changes.each { |group|
-        vm_group_by_threads(group) { |vm|
+        group_each_by_threads(group, :callee=>'deploy changes') { |vm|
           #TODO add change code here
           @logger.info("changing vm #{vm.pretty_inspect}")
           vm.status = VM_STATE_DONE
@@ -18,7 +20,7 @@ module VHelper::CloudManager
       @logger.info("Finish all changes")
 
       vm_placement.each { |group|
-        vm_group_by_threads(group) { |vm|
+        group_each_by_threads(group, :callee=>'deploy vms') { |vm|
           # Existed VM is same as will be deployed?
           if (!vm.error_msg.nil?)
             @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
@@ -49,7 +51,7 @@ module VHelper::CloudManager
       @logger.debug("wait all existed vms poweron and return their ip address")
       wait_thread = []
       @status = CLUSTER_WAIT_START
-      vm_map_by_threads(@existed_vms) { |vm|
+      map_each_by_threads(@existed_vms) { |vm|
         # Power On vm
         vm.status = VM_STATE_POWER_ON
         @logger.debug("vm:#{vm.name} power:#{vm.power_state}")
@@ -71,38 +73,6 @@ module VHelper::CloudManager
 
       @logger.info("Finish all deployments")
       "finished"
-    end
-
-    def vm_map_by_threads(map, options={})
-      work_thread = []
-      map.each_value do |vm|
-        work_thread << Thread.new(vm) do |vm| 
-          begin
-            yield vm 
-          rescue => e
-            @logger.debug("vm_map threads failed")
-            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
-          end
-        end
-      end
-      work_thread.each { |t| t.join }
-      @logger.info("##Finish change one vm_group")
-    end
-
-    def vm_group_by_threads(group, options={})
-      work_thread = []
-      group.each do |vm|
-        work_thread << Thread.new(vm) do |vm|
-          begin
-            yield vm 
-          rescue => e
-            @logger.debug("vm_group threads failed")
-            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
-          end
-        end
-      end
-      work_thread.each { |t| t.join }
-      @logger.info("##Finish change one vm_group")
     end
 
     def vm_deploy_group_pool(thread_pool, group, options={})

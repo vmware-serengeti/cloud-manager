@@ -1,4 +1,39 @@
 module VHelper::CloudManager
+  module Parallel
+    def map_each_by_threads(map, options={})
+      work_thread = []
+      map.each_value do |item|
+        work_thread << Thread.new(item) do |item| 
+          begin
+            yield item
+          rescue => e
+            @logger.debug("#{options[:callee]} map threads failed")
+            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+          end
+        end
+      end
+      work_thread.each { |t| t.join }
+      @logger.info("##Finish #{options[:callee]} one map")
+    end
+
+    def group_each_by_threads(group, options={})
+      work_thread = []
+      group.each do |item|
+        work_thread << Thread.new(item) do |item|
+          begin
+            yield item
+          rescue => e
+            @logger.debug("#{options[:callee]} group threads failed")
+            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+          end
+        end
+      end
+      work_thread.each { |t| t.join }
+      @logger.info("##Finish #{options[:callee]} group")
+    end
+  end
+
+
   class VHelperCloud
     VM_SPLIT_SIGN = '-'
     def gen_vm_name(cluster_name, group_name, num)
