@@ -1,4 +1,5 @@
 require "lib/cloud_manager/cloud_item"
+require "lib/cloud_manager/vm"
 require "lib/cloud_manager/utils"
 require "lib/cloud_manager/resources"
 require "lib/cloud_manager/vm_group"

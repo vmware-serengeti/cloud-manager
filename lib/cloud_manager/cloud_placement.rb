@@ -52,6 +52,7 @@ module VHelper::CloudManager
       vm.resource_pool_moid = cur_rp.mob
       vm.template_id = vm_group.req_info.template_id
       vm.rp_name = cur_rp.name
+      vm.rp_cluster_name = cur_rp.cluster.name
 
       used_datastores.each { |datastore|
         fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk" 
@@ -82,7 +83,7 @@ module VHelper::CloudManager
       @logger.debug("ERROR: #{msg}")
     end
 
-    def vm_group_placement(cluster, vm_group, group_place, hosts, cur_rp)
+    def vm_group_placement(vm_group, group_place, hosts, cur_rp)
       vm_group.instances.times { |num|
         return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
         vm_name = gen_vm_name(@cluster_name, vm_group.name, num)
@@ -162,7 +163,7 @@ module VHelper::CloudManager
           need_next_rp = nil
           hosts = hosts_prepare_in_cluster(cluster)
           loop_resource(place_rp) {|resource_pool|
-            need_next_rp = vm_group_placement(cluster, vm_group, group_place, hosts, resource_pool)
+            need_next_rp = vm_group_placement(vm_group, group_place, hosts, resource_pool)
             next if need_next_rp
             break
           }

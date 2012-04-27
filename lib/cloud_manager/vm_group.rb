@@ -51,7 +51,47 @@ module VHelper::CloudManager
       #@logger.debug("res_group:#{vm_groups}")
       vm_groups
     end
-
   end
+
+  class VmGroupInfo
+    attr_accessor :name
+    attr_accessor :req_info  #class ResourceInfo
+    attr_reader   :vc_req
+    attr_accessor :instances
+    attr_accessor :req_rps
+    attr_accessor :vm_ids    #classes VmInfo
+    def initialize(logger, rp=nil, template_id=nil)
+      @logger = logger
+      @vm_ids = {}
+      @req_info = ResourceInfo.new(rp, template_id)
+      return unless rp
+      @name = rp["name"]
+      @instances = rp["instance_num"]
+      @req_rps = {}
+    end
+
+    def size
+      vm_ids.size
+    end
+
+    def del_vm(vm_mob)
+      vm_info = find_vm(vm_mob)
+      return nil unless vm_info
+      vm_info.delete_all_disk
+
+      @vm_ids.delete(vm_mob)
+    end
+    def add_vm(vm_info)
+      if @vm_ids[vm_info.mob].nil?
+        @vm_ids[vm_info.mob] = vm_info
+      else
+        @logger.debug("#{vm_info.name} is existed.")
+      end
+    end
+    def find_vm(vm_mob)
+      @vm_ids[vm_mob]
+    end
+  end
+
 end
 

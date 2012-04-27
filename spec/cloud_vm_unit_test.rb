@@ -42,11 +42,12 @@ end
 begin
   puts "Please input \n"
   puts "\t1-->Create in UT\n"
-  puts "\t2-->Create in wdc\n"
-  puts "\t3-->Delete in UT\n"
-  puts "\t4-->Delete in wdc\n"
+  puts "\t2-->Delete in UT\n"
+  puts "\t3-->List all vm in UT\n"
+  puts "\t11-->Create in wdc\n"
+  puts "\t12-->Delete in wdc\n"
+  puts "\t13-->Delete all UT vm\n"
   puts "\t5-->List all vm in UT\n"
-  puts "\t10-->Delete all UT vm\n"
   puts "\t11-->DEL all vm-XXXX vm \n"
   puts "\t12-->show all VMs in vsPhere\n"
 
@@ -103,12 +104,8 @@ begin
     p "Finish delete"
     puts("delete ut process:#{cloud.get_progress.inspect}")
   when 13 then #List vms in Cluster
-    vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
-    cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
-    info["cluster_definition"] = cluster_req_1
-    info["cloud_provider"] = vcenter
-    puts("cluster_def : #{cluster_req_1}")
-    puts("provider: #{vcenter}")
+    puts "## List Cluster in WDC"
+    info = wdc_test_env
     result = VHelper::CloudManager::Manager.list_vms_cluster(info)
     puts("##result:#{result.pretty_inspect}")
   when 10 then #DEL all XXXX vm

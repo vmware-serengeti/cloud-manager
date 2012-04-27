@@ -8,6 +8,9 @@ vc_clusters:
   - name: cluster-fog
     vc_rps: 
     - resource_pool1
+  - name: cluster-ironfan
+    vc_rps:
+    - rp2-res-manager
 vc_shared_datastore_pattern: ["Enclosure"]
 vc_local_datastore_pattern: ["local"]
 cloud_adapter: fog

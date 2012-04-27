@@ -174,13 +174,13 @@ module VHelper::CloudManager
         next unless clusters_req.key?(attr["name"])
 
         @logger.debug("Use cluster :#{attr["name"]} and checking resource pools")
-        resource_pools = fetch_resource_pool(cluster_mob, clusters_req[attr["name"]])
+        cluster                     = Cluster.new
+        resource_pools = fetch_resource_pool(cluster, cluster_mob, clusters_req[attr["name"]])
         if resource_pools.empty?
           @logger.debug("Do not find any reqired resources #{clusters_req[attr["name"]]} in cluster :#{attr["name"]}")
           next
         end
 
-        cluster                     = Cluster.new
         cluster.mem_over_commit     = @mem_over_commit
         cluster.mob                 = attr["mo_ref"]
         cluster.name                = attr["name"]
@@ -219,7 +219,7 @@ module VHelper::CloudManager
       clusters
     end
 
-    def fetch_resource_pool(cluster_mob, resource_pool_names)
+    def fetch_resource_pool(cluster, cluster_mob, resource_pool_names)
       resource_pool_mobs = @client.get_rps_by_cs_mob(cluster_mob)
       resource_pools = {}
 
@@ -237,6 +237,7 @@ module VHelper::CloudManager
         rp.config_mem     = attr["config_mem"]
         rp.rev_used_mem   = attr["rev_used_mem"]
         rp.free_memory = rp.limit_mem.to_i
+        rp.cluster        = cluster
         if rp.limit_mem.to_i != -1
           rp.free_memory  = rp.limit_mem - rp.host_used_mem - rp.guest_used_mem
         end

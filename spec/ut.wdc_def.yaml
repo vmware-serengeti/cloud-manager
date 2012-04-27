@@ -2,6 +2,10 @@
 name: vhelper
 channel_id: provsion
 template_id: centos58-x64
+vc_clusters: 
+- name: cluster-fog
+  vc_rps: 
+  - resource_pool1
 #template_id: centos-5.7-template
 groups:
 - name: NameNode 
@@ -18,5 +22,9 @@ groups:
   storage:
     type: share
     size: 30
+  vc_clusters: 
+  - name: cluster-ironfan
+    vc_rps:
+    - rp2-res-manager
   network: CFNetwork
   instance_num: 1
