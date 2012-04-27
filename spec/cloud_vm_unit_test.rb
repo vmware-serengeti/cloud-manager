@@ -56,7 +56,7 @@ begin
   puts "You select #{opt}"
   case opt
   when 1 then
-    p "##Test UT"
+    p "##Create Test UT"
     info = ut_test_env
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.finished?
@@ -67,7 +67,20 @@ begin
     puts("ut finished")
     progress = cloud.get_progress
     puts("ut process:#{progress.inspect}")
-  when 2 then
+  when 2 then #Delete Cluster
+    puts "## Delete Cluster in UT"
+    info = ut_test_env
+    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => true)
+    while !cloud.finished?
+      puts("delete ut process:#{cloud.get_progress}")
+      sleep(1)
+    end
+  when 3 then #List vms in Cluster
+    puts("##List all vm in UT")
+    info = ut_test_env
+    result = VHelper::CloudManager::Manager.list_vms_cluster(info)
+    puts("##result:#{result.pretty_inspect}")
+  when 11 then
     puts "##Test WDC"
     info = wdc_test_env
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
@@ -79,15 +92,7 @@ begin
     puts("ut finished")
     progress = cloud.get_progress
     puts("ut process:#{progress.inspect}")
-  when 3 then #Delete Cluster
-    puts "## Delete Cluster in UT"
-    info = ut_test_env
-    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => true)
-    while !cloud.finished?
-      puts("delete ut process:#{cloud.get_progress}")
-      sleep(1)
-    end
-  when 4 then #Delete Cluster
+  when 12 then #Delete Cluster
     puts "## Delete Cluster in WDC"
     info = wdc_test_env
     cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => false)
@@ -97,7 +102,7 @@ begin
     end
     p "Finish delete"
     puts("delete ut process:#{cloud.get_progress.inspect}")
-  when 5 then #List vms in Cluster
+  when 13 then #List vms in Cluster
     vcenter = YAML.load(File.open(WDC_CONFIG_FILE))
     cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
     info["cluster_definition"] = cluster_req_1

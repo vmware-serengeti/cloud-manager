@@ -65,3 +65,40 @@
       cpu_limit: 10000
       datastores: *id1
 
+  - name: Cluster2
+    mob: cs2
+    resource_pool:
+    - name: resource_pool2
+      mob: rs12
+      shares: 2000
+      host_used_mem: 1000
+      guest_used_mem: 1000
+      limit_mem: 16000
+    datastores: &id2  #Size is KB
+    - name: tta-ds-2
+      mob: share-ds1
+      freeSpace: 210000
+      maxSpace: 400000
+    - name: share-dsC
+      mob: share-ds2
+      freeSpace: 200000
+      maxSpace: 300000
+
+    hosts:
+    - name: host10
+      mob: hs10
+      cpu: 4 
+      mem: 8192
+      used_mem: 1200
+      cpu_limit: 9000
+      total_memory: 10000
+      datastores: *id2
+
+    - name: host11
+      mob: hs11
+      cpu: 4 
+      mem: 16000
+      used_mem: 1300
+      total_memory: 12000
+      cpu_limit: 8000
+      datastores: *id2

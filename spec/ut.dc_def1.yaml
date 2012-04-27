@@ -20,7 +20,7 @@ groups:
   network: CFNetwork
   instance_num: 5
   vc_clusters:
-  - name: Cluster1
+  - name: Cluster2
     vc_rps:
     - resource_pool2
 - name: group2

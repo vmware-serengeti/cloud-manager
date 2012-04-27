@@ -159,12 +159,12 @@ module VHelper::CloudManager
           data[disk.datastore_name] = disk.size
         end
       }
-      data.each {|k, v| ds << {:name=>k, :size=>v/DISK_CHANGE_TIMES}}
+      data.each {|k, v| ds << {:name=>k, :size=>v/ResourceInfo::DISK_CHANGE_TIMES}}
       ds
     end
 
     def inspect
-      "name:#{@name} host:#{@hostname} ip:#{@ip_address} status:#{@status} created:#{@created} state:#{@power_state} #{get_error_msg}\n"
+      "#{to_hash.pretty_inspect} #{get_error_msg}\n"
     end
 
     def state; @power_state end
@@ -190,6 +190,7 @@ module VHelper::CloudManager
 
     def to_hash
       attrs = {}
+      attrs[:name] = @name
       attrs[:hostname] = @hostname
       attrs[:ip_address] = @ip_address
       attrs[:status] = @status
@@ -201,10 +202,11 @@ module VHelper::CloudManager
       attrs[:created] = @created
       attrs[:deleted] = false
 
-      attrs[:error_code] = vm.error_code
-      attrs[:error_msg] = vm.error_msg
+      attrs[:error_code] = @error_code
+      attrs[:error_msg] = @error_msg
       attrs[:datastores] = datastores
       attrs[:vc_clusters] = {:name=>@cluster_name, :vc_rp=>@rp_name}
+      attrs
     end
 
     def disk_add(size, fullpath, unit_number = 0)
