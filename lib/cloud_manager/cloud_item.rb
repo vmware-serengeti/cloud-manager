@@ -151,6 +151,7 @@ module VHelper::CloudManager
 
     def datastores
       data = {}
+      ds = []
       @disks.each_value { |disk|
         if data.has_key?(disk.datastore_name) 
           data[disk.datastore_name] += disk.size
@@ -158,7 +159,8 @@ module VHelper::CloudManager
           data[disk.datastore_name] = disk.size
         end
       }
-      data.values
+      data.each {|k, v| ds << {:name=>k, :size=>v/DISK_CHANGE_TIMES}}
+      ds
     end
 
     def inspect
@@ -184,6 +186,25 @@ module VHelper::CloudManager
 
     def get_create_progress
       VM_CREATE_PROCESS[@status] || 0
+    end
+
+    def to_hash
+      attrs = {}
+      attrs[:hostname] = @hostname
+      attrs[:ip_address] = @ip_address
+      attrs[:status] = @status
+
+      attrs[:finished] = ready? # FIXME should use 'vm.finished?'
+      attrs[:succeed] = ready? # FIXME should use 'vm.succeed?'
+      attrs[:progress] = get_create_progress
+
+      attrs[:created] = @created
+      attrs[:deleted] = false
+
+      attrs[:error_code] = vm.error_code
+      attrs[:error_msg] = vm.error_msg
+      attrs[:datastores] = datastores
+      attrs[:vc_clusters] = {:name=>@cluster_name, :vc_rp=>@rp_name}
     end
 
     def disk_add(size, fullpath, unit_number = 0)

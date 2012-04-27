@@ -76,6 +76,11 @@ module VHelper::CloudManager
       hosts
     end
 
+    def set_vm_error_msg(vm, msg)
+      vm.error_msg = msg
+      @logger.debug("ERROR: #{msg}")
+    end
+
     def vm_group_placement(vm_group, group_place, hosts, cur_rp)
       vm_group.instances.times { |num|
         return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
@@ -103,8 +108,7 @@ module VHelper::CloudManager
           sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
 
           if sys_datastore.nil?
-            vm.error_msg = "can not find suitable sys datastore in host #{host.name}."
-            @logger.debug("#{vm.error_msg}")
+            set_vm_error_msg(vm, "can not find suitable sys datastore in host #{host.name}.")
             next
           end
           @logger.debug("get sys datastore :#{sys_datastore.name}")
@@ -114,8 +118,7 @@ module VHelper::CloudManager
           used_datastores = get_suitable_datastores(host.place_share_datastores, req_size)
           if used_datastores.empty?
             #TODO no disk space for this vm
-            vm.error_msg = "No enough disk for #{vm_name}."
-            @logger.debug("ERROR: #{vm.error_msg}")
+            set_vm_error_msg(vm, "No enough disk for #{vm_name}.")
             next
           end
           #Find suitable Host and datastores
@@ -126,8 +129,7 @@ module VHelper::CloudManager
         }
         if vm.error_msg
           #NO resource for this vm_group
-          vm.error_msg << "The group also has no resources to alloced"
-          @logger.debug("vm can not get resources :#{vm.error_msg} ")
+          set_vm_error_msg(vm, "vm can not get resources: #{vm.error_msg} The group also has no resources to alloced")
           #Add failure vm to failure_vms que
           @vm_lock.synchronize { @failure_vms[vm.name] = vm}
         else

@@ -19,6 +19,11 @@ groups:
     size: 20    #SIZE in GB
   network: CFNetwork
   instance_num: 5
+  vc_clusters:
+  - name: Cluster1
+    vc_rps:
+    - resource_pool1
+    - resource_pool2
 - name: group2
   cpu: 2
   memory: 2048
