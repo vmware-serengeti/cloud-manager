@@ -300,6 +300,8 @@ module VHelper::CloudManager
       vm_mobs.each do |vm_mob|
         #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
         vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
+        next if !@vhelper.vm_is_this_cluster(vm_existed["name"])
+
         vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], @logger)
 
         #update vm info with properties
@@ -308,7 +310,6 @@ module VHelper::CloudManager
 
         #update disk info
         #@logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
-        #@logger.debug("vm_:#{vm.pretty_inspect}")
         disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
         disk_attrs.each do |attr|
           disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 

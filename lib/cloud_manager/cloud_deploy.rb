@@ -1,11 +1,20 @@
 module VHelper::CloudManager
   class VHelperCloud
+    DEPLOY_GROUP_PARALLEL = "group_parallel"
+    DEPLOY_GROUP_ORDER    = "group_order"
+    DEPLOY_GROUP_POLICY   = [DEPLOY_GROUP_PARALLEL, DEPLOY_GROUP_ORDER]
+
     include VHelper::CloudManager::Parallel
 
     def cluster_deploy(cluster_changes, vm_placement, options={})
       #TODO add placement code here
 
-      @logger.debug("enter cluster_deploy")
+      policy = @input_cluster_info['deploy_policy'] || DEPLOY_GROUP_POLICY.first 
+      policy.downcase!
+      policy = DEPLOY_GROUP_POLICY.first if !DEPLOY_GROUP_POLICY.include?(policy)
+      
+      @logger.debug("enter cluster_deploy policy: #{policy}") 
+
       #thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
       @logger.debug("created thread pool")
       #Begin to parallel deploy vms
@@ -19,34 +28,15 @@ module VHelper::CloudManager
       }
       @logger.info("Finish all changes")
 
-      vm_placement.each { |group|
-        group_each_by_threads(group, :callee=>'deploy vms') { |vm|
-          # Existed VM is same as will be deployed?
-          if (!vm.error_msg.nil?)
-            @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
-            next
-          end
-          vm.status = VM_STATE_CLONE
-          vm_begin_create(vm)
-          begin
-            vm_clone(vm, :poweron => false)
-          rescue => e
-            @logger.debug("clone failed")
-            vm.error_code = -1
-            vm.error_msg = "Clone vm:#{vm.name} failed. #{e}"
-            #FIXME only handle duplicated issue.
-            next
-          end
-          @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
-
-          vm.status = VM_STATE_RECONFIG
-          vm_reconfigure_disk(vm)
-          @logger.debug("#{vm.name} finish reconfigure")
-
-          #Move deployed vm to existed queue
-          vm_finish_deploy(vm)
+      if policy == DEPLOY_GROUP_ORDER
+        vm_placement.each { |group|
+          deploy_vm_group(group)
         }
-      }
+      else
+        group_each_by_threads(vm_placement) { |group|
+          deploy_vm_group(group)
+        }
+      end
 
       @logger.debug("wait all existed vms poweron and return their ip address")
       wait_thread = []
@@ -73,6 +63,35 @@ module VHelper::CloudManager
 
       @logger.info("Finish all deployments")
       "finished"
+    end
+
+    def deploy_vm_group(group)
+      group_each_by_threads(group, :callee=>'deploy vms') { |vm|
+        # Existed VM is same as will be deployed?
+        if (!vm.error_msg.nil?)
+          @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
+          next
+        end
+        vm.status = VM_STATE_CLONE
+        vm_begin_create(vm)
+        begin
+          vm_clone(vm, :poweron => false)
+        rescue => e
+          @logger.debug("clone failed")
+          vm.error_code = -1
+          vm.error_msg = "Clone vm:#{vm.name} failed. #{e}"
+          #FIXME only handle duplicated issue.
+          next
+        end
+        @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
+
+        vm.status = VM_STATE_RECONFIG
+        vm_reconfigure_disk(vm)
+        @logger.debug("#{vm.name} finish reconfigure")
+
+        #Move deployed vm to existed queue
+        vm_finish_deploy(vm)
+      }
     end
 
     def vm_deploy_group_pool(thread_pool, group, options={})

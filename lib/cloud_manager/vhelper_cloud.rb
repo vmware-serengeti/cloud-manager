@@ -157,9 +157,7 @@ module VHelper::CloudManager
         dc_resources.clusters.each_value { |cluster|
           map_each_by_threads(cluster.vms) { |vm|
             #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
-            result = get_from_vm_name(vm.name)
-            next unless result
-            next unless (result[1] == @cluster_name)
+            next if !vm_is_this_cluster?(vm.name)
             #@logger.debug("vm split to #{@cluster_name}::#{result[2]}::#{result[3]}")
             @logger.debug("delete vm : #{vm.name}")
             @client.vm_destroy(vm)

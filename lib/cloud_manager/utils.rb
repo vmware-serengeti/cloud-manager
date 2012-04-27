@@ -40,6 +40,13 @@ module VHelper::CloudManager
       return "#{cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"
     end
 
+    def vm_is_this_cluster?(vm_name)
+      result = get_from_vm_name(vm.name)
+      return false unless result
+      return false unless (result[1] == @cluster_name)
+      true
+    end
+
     def get_from_vm_name(vm_name, options={})
       return /([\w\s\d]+)#{VM_SPLIT_SIGN}([\w\s\d]+)#{VM_SPLIT_SIGN}([\d]+)/.match(vm_name)
     end
