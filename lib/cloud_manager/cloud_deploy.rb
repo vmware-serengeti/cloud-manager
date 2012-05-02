@@ -7,8 +7,6 @@ module VHelper::CloudManager
     include VHelper::CloudManager::Parallel
 
     def cluster_deploy(cluster_changes, vm_placement, options={})
-      #TODO add placement code here
-
       policy = @input_cluster_info['deploy_policy'] || DEPLOY_GROUP_POLICY.first 
       policy.downcase!
       policy = DEPLOY_GROUP_POLICY.first if !DEPLOY_GROUP_POLICY.include?(policy)
@@ -28,15 +26,9 @@ module VHelper::CloudManager
       }
       @logger.info("Finish all changes")
 
-      if policy == DEPLOY_GROUP_ORDER
-        vm_placement.each { |group|
+      group_each_by_threads(vm_placement, :order=>(policy==DEPLOY_GROUP_ORDER)) { |group|
           deploy_vm_group(group)
-        }
-      else
-        group_each_by_threads(vm_placement) { |group|
-          deploy_vm_group(group)
-        }
-      end
+      }
 
       @logger.debug("wait all existed vms poweron and return their ip address")
       wait_thread = []

@@ -6,17 +6,25 @@ module VHelper::CloudManager
 
     def group_each_by_threads(group, options={})
       work_thread = []
-      group.each { |item|
-        work_thread << Thread.new(item) { |item|
-          begin
-            yield item
-          rescue => e
-            @logger.debug("#{options[:callee]} threads failed")
-            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
-          end
+      if options[:order]
+        #serial method
+        @logger.debug("#{options[:callee]}run in serial model")
+        group.each { |item| yield item }
+      else
+        #paralleled method
+        @logger.debug("#{options[:callee]}run in paralleled model")
+        group.each { |item|
+          work_thread << Thread.new(item) { |item|
+            begin
+              yield item
+            rescue => e
+              @logger.debug("#{options[:callee]} threads failed")
+              @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+            end
+          }
         }
-      }
-      work_thread.each { |t| t.join }
+        work_thread.each { |t| t.join }
+      end
       @logger.info("##Finish #{options[:callee]}")
     end
 

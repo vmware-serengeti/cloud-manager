@@ -46,10 +46,7 @@ begin
   puts "\t3-->List all vm in UT\n"
   puts "\t11-->Create in wdc\n"
   puts "\t12-->Delete in wdc\n"
-  puts "\t13-->Delete all UT vm\n"
-  puts "\t5-->List all vm in UT\n"
-  puts "\t11-->DEL all vm-XXXX vm \n"
-  puts "\t12-->show all VMs in vsPhere\n"
+  puts "\t13-->list all vm in wdc\n"
 
   opt = gets.chomp
   opt = opt.to_i
@@ -84,7 +81,7 @@ begin
   when 11 then
     puts "##Test WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
     while !cloud.finished?
       progress = cloud.get_progress
       puts("ut process:#{progress.inspect}")
@@ -108,8 +105,6 @@ begin
     info = wdc_test_env
     result = VHelper::CloudManager::Manager.list_vms_cluster(info)
     puts("##result:#{result.pretty_inspect}")
-  when 10 then #DEL all XXXX vm
-  when 11 then #Show All vm
   when 100 then #show YAML file
     p "## Test ut.dc.yaml\n"
     CONFIG_FILE = "../test/ut.dc.yaml"

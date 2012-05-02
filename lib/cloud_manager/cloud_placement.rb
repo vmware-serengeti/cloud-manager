@@ -53,6 +53,7 @@ module VHelper::CloudManager
       vm.template_id = vm_group.req_info.template_id
       vm.rp_name = cur_rp.name
       vm.rp_cluster_name = cur_rp.cluster.name
+      cur_rp.used_counter += 1
 
       used_datastores.each { |datastore|
         fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk" 
@@ -131,7 +132,8 @@ module VHelper::CloudManager
         }
         if vm.error_msg
           #NO resource for this vm_group
-          set_vm_error_msg(vm, "vm can not get resources: #{vm.error_msg} The group also has no resources to alloced")
+          set_vm_error_msg(vm, "vm can not get resources: #{vm.error_msg} \n"\
+                           "The group also has no resources to alloced rest #{vm_group.instances - num} vm")
           #Add failure vm to failure_vms que
           #@vm_lock.synchronize { @failure_vms[vm.name] = vm}
           return 'next rp'
@@ -142,6 +144,11 @@ module VHelper::CloudManager
         end
       }
       nil
+    end
+
+    #Select best placement order
+    def set_best_placement_rp_list!(rp_list)
+      rp_list.sort! {|x, y| x.used_counter <=> y.used_counter }
     end
 
     def cluster_placement(dc_resource, vm_groups_input, vm_groups_existed, cluster_info)
@@ -159,9 +166,11 @@ module VHelper::CloudManager
           cluster = dc_resource.clusters[cluster_name]
           cluster_resource_pools = cluster.resource_pools
           place_rp = cluster_resource_pools.select {|k, v| rps.include?(k)}.values
-
           need_next_rp = nil
           hosts = hosts_prepare_in_cluster(cluster)
+
+          set_best_placement_rp_list!(place_rp)
+
           loop_resource(place_rp) {|resource_pool|
             need_next_rp = vm_group_placement(vm_group, group_place, hosts, resource_pool)
             next if need_next_rp
@@ -169,6 +178,10 @@ module VHelper::CloudManager
           }
           break unless need_next_rp
         }
+        if need_next_rp
+          ## can not alloc vm_group anymore
+          #TODO add code here
+        end
         vm_placement << group_place
       }
 
@@ -177,7 +190,7 @@ module VHelper::CloudManager
 
     def loop_resource(res)
       while (!res.empty?)
-        if !yield res[0]
+        if !yield res.first
           res.shift
         end
         res.rotate!

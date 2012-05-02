@@ -81,11 +81,15 @@ module VHelper::CloudManager
       attr_accessor :config_mem
       attr_accessor :cluster
       attr_accessor :rev_used_mem
+      attr_accessor :used_counter
       def real_free_memory
         @free_memory - @unaccounted_memory
       end
       def inspect
         "<Resource Pool: #{@mob} / #{@name}, #{@real_free_memory}MB limit:#{@limit_mem}MB in #{@cluster.inspect}>"
+      end
+      def initialize
+        @used_counter = 0
       end
     end
 
