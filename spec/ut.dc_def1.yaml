@@ -7,7 +7,7 @@ groups:
   cpu: 2
   memory: 1024
   storage:
-    type: share
+    type: local
     size: 30
   network: CFNetwork
   instance_num: 2
@@ -15,7 +15,7 @@ groups:
   cpu: 2
   memory: 1024
   storage:
-    type: share
+    type: local
     size: 20    #SIZE in GB
   network: CFNetwork
   instance_num: 5

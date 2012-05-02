@@ -28,14 +28,15 @@ module VHelper::CloudManager
     def get_suitable_datastores(datastores, req_size)
       datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
       used_datastores = []
-      datastores.each do |datastore|
+      loop_resource(datastores) { |datastore|
+#      datastores.each { |datastore|
         next if datastore.real_free_space < REMAIDER_DISK_SIZE
         free_size = datastore.real_free_space - REMAIDER_DISK_SIZE
         free_size = req_size if free_size > req_size 
         used_datastores << {:datastore => datastore, :size=>free_size}
         req_size -= free_size.to_i
         return used_datastores if req_size.to_i <=0 
-      end
+      }
       []
     end
 
@@ -57,6 +58,7 @@ module VHelper::CloudManager
 
       used_datastores.each { |datastore|
         fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk" 
+        @logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}")
         datastore[:datastore].unaccounted_space += datastore[:size].to_i
         disk = vm.disk_add(datastore[:size].to_i, fullpath)
         disk.datastore_name = datastore[:datastore].name
@@ -105,7 +107,6 @@ module VHelper::CloudManager
             next
           end
           #The host's memory is suitable for this VM
-          host.place_share_datastores.rotate!
 
           #Get the sys_datastore for clone
           sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
@@ -118,13 +119,18 @@ module VHelper::CloudManager
 
           #Get the datastore for this vm
           req_size = vm_group.req_info.disk_size
-          used_datastores = get_suitable_datastores(host.place_share_datastores, req_size)
+          place_datastores = host.place_share_datastores
+          place_datastores = host.place_local_datastores if vm_group.req_info.disk_type == DISK_TYPE_LOCAL
+          used_datastores = get_suitable_datastores(place_datastores, req_size)
           if used_datastores.empty?
             #TODO no disk space for this vm
             set_vm_error_msg(vm, "No enough disk for #{vm_name}.")
             next
           end
           #Find suitable Host and datastores
+          host.place_share_datastores.rotate!
+          @logger.debug("datastores: #{place_datastores.pretty_inspect}")
+          place_datastores.rotate!
           assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
           vm.error_msg = nil
           ## RR for next Host

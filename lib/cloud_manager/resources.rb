@@ -27,7 +27,10 @@ module VHelper::CloudManager
       end
 
       def inspect
-        "<Datastore: #{@mob} / #{@name} size(#{@real_free_space} / #{@free_space} / #{@total_space}>\n"
+        "<Datastore: #{@mob} / #{@name} size(#{real_free_space} / #{@free_space} / #{@total_space}>"
+      end
+      def initialize
+        @unaccounted_space = 0
       end
     end
 
@@ -86,7 +89,7 @@ module VHelper::CloudManager
         @free_memory - @unaccounted_memory
       end
       def inspect
-        "<Resource Pool: #{@mob} / #{@name}, #{@real_free_memory}MB limit:#{@limit_mem}MB in #{@cluster.inspect}>"
+        "<Resource Pool: #{@mob} / #{@name}, #{real_free_memory}MB limit:#{@limit_mem}MB in #{@cluster.inspect}>"
       end
       def initialize
         @used_counter = 0
@@ -122,7 +125,7 @@ module VHelper::CloudManager
       end
 
       def inspect
-        msg = "<Host: #{@mob} / #{@name}, #{@real_free_memory}/#{@free_memory}/#{@total_memory}>, vm #{@vms.size}\n datastores:\n"
+        msg = "<Host: #{@mob} / #{@name}, #{real_free_memory}/#{@free_memory}/#{@total_memory}>, vm #{@vms.size}\n datastores:\n"
         share_datastores.each_value {|datastore|msg<<"share "<<datastore.inspect}
         local_datastores.each_value {|datastore|msg<<"local "<<datastore.inspect}
         msg

@@ -36,6 +36,15 @@
       mob: share-ds3
       freeSpace: 160000
       maxSpace: 200000
+    - name: local-ds1A
+      mob: local-ds1A
+      freeSpace: 1600000
+      maxSpace: 2000000
+    - name: local-ds1B
+      mob: local-ds1B
+      freeSpace: 1000000
+      maxSpace: 2000000
+
 
     hosts:
     - name: host1
@@ -47,7 +56,6 @@
       total_memory: 10000
       connection_state: disconnected 
       datastores: *id1
-
     - name: host2
       mob: hs2
       cpu: 4 
@@ -67,7 +75,7 @@
       cpu_limit: 10000
       connection_state: connected 
       datastores: *id1
-
+    
   - name: Cluster2
     mob: cs2
     resource_pool:
