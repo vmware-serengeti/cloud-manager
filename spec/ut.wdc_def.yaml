@@ -4,7 +4,7 @@ channel_id: provsion
 template_id: IP_Mgr
 networking:
   - port_group: wdc-vhadp-pub2
-    type: static
+    type: dhcp
     ip:
     - "10.141.72.61-10.141.72.70"
     netmask: "255.255.254.0"
@@ -21,14 +21,14 @@ groups:
   memory: 1024
   storage:
     type: local
-    size: 1000
+    size: 10
   network: CFNetwork
-  instance_num: 1
+  instance_num: 2
 - name: DataNode
   cpu: 1
   memory: 2048
   storage:
     type: local
-    size: 1000
+    size: 30
   network: CFNetwork
-  instance_num: 1
+  instance_num: 4

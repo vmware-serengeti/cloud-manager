@@ -11,7 +11,7 @@ vc_clusters:
 #  - name: cluster-ironfan
 #    vc_rps:
 #    - rp2-res-manager
-vc_shared_datastore_pattern: ["h06-ds01"]
+vc_shared_datastore_pattern: ["h06-ds0[1]"]
 vc_local_datastore_pattern: ["h06-ds0[23456789]"]
 cloud_adapter: fog
 

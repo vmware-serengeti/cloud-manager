@@ -2,8 +2,8 @@ module VHelper::CloudManager
   class VHelperCloud
     ############################################################
     # Only RR for rps/hosts/datastores selected
-    REMAIDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 20
-    HOST_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 16
+    REMAIDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 8
+    HOST_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 4
 
     def is_suitable_resource_pool?(rp, req_info)
       @logger.debug("limit:#{rp.limit_mem},real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
@@ -126,7 +126,7 @@ module VHelper::CloudManager
           used_datastores = get_suitable_datastores(place_datastores, req_size)
           if used_datastores.empty?
             #TODO no disk space for this vm
-            set_vm_error_msg(vm, "No enough disk for #{vm_name}.")
+            set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}")
             next
           end
           #Find suitable Host and datastores
