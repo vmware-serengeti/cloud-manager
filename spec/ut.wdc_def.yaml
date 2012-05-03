@@ -21,7 +21,7 @@ groups:
   memory: 1024
   storage:
     type: local
-    size: 20
+    size: 1000
   network: CFNetwork
   instance_num: 1
 - name: DataNode
@@ -29,6 +29,6 @@ groups:
   memory: 2048
   storage:
     type: local
-    size: 30
+    size: 1000
   network: CFNetwork
   instance_num: 1

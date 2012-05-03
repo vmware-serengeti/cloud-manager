@@ -85,6 +85,7 @@ module VHelper::CloudManager
 
         #Move deployed vm to existed queue
         vm_finish_deploy(vm)
+        #TODO add reflush vm info
       }
     end
 

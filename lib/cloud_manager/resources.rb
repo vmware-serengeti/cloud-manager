@@ -349,10 +349,10 @@ module VHelper::CloudManager
 
         #@logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
 
-        datastore.free_space        = attr["freeSpace"]
-        datastore.total_space       = attr["maxSpace"]
+        datastore.free_space        = attr["freeSpace"].to_i / (1024 *1024)
+        datastore.total_space       = attr["maxSpace"].to_i / (1024*1024)
         datastore.unaccounted_space = 0
-        datastores[datastore.name] = datastore
+        datastores[datastore.name]  = datastore
       }
       datastores
     end
