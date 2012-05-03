@@ -28,6 +28,23 @@ module VHelper::CloudManager
       @logger.info("##Finish #{options[:callee]}")
     end
 
+    def vm_deploy_group_pool(thread_pool, group, options={})
+      thread_pool.wrap { |pool|
+        group.each { |vm|
+          @logger.debug("enter : #{vm.pretty_inspect}")
+          pool.process {
+            begin
+              yield(vm)
+            rescue
+              #TODO do some warning handler here
+              raise
+            end
+          }
+        @logger.info("##Finish change one vm_group")
+        }
+      }
+    end
+
     class ThreadPool
       def initialize(options = {})
         @actions = []

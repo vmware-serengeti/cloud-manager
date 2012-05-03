@@ -26,24 +26,36 @@
     datastores: &id1  #Size is KB
     - name: tta-ds
       mob: share-ds1
-      freeSpace: 210000
-      maxSpace: 400000
+      freeSpace: 21000
+      maxSpace: 40000
     - name: share-dsA
       mob: share-ds2
-      freeSpace: 200000
-      maxSpace: 300000
+      freeSpace: 20000
+      maxSpace: 30000
     - name: share-dsB
       mob: share-ds3
       freeSpace: 160000
       maxSpace: 200000
+    - name: share-dsC
+      mob: share-ds4
+      freeSpace: 160000
+      maxSpace: 200000
+    - name: share-dsD
+      mob: share-ds5
+      freeSpace: 160000
+      maxSpace: 200000
+    - name: share-dsE
+      mob: share-ds6
+      freeSpace: 160000
+      maxSpace: 200000
     - name: local-ds1A
       mob: local-ds1A
-      freeSpace: 1600000
-      maxSpace: 2000000
+      freeSpace: 160000
+      maxSpace: 200000
     - name: local-ds1B
       mob: local-ds1B
-      freeSpace: 1000000
-      maxSpace: 2000000
+      freeSpace: 100000
+      maxSpace: 200000
 
 
     hosts:

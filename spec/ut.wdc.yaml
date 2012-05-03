@@ -5,13 +5,13 @@ vc_user: administrator
 vc_pwd: ca$hc0w
 vc_datacenter: Datacenter2012
 vc_clusters: 
-  - name: cluster-fog
+  - name: cluster-integration
     vc_rps: 
     - resource_pool1
-  - name: cluster-ironfan
-    vc_rps:
-    - rp2-res-manager
-vc_shared_datastore_pattern: ["Enclosure"]
-vc_local_datastore_pattern: ["local"]
+#  - name: cluster-ironfan
+#    vc_rps:
+#    - rp2-res-manager
+vc_shared_datastore_pattern: ["h06-ds01"]
+vc_local_datastore_pattern: ["h06-ds0[23456789]"]
 cloud_adapter: fog
 

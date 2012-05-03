@@ -84,6 +84,11 @@ module VHelper::CloudManager
       end
     end
 
+    def vm_update_network(vm, card)
+      config_json = vm.network_res.get_vm_network_json(vm.hostname, card)
+      @logger.debug("network json:#{config_json}")
+    end
+
     def get_dc_mob_ref_by_path(dc_name, options={})
       @debug_dc.each { |dc|
         return dc if dc["name"] == dc_name

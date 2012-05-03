@@ -79,27 +79,12 @@ module VHelper::CloudManager
 
         vm.status = VM_STATE_RECONFIG
         vm_reconfigure_disk(vm)
-        @logger.debug("#{vm.name} finish reconfigure")
+        @logger.debug("#{vm.name} finish reconfigure disk")
+        vm_reconfigure_network(vm)
+        @logger.debug("#{vm.name} finish reconfigure networking")
 
         #Move deployed vm to existed queue
         vm_finish_deploy(vm)
-      }
-    end
-
-    def vm_deploy_group_pool(thread_pool, group, options={})
-      thread_pool.wrap { |pool|
-        group.each { |vm|
-          @logger.debug("enter : #{vm.pretty_inspect}")
-          pool.process {
-            begin
-              yield(vm)
-            rescue
-              #TODO do some warning handler here
-              raise
-            end
-          }
-        @logger.info("##Finish change one vm_group")
-        }
       }
     end
 
@@ -115,6 +100,14 @@ module VHelper::CloudManager
 
     def vm_reconfigure_disk(vm, options={})
       vm.disks.each_value { |disk| @client.vm_create_disk(vm, disk)}
+    end
+
+    def vm_reconfigure_network(vm, options = {})
+      if (vm.network_res)
+        vm.network_res.card_num.times {|card|
+          @client.vm_update_network(vm, card)
+        }
+      end
     end
 
     def vm_poweroff(vm, options={})

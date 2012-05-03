@@ -1,4 +1,5 @@
 require '../fog/lib/fog'
+require 'json'
 
 module VHelper::CloudManager
   class FogAdapter
@@ -154,6 +155,19 @@ module VHelper::CloudManager
     def get_ds_name_by_path(path)
       @connection.get_ds_name_by_path(path)
     end
+
+    def vm_update_network(vm, card)
+      raise "Do not login cloud server, please login first" if @connection.nil?
+      #TODO test port group later
+      @connection.vm_update_network('instance_uuid'=>vm.instance_uuid, 
+                                    'adapter_name' => "Network adapter #{card+1}", 
+                                    'portgroup_name' => vm.network_res.port_group(card))
+
+      config_json = vm.network_res.get_vm_network_json(vm.hostname, card)
+      @logger.debug("network json:#{config_json}")
+      @connection.vm_config_ip('vm_moid' => vm.mob, 'config_json' => config_json)
+    end
+
     ###################################################
     # inner use functions
     def update_vm_with_properties_string(vm, vm_properties)

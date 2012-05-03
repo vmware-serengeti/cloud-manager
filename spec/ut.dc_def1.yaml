@@ -1,23 +1,31 @@
 ---
 name: vhelper
 channel_id: provsion
+networking:
+  - port_group: CFNetwork
+    type: static
+    ip: 
+    - "10.1.1.17-10.1.1.22"
+    netmask: "255.255.255.0"
+    gateway: "10.1.1.254"
+    dns: 
+    - "10.1.100.100"
+    - "10.1.100.240"
 template_id: /Datacenters/DatacenterCF/vm/tt
 groups:
 - name: group0
   cpu: 2
   memory: 1024
   storage:
-    type: local
-    size: 30
-  network: CFNetwork
+    type: shared
+    size: 300
   instance_num: 2
 - name: group1
   cpu: 2
   memory: 1024
   storage:
     type: local
-    size: 20    #SIZE in GB
-  network: CFNetwork
+    size: 30    #SIZE in GB
   instance_num: 5
 #  vc_clusters:
 #  - name: Cluster2
@@ -33,5 +41,4 @@ groups:
 #  - name: Cluster1
 #    vc_rps:
 #    - resource_pool3
-  network: CFNetwork
   instance_num: 5

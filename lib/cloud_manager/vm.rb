@@ -56,6 +56,8 @@ module VHelper::CloudManager
     attr_accessor :group_name
     attr_accessor :created
     attr_accessor :rp_name
+    attr_accessor :network_res
+    attr_accessor :assign_ip
     def succeed?;  ready?  end
     def finished?; succeed? || !error_msg.to_s.empty? end
     
@@ -105,6 +107,8 @@ module VHelper::CloudManager
       @status = VM_STATE_BIRTH
       @ip_address = ""
       @error_msg = ""
+      @assign_ip = []
+      @networking = nil
     end
 
     def get_create_progress

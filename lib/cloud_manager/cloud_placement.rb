@@ -54,6 +54,8 @@ module VHelper::CloudManager
       vm.template_id = vm_group.req_info.template_id
       vm.rp_name = cur_rp.name
       vm.rp_cluster_name = cur_rp.cluster.name
+      vm.vm_group = vm_group
+      vm.network_res = vm_group.network_res
       cur_rp.used_counter += 1
 
       used_datastores.each { |datastore|

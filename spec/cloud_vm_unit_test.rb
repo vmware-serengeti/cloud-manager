@@ -56,7 +56,7 @@ begin
   when 1 then
     p "##Create Test UT"
     info = ut_test_env
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
     while !cloud.finished?
       progress = cloud.get_progress
       puts("ut process:#{progress.inspect}")

@@ -8,6 +8,7 @@ module VHelper::CloudManager
       end
       nil
     end
+
     def create_vm_group_from_vhelper_input(cluster_info, datacenter_name)
       vm_groups = {}
       @logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
@@ -15,12 +16,17 @@ module VHelper::CloudManager
       template_id = "/Datacenters/#{datacenter_name}/vm/#{cluster_info["template_id"]}"
       cluster_req_rps = @vc_req_rps
       cluster_req_rps = req_clusters_rp_to_hash(cluster_info["vc_clusters"]) if cluster_info["vc_clusters"]
+      cluster_networking = cluster_info["networking"]
+      @logger.debug("networking : #{cluster_networking.pretty_inspect}")
+      network_res = NetworkRes.new(cluster_networking)
+      @logger.debug("dump network:#{network_res}")
       @logger.debug("template_id:#{template_id}")
       vhelper_groups.each { |vm_group_req|
         vm_group = VmGroupInfo.new(@logger, vm_group_req, template_id)
         vm_group.req_info.disk_pattern = cluster_datastore_pattern(cluster_info, vm_group.req_info.disk_type) if vm_group.req_info.disk_pattern.nil?
         vm_group.req_rps = cluster_req_rps
         vm_group.req_rps = req_clusters_rp_to_hash(vm_group_req["vc_clusters"]) if vm_group_req["vc_clusters"]
+        vm_group.network_res = network_res
         vm_groups[vm_group.name] = vm_group
       }
       @logger.debug("vhelper_group:#{vm_groups}")
@@ -59,6 +65,7 @@ module VHelper::CloudManager
     attr_reader   :vc_req
     attr_accessor :instances
     attr_accessor :req_rps
+    attr_accessor :network_res
     attr_accessor :vm_ids    #classes VmInfo
     def initialize(logger, rp=nil, template_id=nil)
       @logger = logger

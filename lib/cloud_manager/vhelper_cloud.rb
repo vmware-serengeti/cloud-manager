@@ -65,6 +65,7 @@ module VHelper::CloudManager
     attr_reader :vc_req_datacenter
     attr_reader :vc_req_clusters
     attr_reader :vc_req_rps
+
     attr_reader :allow_mixed_datastores
     attr_reader :racks
     attr_reader :need_abort
@@ -200,7 +201,6 @@ module VHelper::CloudManager
       log_obj_to_file(vm_groups_existed, 'vm_groups_existed')
 
       @logger.info("Finish collect vm_group info from resources")
-
       [dc_resources, vm_groups_existed, vm_groups_input]
     end
 
