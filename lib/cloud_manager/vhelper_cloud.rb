@@ -60,6 +60,9 @@ module VHelper::CloudManager
     attr_reader :input_cluster_info
     attr_reader :action
 
+    attr_accessor :placement_failed
+    attr_accessor :cloud_error_msg_que
+
     attr_reader :vc_share_datastore_pattern
     attr_reader :vc_local_datastore_pattern
     attr_reader :vc_req_datacenter
@@ -88,6 +91,8 @@ module VHelper::CloudManager
       @client = nil
       @success = false
       @finished = false
+      @placement_failed = 0
+      @cloud_error_msg_que = []
     end
 
     def add_deploying_vm(vm)
@@ -317,7 +322,7 @@ module VHelper::CloudManager
         result.deploy = @deploy_vms.size
         result.waiting_start = @existed_vms.size
         result.success = @finished_vms.size
-        result.failure = @failure_vms.size
+        result.failure = @failure_vms.size + @placement_failed
         result.succeed = @success && result.failure <= 0
         result.running = result.deploy + result.waiting + result.waiting_start
         result.total = result.running + result.success + result.failure

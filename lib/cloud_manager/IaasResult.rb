@@ -24,7 +24,7 @@ module VHelper::CloudManager
     def succeed? ; @succeed end
 
     def inspect
-      msg = "total:#{total} sucess:#{success} failed:#{failure} running:#{running} [waiting:#{waiting} waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
+      msg = "succeed? #{succeed?} total:#{total} sucess:#{success} failed:#{failure} running:#{running} [waiting:#{waiting} waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
       servers.each {|vm| msg<<vm.inspect}
       msg
     end

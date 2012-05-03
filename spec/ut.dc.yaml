@@ -26,36 +26,36 @@
     datastores: &id1  #Size is KB
     - name: tta-ds
       mob: share-ds1
-      freeSpace: 21000
-      capacity: 40000
+      freeSpace: 21000000000
+      capacity: 40000000000
     - name: share-dsA
       mob: share-ds2
-      freeSpace: 20000
-      capacity: 30000
+      freeSpace: 20000000000
+      capacity: 30000000000
     - name: share-dsB
       mob: share-ds3
-      freeSpace: 160000
-      capacity: 200000
+      freeSpace: 160000000000
+      capacity: 200000000000
     - name: share-dsC
       mob: share-ds4
-      freeSpace: 160000
-      capacity: 200000
+      freeSpace: 160000000000
+      capacity: 200000000000
     - name: share-dsD
       mob: share-ds5
-      freeSpace: 160000
-      capacity: 200000
+      freeSpace: 160000000000
+      capacity: 200000000000
     - name: share-dsE
       mob: share-ds6
-      freeSpace: 160000
-      capacity: 200000
+      freeSpace: 160000000000
+      capacity: 200000000000
     - name: local-ds1A
       mob: local-ds1A
-      freeSpace: 160000
-      capacity: 200000
+      freeSpace: 160000000000
+      capacity: 200000000000
     - name: local-ds1B
       mob: local-ds1B
-      freeSpace: 100000
-      capacity: 200000
+      freeSpace: 100000000000
+      capacity: 200000000000
 
 
     hosts:
@@ -97,7 +97,7 @@
       host_used_mem: 1000
       guest_used_mem: 1000
       limit_mem: 16000
-    datastores: &id2  #Size is KB
+    datastores: &id2  #Size is MB
     - name: tta-ds-2
       mob: share-ds1
       freeSpace: 210000

@@ -5,6 +5,7 @@ module VHelper::CloudManager
     REMAIDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 8
     HOST_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 4
 
+
     def is_suitable_resource_pool?(rp, req_info)
       @logger.debug("limit:#{rp.limit_mem},real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
       if rp.limit_mem != -1 && (rp.real_free_memory < req_info.mem)
@@ -144,11 +145,12 @@ module VHelper::CloudManager
                            "The group also has no resources to alloced rest #{vm_group.instances - num} vm")
           #Add failure vm to failure_vms que
           #@vm_lock.synchronize { @failure_vms[vm.name] = vm}
-          return 'next rp'
+          return vm.error_msg
         else
           group_place << vm
           #@logger.debug("Add #{vm.name} to preparing vms")
           @vm_lock.synchronize { @preparing_vms[vm.name] = vm }
+          vm_group.add_vm(vm)
         end
       }
       nil
@@ -189,6 +191,10 @@ module VHelper::CloudManager
         if need_next_rp
           ## can not alloc vm_group anymore
           #TODO add code here
+          @cloud_error_msg_que << need_next_rp
+          @placement_failed += vm_group.instances - vm_group.vm_ids.size
+          @logger.debug("place #{vm_group.vm_ids.size} vms (#{vm_group.instances})")
+          @logger.debug("group #{vm_group.name} failed, #{@placement_failed}")
         end
         vm_placement << group_place
       }

@@ -81,16 +81,16 @@ module VHelper::CloudManager
       vm_ids.size
     end
 
-    def del_vm(vm_mob)
-      vm_info = find_vm(vm_mob)
+    def del_vm(vm_name)
+      vm_info = find_vm(vm_name)
       return nil unless vm_info
       vm_info.delete_all_disk
 
       @vm_ids.delete(vm_mob)
     end
     def add_vm(vm_info)
-      if @vm_ids[vm_info.mob].nil?
-        @vm_ids[vm_info.mob] = vm_info
+      if @vm_ids[vm_info.name].nil?
+        @vm_ids[vm_info.name] = vm_info
       else
         @logger.debug("#{vm_info.name} is existed.")
       end
