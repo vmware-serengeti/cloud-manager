@@ -27,35 +27,35 @@
     - name: tta-ds
       mob: share-ds1
       freeSpace: 21000
-      maxSpace: 40000
+      capacity: 40000
     - name: share-dsA
       mob: share-ds2
       freeSpace: 20000
-      maxSpace: 30000
+      capacity: 30000
     - name: share-dsB
       mob: share-ds3
       freeSpace: 160000
-      maxSpace: 200000
+      capacity: 200000
     - name: share-dsC
       mob: share-ds4
       freeSpace: 160000
-      maxSpace: 200000
+      capacity: 200000
     - name: share-dsD
       mob: share-ds5
       freeSpace: 160000
-      maxSpace: 200000
+      capacity: 200000
     - name: share-dsE
       mob: share-ds6
       freeSpace: 160000
-      maxSpace: 200000
+      capacity: 200000
     - name: local-ds1A
       mob: local-ds1A
       freeSpace: 160000
-      maxSpace: 200000
+      capacity: 200000
     - name: local-ds1B
       mob: local-ds1B
       freeSpace: 100000
-      maxSpace: 200000
+      capacity: 200000
 
 
     hosts:
@@ -101,11 +101,11 @@
     - name: tta-ds-2
       mob: share-ds1
       freeSpace: 210000
-      maxSpace: 400000
+      capacity: 400000
     - name: share-dsC
       mob: share-ds2
       freeSpace: 200000
-      maxSpace: 300000
+      capacity: 300000
 
     hosts:
     - name: host10

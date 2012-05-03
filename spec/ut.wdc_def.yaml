@@ -5,13 +5,13 @@ template_id: IP_Mgr
 networking:
   - port_group: wdc-vhadp-pub2
     type: dhcp
-    ip:
-    - "10.141.72.61-10.141.72.70"
-    netmask: "255.255.254.0"
-    gateway: "10.141.73.253"
-    dns: 
-    - "10.132.71.1"
-    - "10.132.71.2"
+#    ip:
+#    - "10.141.72.61-10.141.72.70"
+#    netmask: "255.255.254.0"
+#    gateway: "10.141.73.253"
+#    dns: 
+#    - "10.132.71.1"
+#    - "10.132.71.2"
 
 #vc_clusters: 
 #template_id: centos-5.7-template

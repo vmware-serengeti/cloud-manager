@@ -8,6 +8,7 @@ module VHelper::CloudManager
         # TODO ip range handle
         @configure.each {|conf|
           conf['ip_pool'] = []
+          next if (conf['type'] != 'static')
           conf['ip'].each { |ip|
             next if put_range_to_ip_pool(ip, conf['ip_pool'])
             single_result = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/.match(ip)
