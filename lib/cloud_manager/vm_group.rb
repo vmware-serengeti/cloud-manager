@@ -18,6 +18,7 @@ module VHelper::CloudManager
       cluster_req_rps = req_clusters_rp_to_hash(cluster_info["vc_clusters"]) if cluster_info["vc_clusters"]
       cluster_networking = cluster_info["networking"]
       @logger.debug("networking : #{cluster_networking.pretty_inspect}")
+
       network_res = NetworkRes.new(cluster_networking)
       @logger.debug("dump network:#{network_res}")
       @logger.debug("template_id:#{template_id}")

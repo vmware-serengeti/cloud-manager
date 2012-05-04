@@ -89,7 +89,7 @@ module VHelper::CloudManager
         @free_memory - @unaccounted_memory
       end
       def inspect
-        "<Resource Pool: #{@mob} / #{@name}, #{real_free_memory}MB limit:#{@limit_mem}MB in #{@cluster.inspect}>"
+        "<Resource Pool: #{@mob} / #{@name}, #{real_free_memory}MB limit:#{@limit_mem}MB in #{@cluster.inspect} c:#{@used_counter}>"
       end
       def initialize
         @used_counter = 0
@@ -172,20 +172,21 @@ module VHelper::CloudManager
     def fetch_clusters(datacenter, datacenter_mob)
       cluster_mobs = @client.get_clusters_by_dc_mob(datacenter_mob)
 
-      cluster_names = @vhelper.vc_req_rps.keys
-      clusters_req = @vhelper.vc_req_rps 
+      cluster_names = @vhelper.vc_req_rps.values
+      resouce_names = @vhelper.vc_req_rps.keys
+      clusters_req = @vhelper.vc_req_rps
 
       clusters = {}
       group_each_by_threads(cluster_mobs, :callee=>"fetch cluster in datacenter #{datacenter.name}") { |cluster_mob|
         attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
         # chose cluster in cluster_names
-        next unless clusters_req.key?(attr["name"])
+        next unless cluster_names.include?(attr["name"])
 
         @logger.debug("Use cluster :#{attr["name"]} and checking resource pools")
         cluster                     = Cluster.new
-        resource_pools = fetch_resource_pool(cluster, cluster_mob, clusters_req[attr["name"]])
+        resource_pools = fetch_resource_pool(cluster, cluster_mob, resouce_names)
         if resource_pools.empty?
-          @logger.debug("Do not find any reqired resources #{clusters_req[attr["name"]]} in cluster :#{attr["name"]}")
+          @logger.debug("Do not find any reqired resources #{clusters_req.pretty_inspect} in cluster :#{attr["name"]}")
           next
         end
 

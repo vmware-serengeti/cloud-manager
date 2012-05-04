@@ -125,7 +125,7 @@ module VHelper::CloudManager
 
     def req_clusters_rp_to_hash(a)
       rps = {}
-      a.each {|v| rps[v["name"]] = v["vc_rps"]}
+      a.each {|v| v["vc_rps"].each { |rp| rps[rp] = v["name"] } }
       rps
     end
 
@@ -278,8 +278,13 @@ module VHelper::CloudManager
             log_obj_to_file(placement, 'placement')
 
             @logger.debug("Begin deploy")
+            #Begin cluster deploy
             @status = CLUSTER_DEPLOY
             successful = cluster_deploy(cluster_changes , placement)
+
+            #Wait cluster ready
+            @status = CLUSTER_WAIT_START
+            successful = cluster_wait_ready(@existed_vms)
             break if successful
 
             @status = CLUSTER_RE_FETCH_INFO

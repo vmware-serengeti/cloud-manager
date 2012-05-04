@@ -31,14 +31,14 @@ groups:
   memory: 1024
   storage:
     type: shared
-    size: 300
+    size: 30
   instance_num: 2
 - name: group1
   cpu: 2
   memory: 1024
   storage:
-    type: local
-    size: 300    #SIZE in GB
+    type: shared
+    size: 30    #SIZE in GB
   instance_num: 5
 #  vc_clusters:
 #  - name: Cluster2
@@ -48,10 +48,10 @@ groups:
   cpu: 2
   memory: 2048
   storage:
-    type: share
-    size: 400
+    type: shared
+    size: 40
 #  vc_clusters:
 #  - name: Cluster1
 #    vc_rps:
 #    - resource_pool3
-  instance_num: 20
+  instance_num: 4

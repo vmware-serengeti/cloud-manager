@@ -4,17 +4,24 @@ channel_id: provsion
 template_id: IP_Mgr
 networking:
   - port_group: wdc-vhadp-pub2
-    type: dhcp
-#    ip:
-#    - "10.141.72.61-10.141.72.70"
-#    netmask: "255.255.254.0"
-#    gateway: "10.141.73.253"
-#    dns: 
-#    - "10.132.71.1"
-#    - "10.132.71.2"
+    type: static
+    ip:
+    - "10.141.72.61-10.141.72.70"
+    netmask: "255.255.254.0"
+    gateway: "10.141.73.253"
+    dns: 
+    - "10.132.71.1"
+    - "10.132.71.2"
+vc_clusters:
+  - name: cluster-integration
+    vc_rps:
+    - resource_pool1
+    - test-1
+  - name: cluster-ironfan
+    vc_rps:
+    - rp2-res-manager
 
 #vc_clusters: 
-#template_id: centos-5.7-template
 groups:
 - name: NameNode 
   cpu: 2
@@ -23,7 +30,7 @@ groups:
     type: local
     size: 10
   network: CFNetwork
-  instance_num: 2
+  instance_num: 1
 - name: DataNode
   cpu: 1
   memory: 2048
@@ -31,4 +38,12 @@ groups:
     type: local
     size: 30
   network: CFNetwork
-  instance_num: 4
+  instance_num: 3
+- name: Client
+  cpu: 1
+  memory: 2048
+  storage:
+    type: local
+    size: 40
+  network: CFNetwork
+  instance_num: 1

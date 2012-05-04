@@ -100,12 +100,12 @@
     datastores: &id2  #Size is MB
     - name: tta-ds-2
       mob: share-ds1
-      freeSpace: 210000
-      capacity: 400000
+      freeSpace: 210000000000
+      capacity: 400000000000
     - name: share-dsC
       mob: share-ds2
-      freeSpace: 200000
-      capacity: 300000
+      freeSpace: 200000000000
+      capacity: 300000000000
 
     hosts:
     - name: host10

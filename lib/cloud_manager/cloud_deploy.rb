@@ -17,7 +17,7 @@ module VHelper::CloudManager
       @logger.debug("created thread pool")
       #Begin to parallel deploy vms
       cluster_changes.each { |group|
-        group_each_by_threads(group, :callee=>'deploy changes') { |vm|
+        group_each_by_threads(group, :callee=>'deploy changes', :order=>(policy==DEPLOY_GROUP_ORDER)) { |vm|
           #TODO add change code here
           @logger.info("changing vm #{vm.pretty_inspect}")
           vm.status = VM_STATE_DONE
@@ -26,31 +26,8 @@ module VHelper::CloudManager
       }
       @logger.info("Finish all changes")
 
-      group_each_by_threads(vm_placement, :order=>(policy==DEPLOY_GROUP_ORDER)) { |group|
+      group_each_by_threads(vm_placement, :order=>(policy==DEPLOY_GROUP_ORDER), :callee=>'deploy group') { |group|
           deploy_vm_group(group)
-      }
-
-      @logger.debug("wait all existed vms poweron and return their ip address")
-      wait_thread = []
-      @status = CLUSTER_WAIT_START
-      map_each_by_threads(@existed_vms) { |vm|
-        # Power On vm
-        vm.status = VM_STATE_POWER_ON
-        @logger.debug("vm:#{vm.name} power:#{vm.power_state}")
-        if vm.power_state == 'poweredOff'
-          vm_poweron(vm)
-          @logger.debug("#{vm.name} has poweron")
-        end
-        vm.status = VM_STATE_WAIT_IP
-        while (vm.ip_address.nil? || vm.ip_address.empty?)
-          @client.update_vm_properties_by_vm_mob(vm)
-          @logger.debug("#{vm.name} ip: #{vm.ip_address}")
-          sleep(4)
-        end
-        #TODO add ping progress to tested target vm is working
-        vm.status = VM_STATE_DONE
-        vm_finish(vm)
-        @logger.debug("#{vm.name}: done")
       }
 
       @logger.info("Finish all deployments")
@@ -78,9 +55,24 @@ module VHelper::CloudManager
         @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
 
         vm.status = VM_STATE_RECONFIG
+        begin
         vm_reconfigure_disk(vm)
+        rescue => e
+          @logger.debug("reconfigure disk failed")
+          vm.error_code = -1
+          vm.error_msg = "Configure vm:#{vm.name} disk failed.#{e}"
+          next
+        end
         @logger.debug("#{vm.name} finish reconfigure disk")
+
+        begin
         vm_reconfigure_network(vm)
+        rescue => e
+          @logger.debug("reconfigure network failed")
+          vm.error_code = -1
+          vm.error_msg = "Configure vm:#{vm.name} network failed.#{e}"
+          next
+        end
         @logger.debug("#{vm.name} finish reconfigure networking")
 
         #Move deployed vm to existed queue

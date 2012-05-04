@@ -172,21 +172,22 @@ module VHelper::CloudManager
         #Check and find suitable resource_pool
         group_place = []
         need_next_rp = nil
-        vm_group.req_rps.each { |cluster_name, rps|
-          cluster = dc_resource.clusters[cluster_name]
-          cluster_resource_pools = cluster.resource_pools
-          place_rp = cluster_resource_pools.select {|k, v| rps.include?(k)}.values
+
+        place_rp = []
+        @logger.debug("req_rps:#{vm_group.req_rps}")
+        vm_group.req_rps.each {|rp_name, cluster_name|
+          place_rp << dc_resource.clusters[cluster_name].resource_pools[rp_name]
+        }
+        set_best_placement_rp_list!(place_rp)
+        loop_resource(place_rp) { |rp|
+          @logger.debug("Place rp:#{place_rp.pretty_inspect}")
+          cluster = rp.cluster
+          @logger.debug("used rp:#{rp.name} in cluster:#{cluster.name}")
           need_next_rp = nil
           hosts = hosts_prepare_in_cluster(cluster)
-
-          set_best_placement_rp_list!(place_rp)
-
-          loop_resource(place_rp) {|resource_pool|
-            need_next_rp = vm_group_placement(vm_group, group_place, hosts, resource_pool)
-            next if need_next_rp
-            break
-          }
-          break unless need_next_rp
+          need_next_rp = vm_group_placement(vm_group, group_place, hosts, rp)
+          next if need_next_rp
+          break
         }
         if need_next_rp
           ## can not alloc vm_group anymore
@@ -203,12 +204,7 @@ module VHelper::CloudManager
     end
 
     def loop_resource(res)
-      while (!res.empty?)
-        if !yield res.first
-          res.shift
-        end
-        res.rotate!
-      end
+      res.cycle { |item| res.shift if !yield item }
     end
 
   end
