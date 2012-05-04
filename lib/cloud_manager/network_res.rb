@@ -3,46 +3,34 @@ module VHelper::CloudManager
     class NetworkRes
       attr_accessor :configure
 
+      IP = '(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])'
       def initialize(networking)
         @configure = networking
         # TODO ip range handle
+        
+        range_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}-#{IP}\.#{IP}\.#{IP}\.#{IP}$")
+        ip_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}$")
         @configure.each {|conf|
           conf['ip_pool'] = []
           next if (conf['type'] != 'static')
           conf['ip'].each { |ip|
-            next if put_range_to_ip_pool(ip, conf['ip_pool'])
-            single_result = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/.match(ip)
+            next if put_range_to_ip_pool(ip, conf['ip_pool'], range_check)
+            single_result = ip_check.match(ip)
             conf['ip_pool'] << ip if (single_result)
           }
         }
         @lock = Mutex.new
       end
 
-      def put_range_to_ip_pool(ip_range, pool)
-        range_result = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])-(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/.match(ip_range)
-        return nil if range_result.nil?
-        ip11 = range_result[1].to_i
-        ip12 = range_result[2].to_i
-        ip13 = range_result[3].to_i
-        ip14 = range_result[4].to_i
-        ip21 = range_result[5].to_i
-        ip22 = range_result[6].to_i
-        ip23 = range_result[7].to_i
-        ip24 = range_result[8].to_i
-        while (ip11 <= ip21)
-          while (ip12<=ip22)
-            while (ip13<=ip23)
-              while (ip14<=ip24)
-                pool << "#{ip11}.#{ip12}.#{ip13}.#{ip14}"
-                ip14 += 1
-              end
-              ip13 += 1
-            end
-            ip12 += 1
-          end
-          ip11 += 1
-        end
+      def range_extend(range, level, out_ip, out_range)
+        return out_range << out_ip if (level >= 5)
+        (range[level]..range[level+4]).each {|ip| range_extend(range, level+1, "#{out_ip}.#{ip}", out_range)}
+      end
 
+      def put_range_to_ip_pool(ip_range, pool, range_check)
+        range_result = range_check.match(ip_range)
+        return nil if range_result.nil?
+        range_extend(range_result, 2, range_result[1].to_s, pool)
       end
 
       def dhcp?(card);  @configure[card]['type'] == 'dhcp'; end
