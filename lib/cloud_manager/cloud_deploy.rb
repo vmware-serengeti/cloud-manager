@@ -21,7 +21,6 @@ module VHelper::CloudManager
           #TODO add change code here
           @logger.info("changing vm #{vm.pretty_inspect}")
           vm.status = VM_STATE_DONE
-          vm_finish_deploy(vm)
         }
       }
       @logger.info("Finish all changes")
@@ -34,6 +33,20 @@ module VHelper::CloudManager
       "finished"
     end
 
+    def vm_deploy_op(vm, working)
+      begin
+        yield
+      rescue => e
+        @logger.debug("#{working} failed.")
+        @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+        vm.error_code = -1
+        vm.error_msg = "#{working} vm:#{vm.name} failed. #{e}"
+        mov_vm(vm, @deploy_vms, @failure_vms)
+        return nil
+      end
+      'OK'
+    end
+
     def deploy_vm_group(group)
       group_each_by_threads(group, :callee=>'deploy vms') { |vm|
         # Existed VM is same as will be deployed?
@@ -42,52 +55,24 @@ module VHelper::CloudManager
           next
         end
         vm.status = VM_STATE_CLONE
-        vm_begin_create(vm)
-        begin
-          vm_clone(vm, :poweron => false)
-        rescue => e
-          @logger.debug("clone failed")
-          vm.error_code = -1
-          vm.error_msg = "Clone vm:#{vm.name} failed. #{e}"
-          #FIXME only handle duplicated issue.
-          next
-        end
+        mov_vm(vm, @preparing_vms, @deploy_vms)
+        next if !vm_deploy_op(vm, 'Clone') { vm_clone(vm, :poweron => false)}
         @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
 
         vm.status = VM_STATE_RECONFIG
-        begin
-        vm_reconfigure_disk(vm)
-        rescue => e
-          @logger.debug("reconfigure disk failed")
-          vm.error_code = -1
-          vm.error_msg = "Configure vm:#{vm.name} disk failed.#{e}"
-          next
-        end
+        next if !vm_deploy_op(vm, 'Reconfigure disk') { vm_reconfigure_disk(vm)}
         @logger.debug("#{vm.name} finish reconfigure disk")
 
-        begin
-        vm_reconfigure_network(vm)
-        rescue => e
-          @logger.debug("reconfigure network failed")
-          vm.error_code = -1
-          vm.error_msg = "Configure vm:#{vm.name} network failed.#{e}"
-          next
-        end
+        next if !vm_deploy_op(vm, 'Reconfigure network') {vm_reconfigure_network(vm)}
         @logger.debug("#{vm.name} finish reconfigure networking")
 
         #Move deployed vm to existed queue
-        vm_finish_deploy(vm)
+        mov_vm(vm, @deploy_vms, @existed_vms)
         #TODO add reflush vm info
       }
     end
 
-    def vm_begin_create(vm, options={})
-      @logger.debug("move prepare to deploy :#{vm.name}")
-      add_deploying_vm(vm)
-    end
-
     def vm_clone(vm, options={})
-      @logger.debug("cpu:#{vm.req_rp.cpu} mem:#{vm.req_rp.mem}")
       @client.clone_vm(vm, options)
     end
 
@@ -111,12 +96,8 @@ module VHelper::CloudManager
       @client.vm_power_on(vm)
     end
 
-    def vm_finish_deploy(vm, options={})
-      deploying_vm_move_to_existed(vm, options)
-    end
-
     def vm_finish(vm, options={})
-      existed_vm_move_to_finish(vm, options)
+      mov_vm(vm, @existed_vms, @finished_vms)
     end
 
     ###################################

@@ -13,6 +13,9 @@ require "lib/cloud_manager/client_fog"
 require "lib/cloud_manager/IaasProgress"
 require "lib/cloud_manager/IaasResult"
 require "lib/cloud_manager/IaasTask"
+require "lib/cloud_manager/cloud_progress"
+require "lib/cloud_manager/cloud_create"
+require "lib/cloud_manager/cloud_operations"
 require 'lib/cloud_manager/vhelper_cloud'
 
 module VHelper::CloudManager
@@ -33,6 +36,14 @@ module VHelper::CloudManager
         cloud.release_connection if cloud
       end
       cloud
+    end
+
+    def self.start_cluster(parameter, options={})
+      cluster_helper(parameter, options) { |cloud| cloud.start }
+    end
+
+    def self.stop_cluster(parameter, options={})
+      cluster_helper(parameter, options) { |cloud| cloud.stop }
     end
 
     def self.delete_cluster(parameter, options={})

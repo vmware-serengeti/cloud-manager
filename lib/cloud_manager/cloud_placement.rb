@@ -204,7 +204,7 @@ module VHelper::CloudManager
     end
 
     def loop_resource(res)
-      res.cycle { |item| res.shift if !yield item }
+      res.cycle { |item| res.delete(item) if !yield item }
     end
 
   end

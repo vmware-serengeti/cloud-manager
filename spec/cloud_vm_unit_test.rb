@@ -44,9 +44,14 @@ begin
   puts "\t1-->Create in UT\n"
   puts "\t2-->Delete in UT\n"
   puts "\t3-->List all vm in UT\n"
+  puts "\t4-->start all vm in UT\n"
+  puts "\t5-->stop all vm in UT\n"
+  puts "WDC\n"
   puts "\t11-->Create in wdc\n"
   puts "\t12-->Delete in wdc\n"
   puts "\t13-->list all vm in wdc\n"
+  puts "\t14-->start all vm in wdc\n"
+  puts "\t15-->stop all vm in wdc\n"
 
   opt = gets.chomp
   opt = opt.to_i
@@ -78,7 +83,18 @@ begin
     info = ut_test_env
     result = VHelper::CloudManager::Manager.list_vms_cluster(info)
     puts("##result:#{result.pretty_inspect}")
-  when 11 then
+  when 4 then #Start vms in Cluster
+    puts("##List all vm in UT")
+    info = ut_test_env
+    result = VHelper::CloudManager::Manager.start_cluster(info, :wait => true)
+    puts("##result:#{result.pretty_inspect}")
+  when 5 then #Stop vms in Cluster
+    puts("##List all vm in UT")
+    info = ut_test_env
+    result = VHelper::CloudManager::Manager.stop_cluster(info, :wait => true)
+    puts("##result:#{result.pretty_inspect}")
+
+when 11 then
     puts "##Test WDC"
     info = wdc_test_env
     cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
@@ -104,6 +120,16 @@ begin
     puts "## List Cluster in WDC"
     info = wdc_test_env
     result = VHelper::CloudManager::Manager.list_vms_cluster(info)
+    puts("##result:#{result.pretty_inspect}")
+  when 14 then #Start vms in Cluster
+    puts "## Start Cluster in WDC"
+    info = wdc_test_env
+    result = VHelper::CloudManager::Manager.start_cluster(info, :wait => true)
+    puts("##result:#{result.pretty_inspect}")
+  when 15 then #Stop vms in Cluster
+    puts "## Stop Cluster in WDC"
+    info = wdc_test_env
+    result = VHelper::CloudManager::Manager.stop_cluster(info, :wait => true)
     puts("##result:#{result.pretty_inspect}")
   when 100 then #show YAML file
     p "## Test ut.dc.yaml\n"

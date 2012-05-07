@@ -44,6 +44,16 @@ module VHelper::CloudManager
       end
     end
 
+    def start
+      @logger.debug("call cloud.start...")
+      return @vhelper.start(@cloud_provider, @cluster_definition, self)
+    end
+
+    def stop
+      @logger.debug("call cloud.stop...")
+      return @vhelper.stop(@cloud_provider, @cluster_definition, self)
+    end
+
     def list_vms
       @logger.debug("call cloud.list_vms...")
       return @vhelper.list_vms(@cloud_provider, @cluster_definition, self)
