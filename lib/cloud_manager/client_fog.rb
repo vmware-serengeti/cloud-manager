@@ -65,7 +65,7 @@ module VHelper::CloudManager
 
     def vm_power_off(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      task_state = @connection.vm_power_off('instance_uuid' => vm.instance_uuid)
+      task_state = @connection.vm_power_off('instance_uuid' => vm.instance_uuid, 'force'=>false)
       #task_state #'success', 'running', 'queued', 'error'
     end
 

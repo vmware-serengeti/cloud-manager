@@ -15,9 +15,16 @@ module VHelper::CloudManager
       true
     end
 
-    def get_suitable_sys_datastore(datastores)
+    def datastore_group_match?(req_info, ds_name)
+      @logger.debug("pattern: #{req_info.disk_pattern}, name:#{ds_name}")
+      return !req_info.disk_pattern.match(ds_name).nil?
+    end
+
+
+    def get_suitable_sys_datastore(req_info, datastores)
       datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
       datastores.each { |datastore|
+        next if !datastore_group_match?(req_info, datastore.name)
         if datastore.real_free_space > REMAIDER_DISK_SIZE 
           datastore.unaccounted_space += HOST_SYS_DISK_SIZE
           return datastore
@@ -26,12 +33,14 @@ module VHelper::CloudManager
       nil
     end
 
-    def get_suitable_datastores(datastores, req_size)
+    def get_suitable_datastores(datastores, req_info)
+      req_size = req_info.disk_size
       datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
       used_datastores = []
       loop_resource(datastores) { |datastore|
 #      datastores.each { |datastore|
         next if datastore.real_free_space < REMAIDER_DISK_SIZE
+        next if !datastore_group_match?(req_info, datastore.name)
         free_size = datastore.real_free_space - REMAIDER_DISK_SIZE
         free_size = req_size if free_size > req_size 
         used_datastores << {:datastore => datastore, :size=>free_size}
@@ -112,7 +121,7 @@ module VHelper::CloudManager
           #The host's memory is suitable for this VM
 
           #Get the sys_datastore for clone
-          sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
+          sys_datastore = get_suitable_sys_datastore(vm_group.req_info, host.place_share_datastores)
 
           if sys_datastore.nil?
             set_vm_error_msg(vm, "can not find suitable sys datastore in host #{host.name}.")
@@ -124,7 +133,7 @@ module VHelper::CloudManager
           req_size = vm_group.req_info.disk_size
           place_datastores = host.place_share_datastores
           place_datastores = host.place_local_datastores if vm_group.req_info.disk_type == DISK_TYPE_LOCAL
-          used_datastores = get_suitable_datastores(place_datastores, req_size)
+          used_datastores = get_suitable_datastores(place_datastores, vm_group.req_info)
           if used_datastores.empty?
             #TODO no disk space for this vm
             set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}")

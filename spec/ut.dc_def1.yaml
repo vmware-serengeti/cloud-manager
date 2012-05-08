@@ -37,6 +37,7 @@ groups:
   cpu: 2
   memory: 1024
   storage:
+    name_patten: '*-ds*'
     type: shared
     size: 30    #SIZE in GB
   instance_num: 5

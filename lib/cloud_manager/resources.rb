@@ -159,6 +159,8 @@ module VHelper::CloudManager
       @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
       raise "Missing share_datastore_pattern in director config" if @vhelper.vc_share_datastore_pattern.nil?
+      @logger.debug("share pattern:#{@vhelper.vc_share_datastore_pattern}")
+      @logger.debug("local pattern:#{@vhelper.vc_local_datastore_pattern}")
       datacenter.share_datastore_pattern    = @vhelper.vc_share_datastore_pattern
       datacenter.local_datastore_pattern = @vhelper.vc_local_datastore_pattern
 
@@ -208,18 +210,6 @@ module VHelper::CloudManager
         cluster.local_datastores    = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
                                                        datacenter.local_datastore_pattern)
         @logger.debug("warning: no matched sharestores in cluster:#{cluster.name}") if cluster.share_datastores.empty?
-
-        # make sure share_datastores and local_datastores are mutually exclusive
-        #share_datastore_names = cluster.share_datastores.map { |ds| ds.name }
-        #local_datastore_names = cluster.local_datastores.map { |ds| ds.name }
-
-        #if (share_datastore_names & local_datastore_names).length != 0 && !datacenter.allow_mixed_datastores
-        #  raise("datastore patterns are not mutually exclusive non-persistent are #{share_datastore_names.pretty_inspect}\n " +
-        #        "local are: #{local_datastore_names.pretty_inspect} \n , " +
-        #  "please use allow_mixed_datastores director configuration parameter to allow this")
-        #end
-        #@logger.debug("share datastores are #{cluster.share_datastores} " +
-        #              "local datastores are #{cluster.local_datastores}")
 
         cluster.hosts = fetch_hosts(cluster, cluster_mob)
 

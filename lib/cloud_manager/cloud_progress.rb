@@ -93,6 +93,7 @@ module VHelper::CloudManager
         result.succeed = @success && result.failure <= 0
         result.running = result.deploy + result.waiting + result.waiting_start
         result.total = result.running + result.success + result.failure
+        result.servers = []
         get_result_by_vms(result.servers, @deploy_vms, :created => false) 
         get_result_by_vms(result.servers, @existed_vms, :created => true)
         get_result_by_vms(result.servers, @failure_vms, :created => false)
@@ -121,6 +122,22 @@ module VHelper::CloudManager
       end
       progress
     end
+
+    def cluster_failed(task)
+      @logger.debug("Enter Cluster_failed")
+      task.set_finish("failed")
+      @success = false
+      @finished = true
+    end
+
+    def cluster_done(task)
+      @logger.debug("Enter cluster_done")
+      # TODO finish cluster information
+      task.set_finish("success")
+      @success = true
+      @finished = true
+    end
+
 
   end
 end

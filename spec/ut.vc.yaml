@@ -13,7 +13,7 @@ vc_clusters:
   - name: Cluster2
     vc_rps:
     - resource_pool2
-vc_shared_datastore_pattern: [share, tta]
-vc_local_datastore_pattern: [local]
+vc_shared_datastore_pattern: ['share*', 'tta*']
+vc_local_datastore_pattern: ['local*']
 cloud_adapter: ut
 

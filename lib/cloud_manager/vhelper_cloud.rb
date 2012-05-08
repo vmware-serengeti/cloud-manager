@@ -80,8 +80,8 @@ module VHelper::CloudManager
       @vc_address = cloud_provider["vc_addr"]
       @vc_username = cloud_provider["vc_user"]
       @vc_password = cloud_provider["vc_pwd"]
-      @vc_share_datastore_pattern = cloud_provider["vc_shared_datastore_pattern"]
-      @vc_local_datastore_pattern = cloud_provider["vc_local_datastore_pattern"]
+      @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"])
+      @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"])
       @client_name = cloud_provider["cloud_adapter"] || "fog"
       @allow_mixed_datastores = nil
       @racks = nil
@@ -148,46 +148,26 @@ module VHelper::CloudManager
         @action = CLOUD_WORK_NONE
       end
     end
-=begin
-    def start(cloud_provider, cluster_info, task)
-      action_process (CLOUD_WORK_START) {
-        @logger.debug("enter cluster start...")
-        create_cloud_provider(cloud_provider)
-        dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
-       }
+
+    def change_wildcard2regex_str(str)
+      str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| return "^#{out}$"}
     end
 
-    def stop(cloud_provider, cluster_info, task)
-      action_process (CLOUD_WORK_STOP) {
-        @logger.debug("enter cluster stop...")
-        create_cloud_provider(cloud_provider)
-        dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
-       }
+    def change_wildcard2regex(strArray)
+      #@logger.debug("input:#{strArray.pretty_inspect}")
+      return change_wildcard2regex_str(strArray) unless strArray.class == Array
+      outArray = []
+      strArray.each { |str| outArray << change_wildcard2regex_str(str) }
+      outArray
     end
-=end
 
     def list_vms(cloud_provider, cluster_info, task)
       action_process (CLOUD_WORK_LIST) {
         @logger.debug("enter list_vms...")
         create_cloud_provider(cloud_provider)
         dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
-        get_result.servers
+        return get_result.servers
       }
-    end
-
-    def cluster_failed(task)
-      @logger.debug("Enter Cluster_failed")
-      task.set_finish("failed")
-      @success = false
-      @finished = true
-    end
-
-    def cluster_done(task)
-      @logger.debug("Enter cluster_done")
-      # TODO finish cluster information
-      task.set_finish("success")
-      @success = true
-      @finished = true
     end
 
   end
