@@ -48,7 +48,7 @@ module VHelper::CloudManager
       @cloud_error_msg_que = []
     end
 
-    def add_existed_vm(vm)
+    def add_2existed_vm(vm)
       @logger.debug("Add existed vm")
       @vm_lock.synchronize {
         @existed_vms[vm.name] = vm
@@ -139,14 +139,16 @@ module VHelper::CloudManager
     end
 
     def action_process act
+      result = nil
       begin
         @logger.debug("begin action:#{act}")
         @action = act
-        yield 
+        result = yield 
         @logger.debug("finished action:#{act}")
       ensure
         @action = CLOUD_WORK_NONE
       end
+      result
     end
 
     def change_wildcard2regex_str(str)
@@ -166,7 +168,7 @@ module VHelper::CloudManager
         @logger.debug("enter list_vms...")
         create_cloud_provider(cloud_provider)
         dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
-        return get_result.servers
+        get_result.servers
       }
     end
 

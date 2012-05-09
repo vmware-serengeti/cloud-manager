@@ -59,6 +59,9 @@ module VHelper::CloudManager
         next if !vm_deploy_op(vm, 'Clone') { vm_clone(vm, :poweron => false)}
         @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
 
+        #is this VM can do HA?
+        vm.can_ha = @client.is_vm_in_ha_cluster(vm)
+
         vm.status = VM_STATE_RECONFIG
         next if !vm_deploy_op(vm, 'Reconfigure disk') { vm_reconfigure_disk(vm)}
         @logger.debug("#{vm.name} finish reconfigure disk")

@@ -3,6 +3,15 @@ module VHelper::CloudManager
     def cluster_wait_ready(vm_pool)
       @logger.debug("wait all existed vms poweron and return their ip address")
       group_each_by_threads(vm_pool) { |vm|
+        @logger.debug("vm:#{vm.name} can ha?:#{vm.can_ha}, enable ? #{vm.ha_enable}")
+        if !vm.ha_enable && vm.can_ha?
+          next if !vm_deploy_op(vm, 'disable ha') { @client.vm_set_ha(vm, vm.ha_enable)}
+          @logger.debug("disable ha of vm #{vm.name}")
+        elsif (!vm.can_ha? && vm.ha_enable)
+          #TODO add error msg to cluster error message
+          @logger.debug("can not enable ha on unHA cluster")
+        end
+
         # Power On vm
         vm.status = VM_STATE_POWER_ON
         @logger.debug("vm:#{vm.name} power:#{vm.power_state}")

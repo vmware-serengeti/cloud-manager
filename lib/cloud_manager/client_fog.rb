@@ -65,7 +65,7 @@ module VHelper::CloudManager
 
     def vm_power_off(vm)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      task_state = @connection.vm_power_off('instance_uuid' => vm.instance_uuid, 'force'=>false)
+      task_state = @connection.vm_power_off('instance_uuid' => vm.instance_uuid, 'force'=>false, 'wait' => true)
       #task_state #'success', 'running', 'queued', 'error'
     end
 
@@ -168,6 +168,15 @@ module VHelper::CloudManager
       @connection.vm_config_ip('vm_moid' => vm.mob, 'config_json' => config_json)
     end
 
+    def vm_set_ha(vm, enable)
+      raise "Do not login cloud server, please login first" if @connection.nil?
+      @connection.vm_disable_ha('vm_moid' => vm.mob) if (enable)
+    end
+
+    def is_vm_in_ha_cluster(vm)
+      raise "Do not login cloud server, please login first" if @connection.nil?
+      @connection.is_vm_in_ha_cluster('vm_moid' => vm.mob)
+    end
     ###################################################
     # inner use functions
     def update_vm_with_properties_string(vm, vm_properties)

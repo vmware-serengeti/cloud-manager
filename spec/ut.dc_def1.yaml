@@ -33,9 +33,11 @@ groups:
     type: shared
     size: 30
   instance_num: 2
+  ha: true
 - name: group1
   cpu: 2
   memory: 1024
+  ha: false
   storage:
     name_patten: '*-ds*'
     type: shared

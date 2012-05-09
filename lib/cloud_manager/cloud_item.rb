@@ -15,6 +15,7 @@ module VHelper::CloudManager
     attr_accessor :rack_id
     attr_accessor :template_id
     attr_accessor :affinity
+    attr_accessor :ha
     def initialize(rp=nil, template_id=nil)
       if rp
         @cpu = rp["cpu"] || 1
@@ -26,6 +27,7 @@ module VHelper::CloudManager
         @disk_type = DISK_TYPE_SHARE if @disk_type != DISK_TYPE_LOCAL
         @affinity = rp["affinity"] || "none"
         @template_id = rp["template_id"] || template_id
+        @ha = rp["ha"] || true    #FIXME current setting is enable for all.
         @rack_id = nil
       end
     end

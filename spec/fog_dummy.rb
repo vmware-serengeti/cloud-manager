@@ -109,6 +109,8 @@ module VHelper::CloudManager
       dummy_sleep(1)
       host_mob["datastores"]; 
     end
+    def vm_set_ha(vm, enable) end
+    def is_vm_in_ha_cluster(vm) true end
 
     def get_vms_by_host_mob(host_mob, options={}) host_mob["vms"] end
     def get_disks_by_vm_mob(vm_mob, options={}) vm_mob["disks"] end

@@ -58,6 +58,8 @@ module VHelper::CloudManager
     attr_accessor :rp_name
     attr_accessor :network_res
     attr_accessor :assign_ip
+    attr_accessor :can_ha
+    attr_accessor :ha_enable
     def succeed?;  ready?  end
     def finished?; succeed? || !error_msg.to_s.empty? end
     
@@ -69,6 +71,7 @@ module VHelper::CloudManager
     attr_accessor :flavor_id
     attr_accessor :image_id
 
+    def can_ha?; @can_ha;end
     def get_error_msg
       return "OK" if @error_msg.to_s.empty?
       "ERR: #{error_msg}"
@@ -119,7 +122,8 @@ module VHelper::CloudManager
       attrs = {}
       attrs[:name] = @name
       attrs[:hostname] = @hostname
-      attrs[:ip_address] = @ip_address
+      attrs[:ip_address] = nil
+      attrs[:ip_address] = @ip_address if @power_state == "poweredOn"
       attrs[:status] = @status
 
       attrs[:finished] = ready? # FIXME should use 'vm.finished?'
@@ -133,6 +137,7 @@ module VHelper::CloudManager
       attrs[:error_msg] = @error_msg
       attrs[:datastores] = datastores
       attrs[:vc_cluster] = {:name=>@rp_cluster_name, :vc_rp=>@rp_name}
+      attrs[:ha] = @ha_enable
       attrs
     end
 

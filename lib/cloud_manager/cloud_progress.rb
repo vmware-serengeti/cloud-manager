@@ -11,6 +11,7 @@ module VHelper::CloudManager
     CLUSTER_CONNECT     = "connectting"
     CLUSTER_FETCH_INFO  = "fetching"
     CLUSTER_UPDATE      = "updating"
+    CLUSTER_TEMPLATE_PLACE = "tempalte placing"
     CLUSTER_PLACE       = "placing"
     CLUSTER_DEPLOY      = "deploying"
     CLUSTER_RE_FETCH_INFO = "refetching"
@@ -24,18 +25,19 @@ module VHelper::CloudManager
         CLUSTER_BIRTH           =>[0,1],
         CLUSTER_CONNECT         =>[1,4],
         CLUSTER_FETCH_INFO      =>[5,5],
-        CLUSTER_PLACE           =>[10,5],
-        CLUSTER_UPDATE          =>[15,5],
-        CLUSTER_DEPLOY          =>[20,60],
-        CLUSTER_RE_FETCH_INFO   =>[20,60],
-        CLUSTER_WAIT_START      =>[80,20],
+        CLUSTER_TEMPLATE_PLACE  =>[10,5],
+        CLUSTER_PLACE           =>[15,5],
+        CLUSTER_UPDATE          =>[20,5],
+        CLUSTER_DEPLOY          =>[25,60],
+        CLUSTER_RE_FETCH_INFO   =>[25,60],
+        CLUSTER_WAIT_START      =>[85,20],
         CLUSTER_DONE            =>[100,0],
     }
 
     CLUSTER_DELETE_PROCESS = {
       CLUSTER_BIRTH       => [0, 1],
       CLUSTER_CONNECT     => [1, 4],
-      CLUSTER_FETCH_INFO  =>[5,5],
+      CLUSTER_FETCH_INFO  => [5,5],
       CLUSTER_DELETE      => [10, 90],
       CLUSTER_DONE        => [100, 0],
     }
@@ -110,7 +112,7 @@ module VHelper::CloudManager
       progress.finished = @finished
       progress.progress = 0
       case @action
-      when CLOUD_WORK_CREATE,CLOUD_WORK_DELETE, CLOUD_WORK_LIST
+      when CLOUD_WORK_CREATE,CLOUD_WORK_DELETE, CLOUD_WORK_LIST, CLOUD_WORK_START, CLOUD_WORK_STOP
         prog = CLUSTER_PROCESS[@action]
         progress.progress = prog[@status][0]
         if (progress.result.total > 0)

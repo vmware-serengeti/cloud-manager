@@ -54,7 +54,7 @@ module VHelper::CloudManager
             vm_groups[group_name] = vm_group
           end
           vm_group.add_vm(vm)
-          add_existed_vm(vm)
+          add_2existed_vm(vm)
         end
       end
       #@logger.debug("res_group:#{vm_groups}")

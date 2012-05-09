@@ -144,6 +144,10 @@ module VHelper::CloudManager
       @mem_over_commit  = mem_over_commit
     end
 
+    def fetch_vm_info(path)
+      mob = @client.get_vm_mob_ref_by_path(path)
+    end
+
     def fetch_datacenter(datacenter_name)
       datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
       if datacenter_mob.nil?
@@ -297,6 +301,26 @@ module VHelper::CloudManager
       hosts
     end
 
+    def fetch_vm_by_mob(vm_existed, vm_mob, host_name)
+      vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], @logger)
+
+      #update vm info with properties
+      @client.update_vm_with_properties_string(vm, vm_existed)
+      vm.host_name = host_name
+
+      #update disk info
+      #@logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
+      disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
+      disk_attrs.each do |attr|
+        disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 
+        datastore_name = @client.get_ds_name_by_path(attr['path'])
+        disk.datastore_name = datastore_name
+      end
+      
+      vm.can_ha = @client.is_vm_in_ha_cluster(vm)
+      vm
+    end
+
     def fetch_vms_by_host(cluster, host, host_mob)
       vms = {}
       vm_mobs = @client.get_vms_by_host_mob(host_mob)
@@ -305,21 +329,7 @@ module VHelper::CloudManager
         #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
         vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
         next if !@vhelper.vm_is_this_cluster?(vm_existed["name"])
-
-        vm = VHelper::CloudManager::VmInfo.new(vm_existed["name"], @logger)
-
-        #update vm info with properties
-        @client.update_vm_with_properties_string(vm, vm_existed)
-        vm.host_name = host.name
-
-        #update disk info
-        #@logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
-        disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
-        disk_attrs.each do |attr|
-          disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 
-          datastore_name = @client.get_ds_name_by_path(attr['path'])
-          disk.datastore_name = datastore_name
-        end
+        vm = fetch_vm_by_mob(vm_existed, vm_mob, host.name)
 
         cluster.vms[vm.name] = vm
         vms[vm.name] = vm

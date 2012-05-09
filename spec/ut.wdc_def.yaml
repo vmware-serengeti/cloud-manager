@@ -17,9 +17,6 @@ vc_clusters:
     vc_rps:
     - resource_pool1
     - test-1
-  - name: cluster-ironfan
-    vc_rps:
-    - rp2-res-manager
 
 #vc_clusters: 
 groups:
@@ -30,6 +27,7 @@ groups:
     type: local
     size: 10
   network: CFNetwork
+  ha: true
   instance_num: 1
 - name: DataNode
   cpu: 1
@@ -38,6 +36,7 @@ groups:
     type: local
     size: 30
   network: CFNetwork
+  ha: false
   instance_num: 3
 - name: Client
   cpu: 1

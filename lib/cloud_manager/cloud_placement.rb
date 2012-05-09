@@ -66,6 +66,7 @@ module VHelper::CloudManager
       vm.rp_cluster_name = cur_rp.cluster.name
       vm.vm_group = vm_group
       vm.network_res = vm_group.network_res
+      vm.ha_enable = vm_group.req_info.ha
       cur_rp.used_counter += 1
 
       used_datastores.each { |datastore|
@@ -213,7 +214,10 @@ module VHelper::CloudManager
     end
 
     def loop_resource(res)
-      res.cycle { |item| res.delete(item) if !yield item }
+      while (!res.empty?)
+        res.shift if !yield res.first
+        res.rotate!
+      end
     end
 
   end

@@ -9,10 +9,7 @@ vc_clusters:
     vc_rps:
     - resource_pool1
     - test-1
-  - name: cluster-ironfan
-    vc_rps:
-    - rp2-res-manager
-vc_shared_datastore_pattern: ["h06-ds0[1]", "Enclosure_Local_Disk_10"]
-vc_local_datastore_pattern: ["h06-ds0[23456789]", "Enclosure_Local_Disk"]
+vc_shared_datastore_pattern: ["h06-ds01",]
+vc_local_datastore_pattern: ["h06-ds*", "Enclosure_Local_Disk*"]
 cloud_adapter: fog
 
