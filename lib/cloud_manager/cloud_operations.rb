@@ -24,7 +24,6 @@ module VHelper::CloudManager
       #@logger.debug("#{matched_vms.pretty_inspect}")
       @logger.debug("vms name: #{matched_vms.collect{|vm| vm.name}.pretty_inspect}")
       yield matched_vms
-      @status = CLUSTER_DONE
       cluster_done(task)
 
       @logger.debug("#{act} all vm's")
@@ -44,6 +43,7 @@ module VHelper::CloudManager
             vm_finish(vm)
           }
         }
+        cluster_done(task)
       }
     end
 
@@ -53,6 +53,7 @@ module VHelper::CloudManager
           vms.each {|vm| vm.action = VM_ACTION_START}
           cluster_wait_ready(vms)
         }
+        cluster_done(task)
       }
     end
 
@@ -68,6 +69,7 @@ module VHelper::CloudManager
             vm_finish(vm)
           }
         }
+        cluster_done(task)
       }
     end
 

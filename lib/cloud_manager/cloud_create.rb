@@ -101,7 +101,6 @@ module VHelper::CloudManager
         end
         ###########################################################
         # Cluster deploy successfully
-        @status = CLUSTER_DONE
         cluster_done(task)
       }
     end

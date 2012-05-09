@@ -54,6 +54,7 @@ module VHelper::CloudManager
           @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
           next
         end
+        vm.action = VM_ACTION_CREATE
         vm.status = VM_STATE_CLONE
         mov_vm(vm, @preparing_vms, @deploy_vms)
         next if !vm_deploy_op(vm, 'Clone') { vm_clone(vm, :poweron => false)}

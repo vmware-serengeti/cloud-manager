@@ -117,7 +117,7 @@ module VHelper::CloudManager
         progress.progress = prog[@status][0]
         if (progress.result.total > 0)
           progress.progress = prog[@status][0] + 
-            prog[@status][1] * progress.result.servers.inject(0){|sum, vm| sum += vm.get_create_progress} / progress.result.total / 100
+            prog[@status][1] * progress.result.servers.inject(0){|sum, vm| sum += vm.get_progress} / progress.result.total / 100
         end
       else
         progress.progress = 100
@@ -135,6 +135,7 @@ module VHelper::CloudManager
     def cluster_done(task)
       @logger.debug("Enter cluster_done")
       # TODO finish cluster information
+      @status = CLUSTER_DONE
       task.set_finish("success")
       @success = true
       @finished = true

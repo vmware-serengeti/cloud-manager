@@ -149,6 +149,14 @@ module VHelper::CloudManager
       VM_CREATE_PROCESS[@status] || 0
     end
 
+    def get_progress
+      progress = VM_ACT_PROGRES[@action]
+      return 0 if progress.nil?
+      step = progress[@status]
+      return 0 if step.nil?
+      step
+    end
+
     def to_hash
       attrs = {}
       attrs[:name] = @name

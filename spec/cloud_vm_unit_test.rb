@@ -87,7 +87,8 @@ begin
     puts("##List all vm in UT")
     info = ut_test_env
     result = VHelper::CloudManager::Manager.start_cluster(info, :wait => true)
-    puts("##result:#{result.pretty_inspect}")
+    progress = result.get_progress
+    puts("ut process:#{progress.inspect}")
   when 5 then #Stop vms in Cluster
     puts("##List all vm in UT")
     info = ut_test_env
