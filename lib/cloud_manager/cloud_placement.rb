@@ -16,10 +16,10 @@ module VHelper::CloudManager
     end
 
     def datastore_group_match?(req_info, ds_name)
-      @logger.debug("pattern: #{req_info.disk_pattern}, name:#{ds_name}")
-      return !req_info.disk_pattern.match(ds_name).nil?
+      @logger.debug("datastore pattern: #{req_info.disk_pattern.pretty_inspect}, name:#{ds_name}")
+      req_info.disk_pattern.each {|d_pattern| return true unless d_pattern.match(ds_name).nil?}
+      false
     end
-
 
     def get_suitable_sys_datastore(req_info, datastores)
       datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }

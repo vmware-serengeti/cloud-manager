@@ -152,7 +152,12 @@ module VHelper::CloudManager
     end
 
     def change_wildcard2regex_str(str)
-      str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| return "^#{out}$"}
+      @logger.debug("in: #{str}")
+      str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| 
+        t = "^#{out}$"
+        @logger.debug("out: #{t}")
+        return t
+      }
     end
 
     def change_wildcard2regex(strArray)

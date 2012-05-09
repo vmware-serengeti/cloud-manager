@@ -34,10 +34,14 @@ module VHelper::CloudManager
       action_process (CLOUD_WORK_DELETE) {
         vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_DELETE) {|vms|
           group_each_by_threads(vms) { |vm|
+            vm.action = VM_ACTION_DELETE
             #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
             #@logger.debug("vm split to #{@cluster_name}::#{result[2]}::#{result[3]}")
             @logger.debug("delete vm : #{vm.name}")
+            vm.status = VM_STATE_DELETE
             next if !vm_deploy_op(vm, 'delete') { @client.vm_destroy(vm) }
+            vm.status = VM_STATE_DONE
+            vm_finish(vm)
           }
         }
       }
@@ -46,6 +50,7 @@ module VHelper::CloudManager
     def start(cloud_provider, cluster_info, task)
       action_process(CLOUD_WORK_START) {
         vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_START) {|vms|
+          vms.each {|vm| vm.action = VM_ACTION_START}
           cluster_wait_ready(vms)
         }
       }
@@ -55,9 +60,12 @@ module VHelper::CloudManager
       action_process(CLOUD_WORK_STOP) {
         vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_STOP) { |vms|
           group_each_by_threads(vms) { |vm|
+            vm.action = VM_ACTION_STOP
             @logger.debug("stop :#{vm.name}")
 
             next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
+            vm.status = VM_STATE_DONE
+            vm_finish(vm)
           }
         }
       }

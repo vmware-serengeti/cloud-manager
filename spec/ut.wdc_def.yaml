@@ -41,6 +41,7 @@ groups:
 - name: Client
   cpu: 1
   memory: 2048
+  ha: false
   storage:
     type: local
     size: 40

@@ -39,7 +39,7 @@ groups:
   memory: 1024
   ha: false
   storage:
-    name_patten: '*-ds*'
+    name_pattern: ['*-ds*']
     type: shared
     size: 30    #SIZE in GB
   instance_num: 5

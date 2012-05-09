@@ -12,6 +12,8 @@ module VHelper::CloudManager
   VM_ACTION_CREATE  = 'create'
   VM_ACTION_DELETE  = 'delete'
   VM_ACTION_UPDATE  = 'update'
+  VM_ACTION_START   = 'startup'
+  VM_ACTION_STOP    = 'stop'
 
   VM_CREATE_PROCESS = {
     VM_STATE_BIRTH    => 0,
@@ -20,6 +22,34 @@ module VHelper::CloudManager
     VM_STATE_POWER_ON => 70,
     VM_STATE_WAIT_IP  => 80,
     VM_STATE_DONE     => 100,
+  }
+
+  VM_DELETE_PROCESS = {
+    VM_STATE_BIRTH    => 0,
+    VM_STATE_DELETE => 20,
+    VM_STATE_DONE     => 100,
+  }
+
+  VM_STOP_PROCESS = {
+    VM_STATE_BIRTH    => 0,
+    VM_STATE_POWER_OFF=> 20,
+    VM_STATE_DONE     => 100,
+  }
+
+  VM_START_PROCESS = {
+    VM_STATE_BIRTH    => 0,
+    VM_STATE_CLONE    => 10,
+    VM_STATE_RECONFIG => 60,
+    VM_STATE_POWER_ON => 70,
+    VM_STATE_WAIT_IP  => 80,
+    VM_STATE_DONE     => 100,
+  }
+
+  VM_ACT_PROGRES = {
+    VM_ACTION_CREATE  => VM_CREATE_PROCESS,
+    VM_ACTION_DELETE  => VM_DELETE_PROCESS,
+    VM_ACTION_START   => VM_START_PROCESS,
+    VM_ACTION_STOP    => VM_STOP_PROCESS,
   }
 
   class VmInfo
@@ -70,6 +100,7 @@ module VHelper::CloudManager
     attr_accessor :key_name
     attr_accessor :flavor_id
     attr_accessor :image_id
+    attr_accessor :action
 
     def can_ha?; @can_ha;end
     def get_error_msg
