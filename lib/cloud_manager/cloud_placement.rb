@@ -24,7 +24,7 @@ module VHelper::CloudManager
     def get_suitable_sys_datastore(req_info, datastores)
       datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
       datastores.each { |datastore|
-        next if !datastore_group_match?(req_info, datastore.name)
+        #next if !datastore_group_match?(req_info, datastore.name)
         if datastore.real_free_space > REMAIDER_DISK_SIZE 
           datastore.unaccounted_space += HOST_SYS_DISK_SIZE
           return datastore
