@@ -1,5 +1,6 @@
 module VHelper::CloudManager
   class VHelperCloud
+    TIMEOUT_WAIT_IP_TIME = 120
     def cluster_wait_ready(vm_pool)
       @logger.debug("wait all existed vms poweron and return their ip address")
       group_each_by_threads(vm_pool) { |vm|
@@ -21,11 +22,14 @@ module VHelper::CloudManager
         end
         vm.status = VM_STATE_WAIT_IP
 
+        start_time = Time.now.to_i
         next if !vm_deploy_op(vm, 'wait ip') {
           while (vm.ip_address.nil? || vm.ip_address.empty?)
             @client.update_vm_properties_by_vm_mob(vm)
             @logger.debug("#{vm.name} ip: #{vm.ip_address}")
             sleep(4)
+            wait_time = Time.now.to_i - start_time
+            raise "Wait IP time out (#{wait_time}s, please check ip conflict. )" if (wait_time) > TIMEOUT_WAIT_IP_TIME
           end
         }
 
