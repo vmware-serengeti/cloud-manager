@@ -170,7 +170,7 @@ module VHelper::CloudManager
 
     def vm_set_ha(vm, enable)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      @connection.vm_disable_ha('vm_moid' => vm.mob) if (enable)
+      @connection.vm_disable_ha('vm_moid' => vm.mob) if (!enable)
     end
 
     def is_vm_in_ha_cluster(vm)
