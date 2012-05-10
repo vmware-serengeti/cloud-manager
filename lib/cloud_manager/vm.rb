@@ -1,5 +1,6 @@
 module VHelper::CloudManager
   VM_STATE_BIRTH      = "birth"
+  VM_STATE_PLACE      = "placing"
   VM_STATE_CLONE      = "cloning"
   VM_STATE_RECONFIG   = "reconfiging"
   VM_STATE_DELETE     = "deleting"
@@ -17,6 +18,7 @@ module VHelper::CloudManager
 
   VM_CREATE_PROCESS = {
     VM_STATE_BIRTH    => 0,
+    VM_STATE_PLACE    => 2,
     VM_STATE_CLONE    => 10,
     VM_STATE_RECONFIG => 60,
     VM_STATE_POWER_ON => 70,
@@ -159,24 +161,24 @@ module VHelper::CloudManager
 
     def to_hash
       attrs = {}
-      attrs[:name] = @name
-      attrs[:hostname] = @hostname
-      attrs[:ip_address] = nil
-      attrs[:ip_address] = @ip_address if @power_state == "poweredOn"
-      attrs[:status] = @status
+      attrs[:name]        = @name
+      attrs[:hostname]    = @hostname
+      attrs[:ip_address]  = nil
+      attrs[:ip_address]  = @ip_address if @power_state == "poweredOn"
+      attrs[:status]      = state #@status
 
-      attrs[:finished] = ready? # FIXME should use 'vm.finished?'
-      attrs[:succeed] = ready? # FIXME should use 'vm.succeed?'
-      attrs[:progress] = get_create_progress
+      attrs[:finished]    = ready? # FIXME should use 'vm.finished?'
+      attrs[:succeed]     = ready? # FIXME should use 'vm.succeed?'
+      attrs[:progress]    = get_create_progress
 
-      attrs[:created] = @created
-      attrs[:deleted] = false
+      attrs[:created]     = @created
+      attrs[:deleted]     = false
 
-      attrs[:error_code] = @error_code
-      attrs[:error_msg] = @error_msg
-      attrs[:datastores] = datastores
-      attrs[:vc_cluster] = {:name=>@rp_cluster_name, :vc_rp=>@rp_name}
-      attrs[:ha] = @ha_enable
+      attrs[:error_code]  = @error_code
+      attrs[:error_msg]   = @error_msg
+      attrs[:datastores]  = datastores
+      attrs[:vc_cluster]  = {:name=>@rp_cluster_name, :vc_rp=>@rp_name}
+      attrs[:ha]          = @ha_enable
       attrs
     end
 

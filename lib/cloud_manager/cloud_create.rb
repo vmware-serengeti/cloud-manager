@@ -1,17 +1,5 @@
 module VHelper::CloudManager
   class VHelperCloud
-    def template_dup_name(template_name, datastore) 
-
-    end
-
-    def template_placement(dc_resources, vm_groups_existed, vm_groups_input)
-      t_place = []
-      # TODO check template vm 
-      # TODO calc template should clone to which hosts/datastores
-
-      t_place
-    end
-
     def create_and_update(cloud_provider, cluster_info, task)
       action_process (CLOUD_WORK_CREATE) {
         @logger.debug("enter create_and_update...")
@@ -66,13 +54,16 @@ module VHelper::CloudManager
             ###########################################################
             #Caculate cluster placement
             @logger.debug("Begin placement")
-            @status = CLUSTER_TEMPLATE_PLACE
-            template_place = template_placement(dc_resources, cluster_info, vm_groups_input)
-            log_obj_to_file(template_place, 'template_place')
-
             @status = CLUSTER_PLACE
             placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed, cluster_info)
             log_obj_to_file(placement, 'placement')
+
+            if template_placement?
+              @status = CLUSTER_TEMPLATE_PLACE
+              template_place = template_placement(dc_resources, cluster_info, vm_groups_input, placement)
+              log_obj_to_file(template_place, 'template_place')
+              cluster_deploy([], template_place)
+            end
 
             @logger.debug("Begin deploy")
             #Begin cluster deploy

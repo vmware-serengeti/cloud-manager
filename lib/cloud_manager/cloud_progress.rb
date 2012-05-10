@@ -141,7 +141,6 @@ module VHelper::CloudManager
       @finished = true
     end
 
-
   end
 end
 

@@ -14,6 +14,7 @@ vc_clusters:
     vc_rps:
     - resource_pool2
 vc_shared_datastore_pattern: ['share*', 'tta*']
-vc_local_datastore_pattern: ['local*']
+vc_local_datastore_pattern: []
 cloud_adapter: ut
+template_placement: true
 

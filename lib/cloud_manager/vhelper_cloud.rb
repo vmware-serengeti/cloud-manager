@@ -71,6 +71,7 @@ module VHelper::CloudManager
     end
 
     def create_cloud_provider(cloud_provider)
+      @cloud_provider = cloud_provider
       @name = cloud_provider["name"]
       @vc_req_datacenter = cloud_provider["vc_datacenter"]
       @vc_req_clusters = cloud_provider["vc_clusters"]
@@ -85,6 +86,10 @@ module VHelper::CloudManager
       @client_name = cloud_provider["cloud_adapter"] || "fog"
       @allow_mixed_datastores = nil
       @racks = nil
+    end
+
+    def template_placement?
+      @cloud_provider['template_placement'] || false;
     end
 
     def attach_adapter(client)
@@ -129,6 +134,10 @@ module VHelper::CloudManager
     end
 
     def release_connection
+      if !@cloud_error_msg_que.empty? 
+        @logger.debug("cloud manager have error/warning message. please chcek it, it is helpful for debugging")
+        @logger.debug("#{@cloud_error_msg_que.pretty_inspect}")
+      end
       return if @client.nil?
       @client.logout
       @client = nil
@@ -152,12 +161,7 @@ module VHelper::CloudManager
     end
 
     def change_wildcard2regex_str(str)
-      @logger.debug("in: #{str}")
-      str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| 
-        t = "^#{out}$"
-        @logger.debug("out: #{t}")
-        return t
-      }
+      str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| return "^#{out}$" }
     end
 
     def change_wildcard2regex(strArray)

@@ -27,7 +27,8 @@ module VHelper::CloudManager
         @disk_type = DISK_TYPE_SHARE if @disk_type != DISK_TYPE_LOCAL
         @affinity = rp["affinity"] || "none"
         @template_id = rp["template_id"] || template_id
-        @ha = rp["ha"] || true    #FIXME current setting is enable for all.
+        @ha = rp["ha"] 
+        @ha = true if @ha.nil?    #FIXME current setting is enable for all.
         @rack_id = nil
       end
     end

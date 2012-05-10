@@ -1,10 +1,24 @@
 module VHelper::CloudManager
   class VHelperCloud
+    ##########################################################
+    # template placement
+    def template_dup_name(template_name, datastore) 
+
+    end
+
+    def template_placement(dc_resources, vm_groups_existed, vm_groups_input)
+      t_place = []
+      # TODO check template vm 
+      
+      # TODO calc template should clone to which hosts/datastores
+
+      t_place
+    end
+
     ############################################################
     # Only RR for rps/hosts/datastores selected
     REMAIDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 8
     HOST_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 4
-
 
     def is_suitable_resource_pool?(rp, req_info)
       @logger.debug("limit:#{rp.limit_mem},real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
@@ -95,7 +109,7 @@ module VHelper::CloudManager
     end
 
     def set_vm_error_msg(vm, msg)
-      vm.error_msg = msg
+      vm.error_msg = "#{vm.error_msg}\n#{msg}"
       @logger.debug("ERROR: #{msg}")
     end
 
@@ -110,13 +124,13 @@ module VHelper::CloudManager
         end
         vm = VHelper::CloudManager::VmInfo.new(vm_name, @logger)
         vm.host_name = nil
-        hosts.rotate!
+        vm.status = VM_STATE_PLACE
         loop_resource(hosts) { |host|
           req_mem = vm_group.req_info.mem
           #@logger.debug("req mem #{req_mem}  ===> host :#{host.inspect}")
           if host.real_free_memory < req_mem
-            vm.error_msg = "#{host.name} haven't enough memory for #{vm_name} req:#{req_mem}, host has :#{host.real_free_memory}."
-            @logger.debug(vm.error_msg)
+            set_vm_error_msg(vm, "#{host.name} haven't enough memory for #{vm_name} req:#{req_mem}, host has :#{host.real_free_memory}."\
+              "And try to get next host.")
             next
           end
           #The host's memory is suitable for this VM
@@ -125,7 +139,7 @@ module VHelper::CloudManager
           sys_datastore = get_suitable_sys_datastore(vm_group.req_info, host.place_share_datastores)
 
           if sys_datastore.nil?
-            set_vm_error_msg(vm, "can not find suitable sys datastore in host #{host.name}.")
+            set_vm_error_msg(vm, "can not find suitable sys datastore in host #{host.name}. And try to find other host")
             next
           end
           @logger.debug("get sys datastore :#{sys_datastore.name}")
@@ -137,7 +151,7 @@ module VHelper::CloudManager
           used_datastores = get_suitable_datastores(place_datastores, vm_group.req_info)
           if used_datastores.empty?
             #TODO no disk space for this vm
-            set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}")
+            set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}. And try to find other host")
             next
           end
           #Find suitable Host and datastores
@@ -147,20 +161,20 @@ module VHelper::CloudManager
           assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
           vm.error_msg = nil
           ## RR for next Host
-          break
-        }
-        if vm.error_msg
-          #NO resource for this vm_group
-          set_vm_error_msg(vm, "vm can not get resources: #{vm.error_msg} \n"\
-                           "The group also has no resources to alloced rest #{vm_group.instances - num} vm")
-          #Add failure vm to failure_vms que
-          #@vm_lock.synchronize { @failure_vms[vm.name] = vm}
-          return vm.error_msg
-        else
+          # Find a suitable place 
           group_place << vm
           #@logger.debug("Add #{vm.name} to preparing vms")
           @vm_lock.synchronize { @preparing_vms[vm.name] = vm }
           vm_group.add_vm(vm)
+          break
+        }
+        if vm.error_msg
+          #NO resource for this vm_group
+          set_vm_error_msg(vm, "vm can not get resources in rp:#{cur_rp.name}. Try to look for other resource pool\n"\
+                           "And the group:#{vm_group.name} has no resources to alloced rest #{vm_group.instances - num} vm")
+          #Add failure vm to failure_vms que
+          #@vm_lock.synchronize { @failure_vms[vm.name] = vm}
+          return vm
         end
       }
       nil
@@ -201,11 +215,12 @@ module VHelper::CloudManager
         }
         if need_next_rp
           ## can not alloc vm_group anymore
-          #TODO add code here
-          @cloud_error_msg_que << need_next_rp
-          @placement_failed += vm_group.instances - vm_group.vm_ids.size
-          @logger.debug("place #{vm_group.vm_ids.size} vms (#{vm_group.instances})")
-          @logger.debug("group #{vm_group.name} failed, #{@placement_failed}")
+          vm = need_next_rp
+          @cloud_error_msg_que << vm.error_msg
+          group_failed = vm_group.instances - vm_group.vm_ids.size
+          @placement_failed += group_failed
+          @logger.debug("Can not place #{vm.name}, Try to place #{vm_group.vm_ids.size} / (#{vm_group.instances})")
+          @logger.debug("VM group #{vm_group.name} failed to place #{group_failed} vm, total failed: #{@placement_failed}.")
         end
         vm_placement << group_place
       }

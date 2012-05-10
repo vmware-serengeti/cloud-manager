@@ -16,14 +16,16 @@ module VHelper::CloudManager
       #thread_pool = ThreadPool.new(:max_threads => 32, :logger => @logger)
       @logger.debug("created thread pool")
       #Begin to parallel deploy vms
-      cluster_changes.each { |group|
-        group_each_by_threads(group, :callee=>'deploy changes', :order=>(policy==DEPLOY_GROUP_ORDER)) { |vm|
-          #TODO add change code here
-          @logger.info("changing vm #{vm.pretty_inspect}")
-          vm.status = VM_STATE_DONE
+      unless cluster_changes.empty?
+        cluster_changes.each { |group|
+          group_each_by_threads(group, :callee=>'deploy changes', :order=>(policy==DEPLOY_GROUP_ORDER)) { |vm|
+            #TODO add change code here
+            @logger.info("changing vm #{vm.pretty_inspect}")
+            vm.status = VM_STATE_DONE
+          }
         }
-      }
-      @logger.info("Finish all changes")
+        @logger.info("Finish all changes")
+      end
 
       group_each_by_threads(vm_placement, :order=>(policy==DEPLOY_GROUP_ORDER), :callee=>'deploy group') { |group|
           deploy_vm_group(group)

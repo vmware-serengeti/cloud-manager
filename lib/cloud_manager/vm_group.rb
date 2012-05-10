@@ -26,8 +26,11 @@ module VHelper::CloudManager
         vm_group = VmGroupInfo.new(@logger, vm_group_req, template_id)
         disk_pattern = vm_group.req_info.disk_pattern || cluster_datastore_pattern(cluster_info, vm_group.req_info.disk_type)
         #@logger.debug("disk patterns:#{disk_pattern.pretty_inspect}")
-        disk_pattern ||= ['*']
-        vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map {|x| Regexp.new(x)}
+
+        vm_group.req_info.disk_pattern = []
+        disk_pattern = ['*'] if disk_pattern.nil?
+        vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map {|x| Regexp.new(x)} unless disk_pattern.empty?
+
         vm_group.req_rps = cluster_req_rps
         vm_group.req_rps = req_clusters_rp_to_hash(vm_group_req["vc_clusters"]) if vm_group_req["vc_clusters"]
         vm_group.network_res = network_res
