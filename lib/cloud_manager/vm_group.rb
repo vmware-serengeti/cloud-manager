@@ -55,6 +55,7 @@ module VHelper::CloudManager
           vm_group = vm_groups[group_name]
           if vm_group.nil?
             vm_group = VmGroupInfo.new(@logger)
+            vm_group.name = group_name
             vm_groups[group_name] = vm_group
           end
           vm_group.add_vm(vm)
@@ -78,6 +79,7 @@ module VHelper::CloudManager
       @logger = logger
       @vm_ids = {}
       @req_info = ResourceInfo.new(rp, template_id)
+      @name = ""
       return unless rp
       @name = rp["name"]
       @instances = rp["instance_num"]

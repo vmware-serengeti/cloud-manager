@@ -101,11 +101,13 @@ module VHelper::CloudManager
     end
 
     def setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
-      vm_groups_existed.each { |exist_group|
+      #@logger.debug("#{vm_groups_existed.class}")
+      vm_groups_existed.each_value { |exist_group|
+        #@logger.debug("exist group: #{exist_group.pretty_inspect}")
         input_group = vm_groups_input[exist_group.name]
         next if input_group.nil?
         @logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
-        exist_group.vm_ids.each_values {|vm| vm.ha_enable = input_group.req_info.ha }
+        exist_group.vm_ids.each_value {|vm| vm.ha_enable = input_group.req_info.ha }
       }
     end
 
@@ -171,15 +173,14 @@ module VHelper::CloudManager
     end
 
     def change_wildcard2regex_str(str)
-      str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| return "^#{out}$" }
+      str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| return "^#{out}$" } unless str.nil?
+      "^.*$"
     end
 
     def change_wildcard2regex(strArray)
       #@logger.debug("input:#{strArray.pretty_inspect}")
       return change_wildcard2regex_str(strArray) unless strArray.class == Array
-      outArray = []
-      strArray.each { |str| outArray << change_wildcard2regex_str(str) }
-      outArray
+      strArray.collect { |str| change_wildcard2regex_str(str) }
     end
 
     def list_vms(cloud_provider, cluster_info, task)
