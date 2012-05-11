@@ -102,8 +102,8 @@ module VHelper::CloudManager
         @logger.debug("#{vm_info.name} is existed.")
       end
     end
-    def find_vm(vm_mob)
-      @vm_ids[vm_mob]
+    def find_vm(vm_name)
+      @vm_ids[vm_name]
     end
   end
 

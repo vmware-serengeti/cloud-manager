@@ -60,9 +60,9 @@ module VHelper::CloudManager
 
             if template_placement?
               @status = CLUSTER_TEMPLATE_PLACE
-              template_place = template_placement(dc_resources, cluster_info, vm_groups_input, placement)
-              log_obj_to_file(template_place, 'template_place')
-              cluster_deploy([], template_place)
+              template_place_result = template_place(dc_resources, cluster_info, vm_groups_input, placement)
+              log_obj_to_file(template_place_result, 'template_place')
+              cluster_deploy([], template_place_result)
             end
 
             @logger.debug("Begin deploy")

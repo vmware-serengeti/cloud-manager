@@ -100,6 +100,15 @@ module VHelper::CloudManager
       "<vHelperCloud: #{@name} vc: #{@vc_address} status: #{@status} client: #{@client.inspect}>"
     end
 
+    def setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
+      vm_groups_existed.each { |exist_group|
+        input_group = vm_groups_input[exist_group.name]
+        next if input_group.nil?
+        @logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
+        exist_group.vm_ids.each_values {|vm| vm.ha_enable = input_group.req_info.ha }
+      }
+    end
+
     def prepare_working(cluster_info)
       ###########################################################
       # Connect to Cloud server
@@ -129,6 +138,7 @@ module VHelper::CloudManager
       vm_groups_existed = create_vm_group_from_resources(dc_resources, cluster_info["name"])
       log_obj_to_file(vm_groups_existed, 'vm_groups_existed')
 
+      setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
       @logger.info("Finish collect vm_group info from resources")
       [dc_resources, vm_groups_existed, vm_groups_input]
     end

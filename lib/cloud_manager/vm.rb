@@ -145,6 +145,7 @@ module VHelper::CloudManager
       @error_msg = ""
       @assign_ip = []
       @networking = nil
+      @ha_enable = true
     end
 
     def get_create_progress

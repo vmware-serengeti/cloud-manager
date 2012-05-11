@@ -2,14 +2,15 @@ module VHelper::CloudManager
   class VHelperCloud
     ##########################################################
     # template placement
-    def template_dup_name(template_name, datastore) 
-
+    def gem_template_name(template_name, datastore) 
+      return "#{template_name}-#{datastore.mob}"
     end
 
-    def template_placement(dc_resources, vm_groups_existed, vm_groups_input, placement)
+    def template_place(dc_resources, vm_groups_existed, vm_groups_input, placement)
       t_place = []
       # TODO check template vm 
-      
+      temp_hash = {}
+
       # TODO calc template should clone to which hosts/datastores
 
       t_place
