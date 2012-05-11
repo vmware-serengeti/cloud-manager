@@ -231,8 +231,8 @@ module VHelper::CloudManager
 
     def loop_resource(res)
       while (!res.empty?)
-        res.rotate!
         res.shift if !yield res.first
+        res.rotate!
       end
     end
 
