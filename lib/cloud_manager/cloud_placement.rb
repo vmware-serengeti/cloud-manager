@@ -6,7 +6,7 @@ module VHelper::CloudManager
 
     end
 
-    def template_placement(dc_resources, vm_groups_existed, vm_groups_input)
+    def template_placement(dc_resources, vm_groups_existed, vm_groups_input, placement)
       t_place = []
       # TODO check template vm 
       
@@ -230,8 +230,8 @@ module VHelper::CloudManager
 
     def loop_resource(res)
       while (!res.empty?)
-        res.shift if !yield res.first
         res.rotate!
+        res.shift if !yield res.first
       end
     end
 

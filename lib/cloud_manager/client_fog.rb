@@ -170,7 +170,18 @@ module VHelper::CloudManager
 
     def vm_set_ha(vm, enable)
       raise "Do not login cloud server, please login first" if @connection.nil?
-      @connection.vm_disable_ha('vm_moid' => vm.mob) if (!enable)
+      # default is enable
+      try_num = 3
+      return if enable
+      try_num.times { |num|
+        result = @connection.vm_disable_ha('vm_moid' => vm.mob)
+        if result['task_state'] == 'success'
+          @logger.debug("vm:#{vm.name} disable ha success.")
+          return
+        end
+        @logger.debug("vm:#{vm.name} disable ha failed and retry #{num+1} times.")
+      }
+
     end
 
     def is_vm_in_ha_cluster(vm)
