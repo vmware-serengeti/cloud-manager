@@ -111,6 +111,17 @@ module VHelper::CloudManager
       }
     end
 
+    def update_input_group_by_existed(vm_groups_input, vm_groups_existed)
+      # remove ips associated with existing vms from input ip pool
+      vm_groups_existed.each_value { |exist_group|
+        input_group = vm_groups_input[exist_group.name]
+        next if input_group.nil?
+        @logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
+        # TODO: multiple vnics
+        exist_group.vm_ids.each_value {|vm| input_group.network_res.ip_remove(0, vm.ip_address) }
+      }
+    end
+
     def prepare_working(cluster_info)
       ###########################################################
       # Connect to Cloud server
@@ -141,6 +152,9 @@ module VHelper::CloudManager
       log_obj_to_file(vm_groups_existed, 'vm_groups_existed')
 
       setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
+
+      update_input_group_by_existed(vm_groups_input, vm_groups_existed)
+
       @logger.info("Finish collect vm_group info from resources")
       [dc_resources, vm_groups_existed, vm_groups_input]
     end
