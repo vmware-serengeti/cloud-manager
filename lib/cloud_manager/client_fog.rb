@@ -77,6 +77,9 @@ module VHelper::CloudManager
     def vm_create_disk(vm, disk, options={})
       raise "Do not login cloud server, please login first" if @connection.nil?
       info = {'instance_uuid' => vm.instance_uuid, 'vmdk_path' => disk.fullpath, 'disk_size' => disk.size / DISK_SIZE_TIMES }
+      if disk.type == DISK_TYPE_SHARE
+         info['thin_provision'] = true
+      end
       result = @connection.vm_create_disk(info)
       # TODO add update disk and vm's info
     end

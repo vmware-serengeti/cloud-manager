@@ -58,7 +58,7 @@ module VHelper::CloudManager
         next if !datastore_group_match?(req_info, datastore.name)
         free_size = datastore.real_free_space - REMAIDER_DISK_SIZE
         free_size = req_size if free_size > req_size 
-        used_datastores << {:datastore => datastore, :size=>free_size}
+        used_datastores << {:datastore => datastore, :size => free_size, :type => req_info.disk_type}
         req_size -= free_size.to_i
         return used_datastores if req_size.to_i <=0 
       }
@@ -90,6 +90,7 @@ module VHelper::CloudManager
         datastore[:datastore].unaccounted_space += datastore[:size].to_i
         disk = vm.disk_add(datastore[:size].to_i, fullpath)
         disk.datastore_name = datastore[:datastore].name
+        disk.type = datastore[:type]
       }
     end
 
