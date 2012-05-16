@@ -60,9 +60,9 @@ module VHelper::CloudManager
         free_size = req_size if free_size > req_size 
         used_datastores << {:datastore => datastore, :size => free_size, :type => req_info.disk_type}
         req_size -= free_size.to_i
-        return used_datastores if req_size.to_i <=0 
+        break used_datastores if req_size.to_i <= 0 
       }
-      []
+      used_datastores
     end
 
     def assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
@@ -159,7 +159,6 @@ module VHelper::CloudManager
           #Find suitable Host and datastores
           host.place_share_datastores.rotate!
           @logger.debug("datastores: #{place_datastores.pretty_inspect}")
-          place_datastores.rotate!
           assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
           vm.error_msg = nil
           ## RR for next Host
@@ -231,10 +230,10 @@ module VHelper::CloudManager
     end
 
     def loop_resource(res)
-      while (!res.empty?)
-        res.shift if !yield res.first
-        res.rotate!
-      end
+      offset = 0
+      res.each_with_index { |elem, idx| offset = idx + 1; yield elem }
+    ensure
+      res.rotate!(offset)
     end
 
   end
