@@ -1,3 +1,4 @@
+require "lib/cloud_manager/log"
 require "lib/cloud_manager/cloud_item"
 require "lib/cloud_manager/network_res"
 require "lib/cloud_manager/vm"
@@ -18,49 +19,51 @@ require "lib/cloud_manager/cloud_create"
 require "lib/cloud_manager/cloud_operations"
 require 'lib/cloud_manager/vhelper_cloud'
 
-module VHelper::CloudManager
-  class Manager
-    def self.cluster_helper(parameter, options={})
-      cloud = nil
-      begin
-        cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-        if (options[:wait])
-          yield cloud
-        else
-          # options["sync"] == false
-          Thread.new do
+module VHelper
+  module CloudManager
+    class Manager
+      def self.cluster_helper(parameter, options={})
+        cloud = nil
+        begin
+          cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+          if (options[:wait])
             yield cloud
+          else
+            # options["sync"] == false
+            Thread.new do
+              yield cloud
+            end
           end
+        ensure
+          cloud.release_connection if cloud
         end
-      ensure
-        cloud.release_connection if cloud
+        cloud
       end
-      cloud
-    end
 
-    def self.start_cluster(parameter, options={})
-      cluster_helper(parameter, options) { |cloud| cloud.start }
-    end
+      def self.start_cluster(parameter, options={})
+        cluster_helper(parameter, options) { |cloud| cloud.start }
+      end
 
-    def self.stop_cluster(parameter, options={})
-      cluster_helper(parameter, options) { |cloud| cloud.stop }
-    end
+      def self.stop_cluster(parameter, options={})
+        cluster_helper(parameter, options) { |cloud| cloud.stop }
+      end
 
-    def self.delete_cluster(parameter, options={})
-      cluster_helper(parameter, options) { |cloud| cloud.delete }
-    end
+      def self.delete_cluster(parameter, options={})
+        cluster_helper(parameter, options) { |cloud| cloud.delete }
+      end
 
-    def self.create_cluster(parameter, options={})
-      cluster_helper(parameter, options) { |cloud| cloud.create_and_update }
-    end
+      def self.create_cluster(parameter, options={})
+        cluster_helper(parameter, options) { |cloud| cloud.create_and_update }
+      end
 
-    def self.list_vms_cluster(parameter, options={})
-      cloud = nil
-      begin
-        cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
-        return cloud.list_vms
-      ensure
-        cloud.release_connection if cloud
+      def self.list_vms_cluster(parameter, options={})
+        cloud = nil
+        begin
+          cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+          return cloud.list_vms
+        ensure
+          cloud.release_connection if cloud
+        end
       end
     end
   end

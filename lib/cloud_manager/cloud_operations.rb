@@ -65,6 +65,7 @@ module VHelper::CloudManager
             @logger.debug("stop :#{vm.name}")
 
             next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
+            next if !vm_deploy_op(vm, 'reRead') {@client.update_vm_properties_by_vm_mob(vm)}
             vm.status = VM_STATE_DONE
             vm_finish(vm)
           }

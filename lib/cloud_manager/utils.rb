@@ -187,39 +187,7 @@ module VHelper::CloudManager
       return /([\w\s\d]+)#{VM_SPLIT_SIGN}([\w\s\d]+)#{VM_SPLIT_SIGN}([\d]+)/.match(vm_name)
     end
 
-    def self.Logger
-      @@self_logger = Logger.new if @@self_logger.nil?
-      @@self_logger
-    end
   end
-
-  class Logger
-    def initialize()
-      puts "initiated logger"
-    end
-    def info(msg)
-      puts ("INFO: #{msg2str(msg)}")
-    end
-
-    def debug(msg)
-      puts ("DEBUG: #{msg2str(msg)}")
-    end
-
-    def inspect; "<Cloud-manager-Logger>" end
-
-    def msg2str(msg)
-      case msg
-      when ::String
-        msg
-      when ::Exception
-        "EXCEPTION #{ msg.message } (#{ msg.class })\n" <<
-        (msg.backtrace || []).join("\n")
-      else
-        msg.inspect
-      end
-    end
-  end
-
 
 end
 
