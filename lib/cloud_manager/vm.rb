@@ -1,15 +1,15 @@
 module Serengeti
   module CloudManager
-    VM_STATE_BIRTH      = {:doing=>"Birth"        ,:done=> 'Birth'}
-    VM_STATE_PLACE      = {:doing=>"Placing"      ,:done=> 'Placed'}
-    VM_STATE_CLONE      = {:doing=>"Cloning"      ,:done=> 'Cloned'}
-    VM_STATE_RECONFIG   = {:doing=>"Reconfiging"  ,:done=> 'Reconfig'}
-    VM_STATE_DELETE     = {:doing=>"Deleting"     ,:done=> 'Deleted'}
-    VM_STATE_DONE       = {:doing=>""             ,:done=> 'Finished'}
-    VM_STATE_FAIL       = {:doing=>"Failure"      ,:done=> 'Failure'} 
-    VM_STATE_POWER_ON   = {:doing=>"Powering On"  ,:done=> 'Powered On'}
-    VM_STATE_WAIT_IP    = {:doing=>"Waiting for IP"   ,:done=> 'VM Ready'}
-    VM_STATE_POWER_OFF  = {:doing=>"Powering Off" ,:done=> 'Powered Off'}
+    VM_STATE_BIRTH      = {:doing => "Initializing" , :done => 'Not Exist'}
+    VM_STATE_PLACE      = {:doing => "Placing"      , :done => 'Placed'}
+    VM_STATE_CLONE      = {:doing => "Cloning"      , :done => 'Created'}
+    VM_STATE_RECONFIG   = {:doing => "Reconfiging"  , :done => 'Created'}
+    VM_STATE_DELETE     = {:doing => "Deleting"     , :done => 'Deleted'}
+    VM_STATE_DONE       = {:doing => ""             , :done => 'Finished'}
+    VM_STATE_FAIL       = {:doing => "Failure"      , :done => 'Failure'} 
+    VM_STATE_POWER_ON   = {:doing => "Powering On"  , :done => 'Powered On'}
+    VM_STATE_WAIT_IP    = {:doing => "Waiting for IP"   , :done => 'VM Ready'}
+    VM_STATE_POWER_OFF  = {:doing => "Powering Off" , :done => 'Powered Off'}
 
     VM_ACTION_CREATE  = 'create'
     VM_ACTION_DELETE  = 'delete'
