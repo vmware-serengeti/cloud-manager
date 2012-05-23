@@ -1,14 +1,14 @@
 module VHelper::CloudManager
-  VM_STATE_BIRTH      = "birth"
-  VM_STATE_PLACE      = "placing"
-  VM_STATE_CLONE      = "cloning"
-  VM_STATE_RECONFIG   = "reconfiging"
-  VM_STATE_DELETE     = "deleting"
-  VM_STATE_DONE       = "finished"
-  VM_STATE_FAIL       = "fails"
-  VM_STATE_POWER_ON   = "poweron..."
-  VM_STATE_WAIT_IP    = "waiting ip"
-  VM_STATE_POWER_OFF  = "poweroff..."
+  VM_STATE_BIRTH      = {:doing=>"Birth"        ,:done=> 'Birth'}
+  VM_STATE_PLACE      = {:doing=>"Placing"      ,:done=> 'Placed'}
+  VM_STATE_CLONE      = {:doing=>"Cloning"      ,:done=> 'Cloned'}
+  VM_STATE_RECONFIG   = {:doing=>"Reconfiging"  ,:done=> 'Reconfig'}
+  VM_STATE_DELETE     = {:doing=>"Deleting"     ,:done=> 'Deleted'}
+  VM_STATE_DONE       = {:doing=>"Finished"     ,:done=> 'Finished'}
+  VM_STATE_FAIL       = {:doing=>"Failure"      ,:done=> 'Failure'} 
+  VM_STATE_POWER_ON   = {:doing=>"Power On..."  ,:done=> 'Powered On'}
+  VM_STATE_WAIT_IP    = {:doing=>"Waiting ip"   ,:done=> 'Get ip'}
+  VM_STATE_POWER_OFF  = {:doing=>"Power Off..." ,:done=> 'Powered Off'}
 
   VM_ACTION_CREATE  = 'create'
   VM_ACTION_DELETE  = 'delete'
@@ -17,34 +17,34 @@ module VHelper::CloudManager
   VM_ACTION_STOP    = 'stop'
 
   VM_CREATE_PROCESS = {
-    VM_STATE_BIRTH    => 0,
-    VM_STATE_PLACE    => 2,
-    VM_STATE_CLONE    => 10,
-    VM_STATE_RECONFIG => 60,
-    VM_STATE_POWER_ON => 70,
-    VM_STATE_WAIT_IP  => 80,
-    VM_STATE_DONE     => 100,
+    VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_PLACE    => {:progress=>2, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_CLONE    => {:progress=>10, :status=>VM_STATE_PLACE[:done]},
+    VM_STATE_RECONFIG => {:progress=>60, :status=>VM_STATE_CLONE[:done]},
+    VM_STATE_POWER_ON => {:progress=>70, :status=>VM_STATE_RECONFIG[:done]},
+    VM_STATE_WAIT_IP  => {:progress=>80, :status=>VM_STATE_POWER_ON[:done]},
+    VM_STATE_DONE     => {:progress=>100, :status=>VM_STATE_DONE[:done]},
   }
 
   VM_DELETE_PROCESS = {
-    VM_STATE_BIRTH    => 0,
-    VM_STATE_DELETE => 20,
-    VM_STATE_DONE     => 100,
+    VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_DELETE => {:progress=>20, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_DONE     => {:progress=>100,:status=>VM_STATE_DONE[:done]},
   }
 
   VM_STOP_PROCESS = {
-    VM_STATE_BIRTH    => 0,
-    VM_STATE_POWER_OFF=> 20,
-    VM_STATE_DONE     => 100,
+    VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_POWER_OFF=> {:progress=>20, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_DONE     => {:progress=>100,:status=>VM_STATE_DONE[:done]},
   }
 
   VM_START_PROCESS = {
-    VM_STATE_BIRTH    => 0,
-    VM_STATE_CLONE    => 10,
-    VM_STATE_RECONFIG => 60,
-    VM_STATE_POWER_ON => 70,
-    VM_STATE_WAIT_IP  => 80,
-    VM_STATE_DONE     => 100,
+    VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_CLONE    => {:progress=>10, :status=>VM_STATE_BIRTH[:done]},
+    VM_STATE_RECONFIG => {:progress=>60, :status=>VM_STATE_CLONE[:done]},
+    VM_STATE_POWER_ON => {:progress=>70, :status=>VM_STATE_RECONFIG[:done]},
+    VM_STATE_WAIT_IP  => {:progress=>80, :status=>VM_STATE_POWER_ON[:done]},
+    VM_STATE_DONE     => {:progress=>100, :status=>VM_STATE_DONE[:done]},
   }
 
   VM_ACT_PROGRES = {
@@ -148,29 +148,26 @@ module VHelper::CloudManager
       @ha_enable = true
     end
 
-    def get_create_progress
-      VM_CREATE_PROCESS[@status] || 0
-    end
-
     def get_progress
       progress = VM_ACT_PROGRES[@action]
       return 0 if progress.nil?
-      step = progress[@status]
+      step = progress[@status][:progress]
       return 0 if step.nil?
       step
     end
 
     def to_hash
+      progress = VM_ACT_PROGRES[@action]
       attrs = {}
       attrs[:name]        = @name
       attrs[:hostname]    = @hostname
-      attrs[:ip_address]  = nil
-      attrs[:ip_address]  = @ip_address if @power_state == "poweredOn"
-      attrs[:status]      = state #@status
+      attrs[:ip_address]  = (@power_state == "poweredOn") ? @ip_address : nil
+      attrs[:status]      = progress[@status][:status]
+      attrs[:action]      = @status[:doing] #@status
 
       attrs[:finished]    = ready? # FIXME should use 'vm.finished?'
       attrs[:succeed]     = ready? # FIXME should use 'vm.succeed?'
-      attrs[:progress]    = get_create_progress
+      attrs[:progress]    = get_progress
 
       attrs[:created]     = @created
       attrs[:deleted]     = false

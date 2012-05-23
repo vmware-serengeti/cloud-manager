@@ -8,18 +8,18 @@ module VHelper::CloudManager
     CLOUD_WORK_NONE   = 'none'
 
     CLUSTER_BIRTH       = "birth"
-    CLUSTER_CONNECT     = "connectting"
-    CLUSTER_FETCH_INFO  = "fetching"
-    CLUSTER_UPDATE      = "updating"
+    CLUSTER_CONNECT     = "Connect to cloud"
+    CLUSTER_FETCH_INFO  = "Fetching info from cloud"
+    CLUSTER_UPDATE      = "Updating"
     CLUSTER_TEMPLATE_PLACE = "tempalte placing"
-    CLUSTER_PLACE       = "placing"
-    CLUSTER_DEPLOY      = "deploying"
+    CLUSTER_PLACE       = "Placing"
+    CLUSTER_DEPLOY      = "Deploying"
     CLUSTER_RE_FETCH_INFO = "refetching"
-    CLUSTER_WAIT_START  = "waiting start"
-    CLUSTER_DELETE    = "deleting"
-    CLUSTER_DONE      = "done"
-    CLUSTER_START     = 'starting'
-    CLUSTER_STOP      = 'stop'
+    CLUSTER_WAIT_START  = "Waiting start"
+    CLUSTER_DELETE    = "Deleting"
+    CLUSTER_DONE      = 'Done'
+    CLUSTER_START     = 'Starting'
+    CLUSTER_STOP      = 'Stoping'
 
     CLUSTER_CREATE_PROCESS = {
         CLUSTER_BIRTH           =>[0,1],

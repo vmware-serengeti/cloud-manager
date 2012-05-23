@@ -1,193 +1,194 @@
-module VHelper::CloudManager
-  module Parallel
-    def map_each_by_threads(map, options={})
-      group_each_by_threads(map.values, options) { |item| yield item }
-    end
+module VHelper
+  module CloudManager
+    module Parallel
+      def map_each_by_threads(map, options={})
+        group_each_by_threads(map.values, options) { |item| yield item }
+      end
 
-    def group_each_by_threads(group, options={})
-      work_thread = []
-      if options[:order]
-        #serial method
-        @logger.debug("#{options[:callee]}run in serial model")
-        group.each { |item| yield item }
-      else
-        #paralleled method
-        @logger.debug("#{options[:callee]}run in paralleled model")
-        group.each { |item|
-          work_thread << Thread.new(item) { |item|
-            begin
-              yield item
-            rescue => e
-              @logger.debug("#{options[:callee]} threads failed")
-              @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+      def group_each_by_threads(group, options={})
+        work_thread = []
+        if options[:order]
+          #serial method
+          @logger.debug("#{options[:callee]}run in serial model")
+          group.each { |item| yield item }
+        else
+          #paralleled method
+          @logger.debug("#{options[:callee]}run in paralleled model")
+          group.each do |item|
+            work_thread << Thread.new(item) do |item|
+              begin
+                yield item
+              rescue => e
+                @logger.debug("#{options[:callee]} threads failed")
+                @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+              end
             end
-          }
-        }
-        work_thread.each { |t| t.join }
+          end
+          work_thread.each { |t| t.join }
+        end
+        @logger.info("##Finish #{options[:callee]}")
       end
-      @logger.info("##Finish #{options[:callee]}")
-    end
 
-    def vm_deploy_group_pool(thread_pool, group, options={})
-      thread_pool.wrap { |pool|
-        group.each { |vm|
-          @logger.debug("enter : #{vm.pretty_inspect}")
-          pool.process {
-            begin
-              yield(vm)
-            rescue
-              #TODO do some warning handler here
-              raise
+      def vm_deploy_group_pool(thread_pool, group, options={})
+        thread_pool.wrap do |pool|
+          group.each do |vm|
+            @logger.debug("enter : #{vm.pretty_inspect}")
+            pool.process do
+              begin
+                yield(vm)
+              rescue
+                #TODO do some warning handler here
+                raise
+              end
             end
-          }
-        @logger.info("##Finish change one vm_group")
-        }
-      }
-    end
-
-    class ThreadPool
-      def initialize(options = {})
-        @actions = []
-        @lock = Mutex.new
-        @cv = ConditionVariable.new
-        @max_threads = options[:max_threads] || 1
-        @available_threads = @max_threads
-        @logger = options[:logger]
-        @boom = nil
-        @original_thread = Thread.current
-        @threads = []
-        @state = :open
-      end
-
-      def wrap
-        begin
-          yield self
-          wait
-        ensure
-          shutdown
-        end
-      end
-
-      def pause
-        @lock.synchronize do
-          @state = :paused
-        end
-      end
-
-      def resume
-        @lock.synchronize do
-          @state = :open
-          [@available_threads, @actions.size].min.times do
-            @available_threads -= 1
-            create_thread
+            @logger.info("##Finish change one vm_group")
           end
         end
       end
 
-      def process(&block)
-        @lock.synchronize do
-          @actions << block
-          if @state == :open
-            if @available_threads > 0
-              @logger.debug("Creating new thread")
+      class ThreadPool
+        def initialize(options = {})
+          @actions = []
+          @lock = Mutex.new
+          @cv = ConditionVariable.new
+          @max_threads = options[:max_threads] || 1
+          @available_threads = @max_threads
+          @logger = options[:logger]
+          @boom = nil
+          @original_thread = Thread.current
+          @threads = []
+          @state = :open
+        end
+
+        def wrap
+          begin
+            yield self
+            wait
+          ensure
+            shutdown
+          end
+        end
+
+        def pause
+          @lock.synchronize do
+            @state = :paused
+          end
+        end
+
+        def resume
+          @lock.synchronize do
+            @state = :open
+            [@available_threads, @actions.size].min.times do
               @available_threads -= 1
               create_thread
-            else
-              @logger.debug("All threads are currently busy, queuing action")
             end
-          elsif @state == :paused
-            @logger.debug("Pool is paused, queueing action.")
           end
         end
-      end
 
-      def create_thread
-        thread = Thread.new do
-          begin
-            loop do
-              action = nil
-              @lock.synchronize do
-                action = @actions.shift unless @boom
-                if action
-                  @logger.debug("Found an action that needs to be processed")
-                else
-                  @logger.debug("Thread is no longer needed, cleaning up")
-                  @available_threads += 1
-                  @threads.delete(thread) if @state == :open
+        def process(&block)
+          @lock.synchronize do
+            @actions << block
+            if @state == :open
+              if @available_threads > 0
+                @logger.debug("Creating new thread")
+                @available_threads -= 1
+                create_thread
+              else
+                @logger.debug("All threads are currently busy, queuing action")
+              end
+            elsif @state == :paused
+              @logger.debug("Pool is paused, queueing action.")
+            end
+          end
+        end
+
+        def create_thread
+          thread = Thread.new do
+            begin
+              loop do
+                action = nil
+                @lock.synchronize do
+                  action = @actions.shift unless @boom
+                  if action
+                    @logger.debug("Found an action that needs to be processed")
+                  else
+                    @logger.debug("Thread is no longer needed, cleaning up")
+                    @available_threads += 1
+                    @threads.delete(thread) if @state == :open
+                  end
+                end
+
+                break unless action
+
+                begin
+                  action.call
+                rescue Exception => e
+                  raise_worker_exception(e)
                 end
               end
-
-              break unless action
-
-              begin
-                action.call
-              rescue Exception => e
-                raise_worker_exception(e)
-              end
             end
+            @lock.synchronize { @cv.signal unless working? }
           end
-          @lock.synchronize { @cv.signal unless working? }
+          @threads << thread
         end
-        @threads << thread
-      end
 
-      def raise_worker_exception(exception)
-        if exception.respond_to?(:backtrace)
-          @logger.debug("Worker thread raised exception: #{exception} - #{exception.backtrace.join("\n")}")
-        else
-          @logger.debug("Worker thread raised exception: #{exception}")
+        def raise_worker_exception(exception)
+          if exception.respond_to?(:backtrace)
+            @logger.debug("Worker thread raised exception: #{exception} - #{exception.backtrace.join("\n")}")
+          else
+            @logger.debug("Worker thread raised exception: #{exception}")
+          end
+          @lock.synchronize do
+            @boom = exception if @boom.nil?
+          end
         end
-        @lock.synchronize do
-          @boom = exception if @boom.nil?
+
+        def working?
+          @boom.nil? && (@available_threads != @max_threads || !@actions.empty?)
         end
-      end
 
-      def working?
-        @boom.nil? && (@available_threads != @max_threads || !@actions.empty?)
-      end
-
-      def wait
-        @logger.debug("Waiting for tasks to complete")
-        @lock.synchronize do
-          @cv.wait(@lock) while working?
-          raise @boom if @boom
+        def wait
+          @logger.debug("Waiting for tasks to complete")
+          @lock.synchronize do
+            @cv.wait(@lock) while working?
+            raise @boom if @boom
+          end
         end
-      end
 
-      def shutdown
-        return if @state == :closed
-        @logger.debug("Shutting down pool")
-        @lock.synchronize do
+        def shutdown
           return if @state == :closed
-          @state = :closed
-          @actions.clear
+          @logger.debug("Shutting down pool")
+          @lock.synchronize do
+            return if @state == :closed
+            @state = :closed
+            @actions.clear
+          end
+          @threads.each { |t| t.join }
         end
-        @threads.each { |t| t.join }
+
+      end
+
+    end
+
+    class VHelperCloud
+      VM_SPLIT_SIGN = '-'
+      def gen_vm_name(cluster_name, group_name, num)
+        return "#{cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"
+      end
+
+      def vm_is_this_cluster?(vm_name)
+        result = get_from_vm_name(vm_name)
+        return false unless result
+        return false unless (result[1] == @cluster_name)
+        true
+      end
+
+      def get_from_vm_name(vm_name, options={})
+        return /([\w\s\d]+)#{VM_SPLIT_SIGN}([\w\s\d]+)#{VM_SPLIT_SIGN}([\d]+)/.match(vm_name)
       end
 
     end
 
   end
-
-
-  class VHelperCloud
-    VM_SPLIT_SIGN = '-'
-    def gen_vm_name(cluster_name, group_name, num)
-      return "#{cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"
-    end
-
-    def vm_is_this_cluster?(vm_name)
-      result = get_from_vm_name(vm_name)
-      return false unless result
-      return false unless (result[1] == @cluster_name)
-      true
-    end
-
-    def get_from_vm_name(vm_name, options={})
-      return /([\w\s\d]+)#{VM_SPLIT_SIGN}([\w\s\d]+)#{VM_SPLIT_SIGN}([\d]+)/.match(vm_name)
-    end
-
-  end
-
 end
 

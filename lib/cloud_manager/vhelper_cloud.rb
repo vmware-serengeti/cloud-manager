@@ -66,7 +66,7 @@ module VHelper::CloudManager
     def req_clusters_rp_to_hash(a)
       rps = {}
       # FIXME resource_pool's name can be the same between different clusters
-      a.each {|v| v["vc_rps"].each { |rp| rps[rp] = v["name"] } }
+      a.map {|v| v["vc_rps"].each { |rp| rps[rp] = v["name"] } }
       rps
     end
 
@@ -100,26 +100,27 @@ module VHelper::CloudManager
       "<vHelperCloud: #{@name} vc: #{@vc_address} status: #{@status} client: #{@client.inspect}>"
     end
 
+    # Setting existed vm parameter from input 
     def setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
       #@logger.debug("#{vm_groups_existed.class}")
-      vm_groups_existed.each_value { |exist_group|
+      vm_groups_existed.each_value do |exist_group|
         #@logger.debug("exist group: #{exist_group.pretty_inspect}")
         input_group = vm_groups_input[exist_group.name]
         next if input_group.nil?
         @logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
         exist_group.vm_ids.each_value {|vm| vm.ha_enable = input_group.req_info.ha }
-      }
+      end
     end
 
     def update_input_group_by_existed(vm_groups_input, vm_groups_existed)
       # remove ips associated with existing vms from input ip pool
-      vm_groups_existed.each_value { |exist_group|
+      vm_groups_existed.each_value do |exist_group|
         input_group = vm_groups_input[exist_group.name]
         next if input_group.nil?
         @logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
         # TODO: multiple vnics
         exist_group.vm_ids.each_value {|vm| input_group.network_res.ip_remove(0, vm.ip_address) }
-      }
+      end
     end
 
     def prepare_working(cluster_info)
@@ -130,6 +131,7 @@ module VHelper::CloudManager
       @input_cluster_info = cluster_info
       @status = CLUSTER_CONNECT
       @client = ClientFactory.create(@client_name, @logger)
+      #client connect need more connect sessions
       @client.login(@vc_address, @vc_username, @vc_password)
 
       @logger.debug("Create Resources ...")
@@ -195,15 +197,6 @@ module VHelper::CloudManager
       #@logger.debug("input:#{strArray.pretty_inspect}")
       return change_wildcard2regex_str(strArray) unless strArray.class == Array
       strArray.collect { |str| change_wildcard2regex_str(str) }
-    end
-
-    def list_vms(cloud_provider, cluster_info, task)
-      action_process (CLOUD_WORK_LIST) {
-        @logger.debug("enter list_vms...")
-        create_cloud_provider(cloud_provider)
-        dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
-        get_result.servers
-      }
     end
 
   end

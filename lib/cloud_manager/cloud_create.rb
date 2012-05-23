@@ -2,9 +2,10 @@ module VHelper::CloudManager
   class VHelperCloud
     def create_and_update(cloud_provider, cluster_info, task)
       action_process (CLOUD_WORK_CREATE) {
-        @logger.debug("enter create_and_update...")
+        @logger.info("enter create_and_update...")
         create_cloud_provider(cloud_provider)
         @vm_lock.synchronize {
+          #TODO document each vm queue. change to same timing
           @deploy_vms = {}
           @existed_vms = {}
           @preparing_vms = {}
@@ -14,7 +15,6 @@ module VHelper::CloudManager
         #FIXME we only support one cluster, currently
 
         #@logger.debug("#{cluster_info.inspect}")
-        @logger.debug("Begin vHelper work...")
         cluster_changes = []
 
         begin
@@ -47,13 +47,14 @@ module VHelper::CloudManager
           return
         end
 
+        # FIXME add networking/port group/resource check
         retry_num = 1
 
         retry_num.times do |cycle_num|
           begin
             ###########################################################
             #Caculate cluster placement
-            @logger.debug("Begin placement")
+            @logger.info("Begin placement")
             @status = CLUSTER_PLACE
             placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed, cluster_info)
             log_obj_to_file(placement, 'placement')
@@ -65,11 +66,12 @@ module VHelper::CloudManager
               cluster_deploy([], template_place_result)
             end
 
-            @logger.debug("Begin deploy")
+            @logger.info("Begin deploy")
             #Begin cluster deploy
             @status = CLUSTER_DEPLOY
             successful = cluster_deploy(cluster_changes , placement)
 
+            @logger.info("Begin waiting cluster ready")
             #Wait cluster ready
             @status = CLUSTER_WAIT_START
             successful = cluster_wait_ready(@existed_vms.values)
@@ -82,12 +84,12 @@ module VHelper::CloudManager
 
             log_obj_to_file(dc_resources, "dc_resource-#{cycle_num}")
           rescue => e
-            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+            @logger.warn("#{e} - #{e.backtrace.join("\n")}")
             if cycle_num + 1  >= retry_num
               cluster_failed(task)
               raise
             end
-            @logger.debug("Loop placement faild and retry #{cycle_num} loop")
+            @logger.warn("Loop placement faild and retry #{cycle_num} loop")
           end
         end
         ###########################################################

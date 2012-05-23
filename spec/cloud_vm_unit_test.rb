@@ -98,7 +98,7 @@ begin
 when 11 then
     puts "##Test WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
+    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.finished?
       progress = cloud.get_progress
       puts("ut process:#{progress.inspect}")
@@ -120,17 +120,29 @@ when 11 then
   when 13 then #List vms in Cluster
     puts "## List Cluster in WDC"
     info = wdc_test_env
-    result = VHelper::CloudManager::Manager.list_vms_cluster(info)
+    cloud = VHelper::CloudManager::Manager.list_vms_cluster(info)
+    while !cloud.finished?
+      puts("list ut process:#{cloud.get_progress.inspect}")
+      sleep(1)
+    end
     puts("##result:#{result.pretty_inspect}")
   when 14 then #Start vms in Cluster
     puts "## Start Cluster in WDC"
     info = wdc_test_env
-    result = VHelper::CloudManager::Manager.start_cluster(info, :wait => true)
+    cloud = VHelper::CloudManager::Manager.start_cluster(info, :wait => false)
+    while !cloud.finished?
+      puts("start ut process:#{cloud.get_progress.inspect}")
+      sleep(1)
+    end
     puts("##result:#{result.pretty_inspect}")
   when 15 then #Stop vms in Cluster
     puts "## Stop Cluster in WDC"
     info = wdc_test_env
-    result = VHelper::CloudManager::Manager.stop_cluster(info, :wait => true)
+    cloud = VHelper::CloudManager::Manager.stop_cluster(info, :wait => false)
+    while !cloud.finished?
+      puts("stop ut process:#{cloud.get_progress.inspect}")
+      sleep(1)
+    end
     puts("##result:#{result.pretty_inspect}")
   when 100 then #show YAML file
     p "## Test ut.dc.yaml\n"

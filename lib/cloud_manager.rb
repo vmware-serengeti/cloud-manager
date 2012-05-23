@@ -40,6 +40,9 @@ module VHelper
         cloud
       end
 
+      # TODO describe start/stop/delete/create functions and limitation
+      # TODO describe cluster structures and operations
+      # TODO add group structures
       def self.start_cluster(parameter, options={})
         cluster_helper(parameter, options) { |cloud| cloud.start }
       end
@@ -56,6 +59,7 @@ module VHelper
         cluster_helper(parameter, options) { |cloud| cloud.create_and_update }
       end
 
+      # TODO change to show_cluster
       def self.list_vms_cluster(parameter, options={})
         cloud = nil
         begin
