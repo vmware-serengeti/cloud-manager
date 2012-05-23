@@ -162,7 +162,7 @@ module Serengeti
         attrs[:name]        = @name
         attrs[:hostname]    = @hostname
         attrs[:ip_address]  = (@power_state == "poweredOn") ? @ip_address : nil
-        attrs[:status]      = progress[@status][:status] unless progress.nil?
+        attrs[:status]      = progress ? progress[@status][:status] : "" 
         attrs[:action]      = @status[:doing] #@status
 
         attrs[:finished]    = ready? # FIXME should use 'vm.finished?'
