@@ -123,11 +123,12 @@ module Serengeti
 
       def vm_group_placement(vm_group, group_place, hosts, cur_rp)
         # FIXME change instances to wanted create number
-        (vm_group.size..vm_group.instances).each do |num|
+        (vm_group.size...vm_group.instances).each do |num|
           return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
           vm_name = gen_vm_name(@cluster_name, vm_group.name, num)
           if (@existed_vms.has_key?(vm_name))
             @logger.debug("do not support change existed VM's setting")
+            @existed_vms[vm_name].action = VM_ACTION_START
             next
           end
           vm = Serengeti::CloudManager::VmInfo.new(vm_name)
@@ -154,12 +155,10 @@ module Serengeti
 
             #Get the datastore for this vm
             req_size = vm_group.req_info.disk_size
-            #TODO change code to one line
             place_datastores = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
               host.place_local_datastores : host.place_share_datastores
             used_datastores = get_suitable_datastores(place_datastores, vm_group.req_info)
             if used_datastores.empty?
-              #TODO no disk space for this vm
               set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}. And try to find other host")
               next 'remove'
             end
@@ -167,6 +166,7 @@ module Serengeti
             host.place_share_datastores.rotate!
             @logger.debug("datastores: #{place_datastores.pretty_inspect}")
             assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
+            vm.action = VM_ACTION_CREATE
             vm.error_msg = nil
             ## RR for next Host
             # Find a suitable place 

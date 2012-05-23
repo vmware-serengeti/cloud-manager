@@ -138,7 +138,7 @@ when 11 then
   when 15 then #Stop vms in Cluster
     puts "## Stop Cluster in WDC"
     info = wdc_test_env
-    cloud = Serengeti::CloudManager::Manager.stop_cluster(info, :wait => true)
+    cloud = Serengeti::CloudManager::Manager.stop_cluster(info, :wait => false)
     while !cloud.finished?
       puts("stop ut process:#{cloud.get_progress.inspect}")
       sleep(1)

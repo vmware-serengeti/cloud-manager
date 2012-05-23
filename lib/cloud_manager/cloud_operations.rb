@@ -18,7 +18,7 @@ module Serengeti
         matched_vms = dc_resources.clusters.values.map {|cs| cs.vms.values.select{|vm| vm_is_this_cluster?(vm.name)} }
         matched_vms.flatten!
 
-        #@logger.debug("#{matched_vms.pretty_inspect}")
+        @logger.debug("#{matched_vms.pretty_inspect}")
         @logger.debug("vms name: #{matched_vms.collect{|vm| vm.name}.pretty_inspect}")
         yield matched_vms
         cluster_done(task)

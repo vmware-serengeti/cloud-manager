@@ -5,7 +5,7 @@ module Serengeti
   module CloudManager
     class FogAdapter
       DISK_SIZE_TIMES = 1
-      CONNECTION_NUMBER = 4
+      CONNECTION_NUMBER = 5
       include Serengeti::CloudManager::Parallel
       def initialize()
         @logger = Serengeti::CloudManager::VHelperCloud.Logger

@@ -53,10 +53,9 @@ module Serengeti
         group_each_by_threads(group, :callee=>'deploy vms') do |vm|
           # Existed VM is same as will be deployed?
           if (!vm.error_msg.nil?)
-            @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}")
+            @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg} and check ready")
             next
           end
-          vm.action = VM_ACTION_CREATE
           vm.status = VM_STATE_CLONE
           mov_vm(vm, @preparing_vms, @deploy_vms)
           next if !vm_deploy_op(vm, 'Clone') { vm_clone(vm, :poweron => false)}
