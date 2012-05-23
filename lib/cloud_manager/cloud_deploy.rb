@@ -51,29 +51,37 @@ module Serengeti
 
       def deploy_vm_group(group)
         group_each_by_threads(group, :callee=>'deploy vms') do |vm|
-          # Existed VM is same as will be deployed?
-          if (!vm.error_msg.nil?)
-            @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg} and check ready")
-            next
+          begin
+            # Existed VM is same as will be deployed?
+            if (!vm.error_msg.nil?)
+              @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg} and check ready")
+              next
+            end
+            vm_create_ok = false
+            vm.status = VM_STATE_CLONE
+            mov_vm(vm, @preparing_vms, @deploy_vms)
+            next if !vm_deploy_op(vm, 'Clone') { vm_clone(vm, :poweron => false)}
+            @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
+
+            #is this VM can do HA?
+            vm.can_ha = @client.is_vm_in_ha_cluster(vm)
+
+            vm.status = VM_STATE_RECONFIG
+            next if !vm_deploy_op(vm, 'Reconfigure disk') { vm_reconfigure_disk(vm)}
+            @logger.info("#{vm.name} finish reconfigure disk")
+
+            next if !vm_deploy_op(vm, 'Reconfigure network') {vm_reconfigure_network(vm)}
+            @logger.info("#{vm.name} finish reconfigure networking")
+            vm_create_ok = true
+
+            #Move deployed vm to existed queue
+            #TODO Move change name mov_vm
+            mov_vm(vm, @deploy_vms, @existed_vms)
+          ensure
+            if !vm_create_ok
+              @client.vm_destroy(vm)
+            end
           end
-          vm.status = VM_STATE_CLONE
-          mov_vm(vm, @preparing_vms, @deploy_vms)
-          next if !vm_deploy_op(vm, 'Clone') { vm_clone(vm, :poweron => false)}
-          @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
-
-          #is this VM can do HA?
-          vm.can_ha = @client.is_vm_in_ha_cluster(vm)
-
-          vm.status = VM_STATE_RECONFIG
-          next if !vm_deploy_op(vm, 'Reconfigure disk') { vm_reconfigure_disk(vm)}
-          @logger.info("#{vm.name} finish reconfigure disk")
-
-          next if !vm_deploy_op(vm, 'Reconfigure network') {vm_reconfigure_network(vm)}
-          @logger.info("#{vm.name} finish reconfigure networking")
-
-          #Move deployed vm to existed queue
-          #TODO Move change name mov_vm
-          mov_vm(vm, @deploy_vms, @existed_vms)
         end
       end
 
