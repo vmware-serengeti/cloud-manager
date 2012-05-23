@@ -1,4 +1,4 @@
-module VHelper
+module Serengeti
   module CloudManager
     class VHelperCloud
       # refine work: TODO
@@ -68,6 +68,7 @@ module VHelper
           return used_datastores if req_size.to_i <= 0 
           false
         end
+        used_datastores
       end
 
       def assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
@@ -129,7 +130,7 @@ module VHelper
             @logger.debug("do not support change existed VM's setting")
             next
           end
-          vm = VHelper::CloudManager::VmInfo.new(vm_name, @logger)
+          vm = Serengeti::CloudManager::VmInfo.new(vm_name)
           vm.host_name = nil
           vm.status = VM_STATE_PLACE
           loop_resource(hosts) do |host|
@@ -241,7 +242,7 @@ module VHelper
           res.rotate!
         end
       ensure
-        res.rotate!
+        res.rotate! unless res.empty?
       end
 
     end

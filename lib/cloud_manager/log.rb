@@ -1,5 +1,5 @@
 require 'logger'
-module VHelper
+module Serengeti
   module CloudManager
 
     LOG_LEVEL = {'debug'=>Logger::DEBUG, 'info'=>Logger::INFO, 'warning'=>Logger::WARN, 'error' => Logger::ERROR,}
@@ -63,7 +63,7 @@ module VHelper
 
       def log_level= (log_level)
         raise "Unknown log level #{log_level}, it should be in #{LOG_LEVEL.keys}" if LOG_LEVEL.has_key?(log_level)
-        HelperLogger.log_level = LOG_LEVEL[log_level]
+        VHelperLogger.log_level = LOG_LEVEL[log_level]
       end
     end
   end

@@ -1,4 +1,4 @@
-module VHelper
+module Serengeti
   module CloudManager
     class VHelperCloud
       CLUSTER_ACTION_MESSAGE = {
@@ -55,30 +55,30 @@ module VHelper
       end
 
       def start(cloud_provider, cluster_info, task)
-        action_process(CLOUD_WORK_START) {
-          vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_START) {|vms|
-          vms.each {|vm| vm.action = VM_ACTION_START}
-          cluster_wait_ready(vms)
-        }
+        action_process(CLOUD_WORK_START) do
+          vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_START) do |vms|
+            vms.each {|vm| vm.action = VM_ACTION_START}
+            cluster_wait_ready(vms)
+          end
         cluster_done(task)
-        }
+        end
       end
 
       def stop(cloud_provider, cluster_info, task)
-        action_process(CLOUD_WORK_STOP) {
-          vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_STOP) { |vms|
-          group_each_by_threads(vms) { |vm|
-            vm.action = VM_ACTION_STOP
-            @logger.debug("stop :#{vm.name}")
+        action_process(CLOUD_WORK_STOP) do
+          vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_STOP) do |vms|
+            group_each_by_threads(vms) do |vm|
+              vm.action = VM_ACTION_STOP
+              @logger.debug("stop :#{vm.name}")
 
-            next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
-            next if !vm_deploy_op(vm, 'reRead') {@client.update_vm_properties_by_vm_mob(vm)}
-            vm.status = VM_STATE_DONE
-            vm_finish(vm)
-          }
-        }
-        cluster_done(task)
-        }
+              next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
+              next if !vm_deploy_op(vm, 'reRead') {@client.update_vm_properties_by_vm_mob(vm)}
+              vm.status = VM_STATE_DONE
+              vm_finish(vm)
+            end
+          end
+          cluster_done(task)
+        end
       end
 
     end

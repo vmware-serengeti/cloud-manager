@@ -1,4 +1,4 @@
-module VHelper
+module Serengeti
   module CloudManager
     module Parallel
       def map_each_by_threads(map, options={})
@@ -26,7 +26,7 @@ module VHelper
           end
           work_thread.each { |t| t.join }
         end
-        @logger.info("##Finish #{options[:callee]}")
+        @logger.debug("Finish group operation for #{options[:callee]}")
       end
 
       def vm_deploy_group_pool(thread_pool, group, options={})
@@ -53,7 +53,8 @@ module VHelper
           @cv = ConditionVariable.new
           @max_threads = options[:max_threads] || 1
           @available_threads = @max_threads
-          @logger = options[:logger]
+
+          @logger = Serengeti::CloudManager::VHelperCloud.Logger
           @boom = nil
           @original_thread = Thread.current
           @threads = []

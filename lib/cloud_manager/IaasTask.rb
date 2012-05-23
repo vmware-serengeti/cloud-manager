@@ -1,11 +1,11 @@
-module VHelper
+module Serengeti
   module CloudManager
     class IaasTask
       def initialize(cluster_definition, cloud_provider)
         @cluster_definition = cluster_definition
         @cloud_provider = cloud_provider
-        @logger = VHelper::CloudManager::VHelperCloud.Logger
-        @vhelper = VHelper::CloudManager::VHelperCloud.new(@logger, @cluster_definition)
+        @logger = Serengeti::CloudManager::VHelperCloud.Logger
+        @vhelper = Serengeti::CloudManager::VHelperCloud.new(@cluster_definition)
 
         @output_lock = Mutex.new
         @finished = nil
@@ -31,7 +31,7 @@ module VHelper
 
       def abort
         @vhelper.need_abort = true
-        @logger.debug("Do not implement abort function")
+        @logger.warn("Do not implement abort function")
       end
 
       def release_connection; @vhelper.release_connection end

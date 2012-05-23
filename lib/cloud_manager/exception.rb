@@ -1,4 +1,6 @@
-module VHelper::CloudManager
-  class CloudException
+module Serengeti
+  module CloudManager
+    class CloudException
+    end
   end
 end

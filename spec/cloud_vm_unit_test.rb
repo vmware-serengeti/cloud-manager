@@ -1,4 +1,4 @@
-module VHelper; end
+module Serengeti; end
 require "rubygems"
 require "tmpdir"
 require 'openssl'
@@ -61,7 +61,7 @@ begin
   when 1 then
     p "##Create Test UT"
     info = ut_test_env
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => true)
+    cloud = Serengeti::CloudManager::Manager.create_cluster(info, :wait => true)
     while !cloud.finished?
       progress = cloud.get_progress
       puts("ut process:#{progress.inspect}")
@@ -73,7 +73,7 @@ begin
   when 2 then #Delete Cluster
     puts "## Delete Cluster in UT"
     info = ut_test_env
-    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => true)
+    cloud = Serengeti::CloudManager::Manager.delete_cluster(info, :wait => true)
     while !cloud.finished?
       puts("delete ut process:#{cloud.get_progress}")
       sleep(1)
@@ -81,24 +81,24 @@ begin
   when 3 then #List vms in Cluster
     puts("##List all vm in UT")
     info = ut_test_env
-    result = VHelper::CloudManager::Manager.list_vms_cluster(info)
+    result = Serengeti::CloudManager::Manager.list_vms_cluster(info)
     puts("##result:#{result.pretty_inspect}")
   when 4 then #Start vms in Cluster
     puts("##List all vm in UT")
     info = ut_test_env
-    result = VHelper::CloudManager::Manager.start_cluster(info, :wait => true)
+    result = Serengeti::CloudManager::Manager.start_cluster(info, :wait => true)
     progress = result.get_progress
     puts("ut process:#{progress.inspect}")
   when 5 then #Stop vms in Cluster
     puts("##List all vm in UT")
     info = ut_test_env
-    result = VHelper::CloudManager::Manager.stop_cluster(info, :wait => true)
+    result = Serengeti::CloudManager::Manager.stop_cluster(info, :wait => true)
     puts("##result:#{result.pretty_inspect}")
 
 when 11 then
     puts "##Test WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.create_cluster(info, :wait => false)
+    cloud = Serengeti::CloudManager::Manager.create_cluster(info, :wait => false)
     while !cloud.finished?
       progress = cloud.get_progress
       puts("ut process:#{progress.inspect}")
@@ -110,7 +110,7 @@ when 11 then
   when 12 then #Delete Cluster
     puts "## Delete Cluster in WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.delete_cluster(info, :wait => false)
+    cloud = Serengeti::CloudManager::Manager.delete_cluster(info, :wait => false)
     while !cloud.finished?
       puts("delete ut process:#{cloud.get_progress.inspect}")
       sleep(1)
@@ -120,7 +120,7 @@ when 11 then
   when 13 then #List vms in Cluster
     puts "## List Cluster in WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.list_vms_cluster(info)
+    cloud = Serengeti::CloudManager::Manager.list_vms_cluster(info)
     while !cloud.finished?
       puts("list ut process:#{cloud.get_progress.inspect}")
       sleep(1)
@@ -129,7 +129,7 @@ when 11 then
   when 14 then #Start vms in Cluster
     puts "## Start Cluster in WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.start_cluster(info, :wait => false)
+    cloud = Serengeti::CloudManager::Manager.start_cluster(info, :wait => false)
     while !cloud.finished?
       puts("start ut process:#{cloud.get_progress.inspect}")
       sleep(1)
@@ -138,7 +138,7 @@ when 11 then
   when 15 then #Stop vms in Cluster
     puts "## Stop Cluster in WDC"
     info = wdc_test_env
-    cloud = VHelper::CloudManager::Manager.stop_cluster(info, :wait => false)
+    cloud = Serengeti::CloudManager::Manager.stop_cluster(info, :wait => true)
     while !cloud.finished?
       puts("stop ut process:#{cloud.get_progress.inspect}")
       sleep(1)

@@ -17,6 +17,7 @@ vc_clusters:
     vc_rps:
     - resource_pool1
     - test-1
+    - rp3
 
 #vc_clusters: 
 groups:

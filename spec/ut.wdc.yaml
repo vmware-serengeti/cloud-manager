@@ -9,6 +9,7 @@ vc_clusters:
     vc_rps:
     - resource_pool1
     - test-1
+    - rp3
 vc_shared_datastore_pattern: ["h06-ds01",]
 vc_local_datastore_pattern: ["h06-ds*", "Enclosure_Local_Disk*"]
 cloud_adapter: fog

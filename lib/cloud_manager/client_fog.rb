@@ -1,15 +1,14 @@
 require '../fog/lib/fog'
 require 'json'
 
-module VHelper
+module Serengeti
   module CloudManager
     class FogAdapter
       DISK_SIZE_TIMES = 1
       CONNECTION_NUMBER = 4
-      include VHelper::CloudManager::Parallel
-      attr_reader :logger
-      def initialize(logger)
-        @logger = logger
+      include Serengeti::CloudManager::Parallel
+      def initialize()
+        @logger = Serengeti::CloudManager::VHelperCloud.Logger
         @connection = nil
         @con_lock = Mutex.new
       end
@@ -26,11 +25,11 @@ module VHelper
         @connection = {}
         @connection[:con] = []
 
-        group_each_by_threads(connect_list) do |con|
+        group_each_by_threads(connect_list, :callee=>'connect to cloud service') do |con|
           connection = Fog::Compute.new(info)
-          @logger.debug("Use Fog, connect to cloud provider: #{cloud_server}, #{connection}")
           @connection[:con] << connection
         end
+        @logger.info("Use #{@connection[:con].size} channels to connect cloud service}")
       end
 
       def fog_op
@@ -51,7 +50,7 @@ module VHelper
       end
 
       def clone_vm(vm, options={})
-        raise "Do not login cloud server, please login first" if @connection.nil?
+        check_connection
         info = {
           'path'=>vm.template_id,
           'name'=>vm.name,

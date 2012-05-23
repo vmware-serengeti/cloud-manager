@@ -19,7 +19,7 @@ require "lib/cloud_manager/cloud_create"
 require "lib/cloud_manager/cloud_operations"
 require 'lib/cloud_manager/vhelper_cloud'
 
-module VHelper
+module Serengeti
   module CloudManager
     class Manager
       def self.cluster_helper(parameter, options={})
