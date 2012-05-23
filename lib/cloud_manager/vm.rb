@@ -30,8 +30,8 @@ module Serengeti
     }
 
     VM_DELETE_PROCESS = {
-      VM_STATE_BIRTH    => {:progress =>0   , :status => VM_STATE_BIRTH[:done]},
-      VM_STATE_DELETE   => {:progress =>20  , :status => VM_STATE_BIRTH[:done]},
+      VM_STATE_READY    => {:progress =>0   , :status => VM_STATE_READY[:done]},
+      VM_STATE_DELETE   => {:progress =>20  , :status => VM_STATE_READY[:done]},
       VM_STATE_DONE     => {:progress =>100 , :status => VM_STATE_DELETE[:done]},
     }
 

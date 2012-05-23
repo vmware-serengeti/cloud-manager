@@ -57,10 +57,9 @@ module Serengeti
               @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg} and check ready")
               next
             end
-            vm_create_ok = false
             vm.status = VM_STATE_CLONE
             mov_vm(vm, @preparing_vms, @deploy_vms)
-            next if !vm_deploy_op(vm, 'Clone') { vm_clone(vm, :poweron => false)}
+            next if !vm_deploy_op(vm, 'Clone') { @client.clone_vm(vm, :poweron => false)}
             @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
 
             #is this VM can do HA?
@@ -72,21 +71,16 @@ module Serengeti
 
             next if !vm_deploy_op(vm, 'Reconfigure network') {vm_reconfigure_network(vm)}
             @logger.info("#{vm.name} finish reconfigure networking")
-            vm_create_ok = true
 
             #Move deployed vm to existed queue
             #TODO Move change name mov_vm
             mov_vm(vm, @deploy_vms, @existed_vms)
           ensure
-            if !vm_create_ok
+            if vm.error_code.to_i != 0
               @client.vm_destroy(vm)
             end
           end
         end
-      end
-
-      def vm_clone(vm, options={})
-        @client.clone_vm(vm, options)
       end
 
       def vm_reconfigure_disk(vm, options={})
