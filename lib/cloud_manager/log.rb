@@ -39,6 +39,10 @@ module Serengeti
         @logger.debug(msg2str(msg))
       end
 
+      def error(msg)
+        @logger.error(msg2str(msg))
+      end
+
       def inspect; "<Cloud-manager-Logger>" end
 
       def msg2str(msg)

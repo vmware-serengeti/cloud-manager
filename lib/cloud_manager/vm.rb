@@ -109,7 +109,7 @@ module Serengeti
       def can_ha?; @can_ha;end
       def get_error_msg
         return "OK" if @error_msg.to_s.empty?
-        "ERR: #{error_msg}"
+        "VM ERROR: #{error_msg}"
       end
 
       def datastores

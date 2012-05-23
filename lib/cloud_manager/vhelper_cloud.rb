@@ -195,7 +195,7 @@ module Serengeti
 
       def change_wildcard2regex(strArray)
         #@logger.debug("input:#{strArray.pretty_inspect}")
-        return change_wildcard2regex_str(strArray) unless strArray.class == Array
+        raise "inputed wildcard [#{strArray}] is not an Array!" if strArray.class != Array
         strArray.collect { |str| change_wildcard2regex_str(str) }
       end
 
