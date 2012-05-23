@@ -17,7 +17,7 @@ module Serengeti
         log_file = options[:file] || STDOUT
         @logger = Logger.new(log_file)
         @logger.formatter = proc do |severity, datetime, progname, msg|
-          "#{severity}: [#{datetime}]: #{msg}\n"
+          "[#{datetime.rfc2822}] #{severity}: #{msg}\n"
         end
         @logger.level = @level
         puts "initiated logger with level #{LOG_LEVEL_NAME[@level]} and output to #{log_file}"
