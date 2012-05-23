@@ -59,6 +59,7 @@ module Serengeti
               vm_group.name = group_name
               vm_groups[group_name] = vm_group
             end
+            vm.status = VM_STATE_READY
             vm_group.add_vm(vm)
             add_2existed_vm(vm)
           end

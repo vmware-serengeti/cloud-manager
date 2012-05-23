@@ -70,6 +70,7 @@ module Serengeti
             group_each_by_threads(vms) do |vm|
               vm.action = VM_ACTION_STOP
               @logger.debug("stop :#{vm.name}")
+              vm.status = VM_STATE_POWER_OFF
 
               next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
               next if !vm_deploy_op(vm, 'reRead') {@client.update_vm_properties_by_vm_mob(vm)}

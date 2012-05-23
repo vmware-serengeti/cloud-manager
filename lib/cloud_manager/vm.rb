@@ -1,7 +1,7 @@
 module Serengeti
   module CloudManager
     VM_STATE_BIRTH      = {:doing => "Initializing" , :done => 'Not Exist'}
-    VM_STATE_PLACE      = {:doing => "Placing"      , :done => 'Placed'}
+    VM_STATE_PLACE      = {:doing => "Initializing" , :done => 'Not Exist'}
     VM_STATE_CLONE      = {:doing => "Cloning"      , :done => 'Created'}
     VM_STATE_RECONFIG   = {:doing => "Reconfiging"  , :done => 'Created'}
     VM_STATE_DELETE     = {:doing => "Deleting"     , :done => 'Deleted'}
@@ -9,6 +9,7 @@ module Serengeti
     VM_STATE_FAIL       = {:doing => "Failure"      , :done => 'Failure'} 
     VM_STATE_POWER_ON   = {:doing => "Powering On"  , :done => 'Powered On'}
     VM_STATE_WAIT_IP    = {:doing => "Waiting for IP"   , :done => 'VM Ready'}
+    VM_STATE_READY      = {:doing => "VM Ready"     , :done => 'VM Ready'}
     VM_STATE_POWER_OFF  = {:doing => "Powering Off" , :done => 'Powered Off'}
 
     VM_ACTION_CREATE  = 'create'
@@ -18,32 +19,34 @@ module Serengeti
     VM_ACTION_STOP    = 'stop'
 
     VM_CREATE_PROCESS = {
-      VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_PLACE    => {:progress=>2, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_CLONE    => {:progress=>10, :status=>VM_STATE_PLACE[:done]},
-      VM_STATE_RECONFIG => {:progress=>60, :status=>VM_STATE_CLONE[:done]},
-      VM_STATE_POWER_ON => {:progress=>70, :status=>VM_STATE_RECONFIG[:done]},
-      VM_STATE_WAIT_IP  => {:progress=>80, :status=>VM_STATE_POWER_ON[:done]},
-      VM_STATE_DONE     => {:progress=>100, :status=>VM_STATE_WAIT_IP[:done]},
+      VM_STATE_BIRTH    => {:progress => 0  , :status => VM_STATE_BIRTH[:done]},
+      VM_STATE_PLACE    => {:progress => 2  , :status => VM_STATE_BIRTH[:done]},
+      VM_STATE_CLONE    => {:progress => 10 , :status => VM_STATE_PLACE[:done]},
+      VM_STATE_RECONFIG => {:progress => 60 , :status => VM_STATE_CLONE[:done]},
+      VM_STATE_READY    => {:progress => 60 , :status => VM_STATE_CLONE[:done]},
+      VM_STATE_POWER_ON => {:progress => 70 , :status => VM_STATE_RECONFIG[:done]},
+      VM_STATE_WAIT_IP  => {:progress => 80 , :status => VM_STATE_POWER_ON[:done]},
+      VM_STATE_DONE     => {:progress => 100, :status => VM_STATE_WAIT_IP[:done]},
     }
 
     VM_DELETE_PROCESS = {
-      VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_DELETE => {:progress=>20, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_DONE     => {:progress=>100,:status=>VM_STATE_DELETE[:done]},
+      VM_STATE_BIRTH    => {:progress =>0   , :status => VM_STATE_BIRTH[:done]},
+      VM_STATE_DELETE   => {:progress =>20  , :status => VM_STATE_BIRTH[:done]},
+      VM_STATE_DONE     => {:progress =>100 , :status => VM_STATE_DELETE[:done]},
     }
 
     VM_STOP_PROCESS = {
-      VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_POWER_OFF=> {:progress=>20, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_DONE     => {:progress=>100,:status=>VM_STATE_POWER_OFF[:done]},
+      VM_STATE_READY     => {:progress => 0   , :status => VM_STATE_READY[:done]},
+      VM_STATE_POWER_OFF => {:progress => 20  , :status => VM_STATE_READY[:done]},
+      VM_STATE_DONE      => {:progress => 100 , :status => VM_STATE_POWER_OFF[:done]},
     }
 
     VM_START_PROCESS = {
-      VM_STATE_BIRTH    => {:progress=>0, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_POWER_ON => {:progress=>10, :status=>VM_STATE_BIRTH[:done]},
-      VM_STATE_WAIT_IP  => {:progress=>50, :status=>VM_STATE_POWER_ON[:done]},
-      VM_STATE_DONE     => {:progress=>100, :status=>VM_STATE_WAIT_IP[:done]},
+      VM_STATE_BIRTH    => {:progress => 0  , :status => VM_STATE_BIRTH[:done]},
+      VM_STATE_READY    => {:progress => 10 , :status => VM_STATE_CLONE[:done]},
+      VM_STATE_POWER_ON => {:progress => 10 , :status => VM_STATE_CLONE[:done]},
+      VM_STATE_WAIT_IP  => {:progress => 50 , :status => VM_STATE_POWER_ON[:done]},
+      VM_STATE_DONE     => {:progress => 100, :status => VM_STATE_WAIT_IP[:done]},
     }
 
     VM_ACT_PROGRES = {

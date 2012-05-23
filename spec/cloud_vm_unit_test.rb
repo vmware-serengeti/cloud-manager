@@ -95,7 +95,7 @@ begin
     result = Serengeti::CloudManager::Manager.stop_cluster(info, :wait => true)
     puts("##result:#{result.pretty_inspect}")
 
-when 11 then
+  when 11 then
     puts "##Test WDC"
     info = wdc_test_env
     cloud = Serengeti::CloudManager::Manager.create_cluster(info, :wait => false)
@@ -125,7 +125,7 @@ when 11 then
       puts("list ut process:#{cloud.get_progress.inspect}")
       sleep(1)
     end
-    puts("##result:#{result.pretty_inspect}")
+    puts("##result:#{cloud.pretty_inspect}")
   when 14 then #Start vms in Cluster
     puts "## Start Cluster in WDC"
     info = wdc_test_env
@@ -134,7 +134,7 @@ when 11 then
       puts("start ut process:#{cloud.get_progress.inspect}")
       sleep(1)
     end
-    puts("##result:#{result.pretty_inspect}")
+    puts("##result:#{cloud.get_progress.inspect}")
   when 15 then #Stop vms in Cluster
     puts "## Stop Cluster in WDC"
     info = wdc_test_env
@@ -143,7 +143,7 @@ when 11 then
       puts("stop ut process:#{cloud.get_progress.inspect}")
       sleep(1)
     end
-    puts("##result:#{result.pretty_inspect}")
+    puts("##result:#{cloud.get_progress.inspect}")
   when 100 then #show YAML file
     p "## Test ut.dc.yaml\n"
     CONFIG_FILE = "../test/ut.dc.yaml"
