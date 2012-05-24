@@ -17,7 +17,7 @@ module Serengeti
       attr_accessor :template_id
       attr_accessor :affinity
       attr_accessor :ha
-      def initialize(rp=nil, template_id=nil)
+      def initialize(rp=nil)
         if rp
           @cpu = rp["cpu"] || 1
           @mem = rp["memory"] || 512
@@ -27,7 +27,7 @@ module Serengeti
           @disk_type = rp["storage"]["type"] 
           @disk_type = DISK_TYPE_SHARE if @disk_type != DISK_TYPE_LOCAL
           @affinity = rp["affinity"] || "none"
-          @template_id = rp["template_id"] || template_id
+          @template_id = rp["template_id"]
           @ha = rp["ha"] 
           @ha = true if @ha.nil?    #FIXME current setting is enable for all.
           @rack_id = nil

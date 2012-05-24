@@ -15,7 +15,9 @@ module Serengeti
         vm_groups = {}
         #@logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
         vhelper_groups = cluster_info["groups"]
-        template_id = "/Datacenters/#{datacenter_name}/vm/#{cluster_info["template_id"]}"
+        #template_id = "/Datacenters/#{datacenter_name}/vm/#{cluster_info["template_id"]}"
+        template_id = cluster_info["template_id"] #currently, it is mob_ref
+        raise "template_id should a vm mob id (like vm-1234)" if /^vm-[\d]+$/.match(template_id).nil?
         cluster_req_rps = @vc_req_rps
         cluster_req_rps = req_clusters_rp_to_hash(cluster_info["vc_clusters"]) if cluster_info["vc_clusters"]
         cluster_networking = cluster_info["networking"]
@@ -25,7 +27,8 @@ module Serengeti
         #@logger.debug("dump network:#{network_res}")
         @logger.debug("template_id:#{template_id}")
         vhelper_groups.each do |vm_group_req|
-          vm_group = VmGroupInfo.new(vm_group_req, template_id)
+          vm_group = VmGroupInfo.new(vm_group_req)
+          vm_group.req_info.template_id ||= template_id
           disk_pattern = vm_group.req_info.disk_pattern || cluster_datastore_pattern(cluster_info, vm_group.req_info.disk_type)
           #@logger.debug("disk patterns:#{disk_pattern.pretty_inspect}")
 
@@ -77,10 +80,10 @@ module Serengeti
       attr_accessor :req_rps
       attr_accessor :network_res
       attr_accessor :vm_ids    #classes VmInfo
-      def initialize(rp=nil, template_id=nil)
+      def initialize(rp=nil)
         @logger = Serengeti::CloudManager::Cloud.Logger
         @vm_ids = {}
-        @req_info = ResourceInfo.new(rp, template_id)
+        @req_info = ResourceInfo.new(rp)
         @name = ""
         return unless rp
         @name = rp["name"]

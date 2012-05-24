@@ -42,9 +42,9 @@ module Serengeti
     }
 
     VM_START_PROCESS = {
-      VM_STATE_BIRTH    => {:progress => 0  , :status => VM_STATE_BIRTH[:done]},
-      VM_STATE_READY    => {:progress => 10 , :status => VM_STATE_CLONE[:done]},
-      VM_STATE_POWER_ON => {:progress => 10 , :status => VM_STATE_CLONE[:done]},
+      VM_STATE_BIRTH    => {:progress => 0  , :status => VM_STATE_POWER_OFF[:done]},
+      VM_STATE_READY    => {:progress => 10 , :status => VM_STATE_POWER_OFF[:done]},
+      VM_STATE_POWER_ON => {:progress => 10 , :status => VM_STATE_POWER_OFF[:done]},
       VM_STATE_WAIT_IP  => {:progress => 50 , :status => VM_STATE_POWER_ON[:done]},
       VM_STATE_DONE     => {:progress => 100, :status => VM_STATE_WAIT_IP[:done]},
     }
@@ -122,7 +122,7 @@ module Serengeti
             data[disk.datastore_name] = disk.size
           end
         end
-        data.each {|k, v| ds << {:name=>k, :size=>v/ResourceInfo::DISK_CHANGE_TIMES}}
+        data.each {|k, v| ds << {:name => k, :size => v/ResourceInfo::DISK_CHANGE_TIMES}}
         ds
       end
 
@@ -178,7 +178,7 @@ module Serengeti
         attrs[:error_code]  = @error_code
         attrs[:error_msg]   = @error_msg
         attrs[:datastores]  = datastores
-        attrs[:vc_cluster]  = {:name=>@rp_cluster_name, :vc_rp=>@rp_name}
+        attrs[:vc_cluster]  = {:name => @rp_cluster_name, :vc_rp => @rp_name}
         attrs[:ha]          = @ha_enable
         attrs
       end

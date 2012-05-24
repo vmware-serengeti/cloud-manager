@@ -2,18 +2,18 @@ module Serengeti
   module CloudManager
 
     class Cloud
-      def create_and_update(cloud_provider, cluster_info, task)
-        action_process (CLOUD_WORK_CREATE) {
+      def create_and_update(cloud_provider, cluster_info, cluster_data, task)
+        action_process (CLOUD_WORK_CREATE) do
           @logger.info("enter create_and_update...")
           create_cloud_provider(cloud_provider)
-          @vm_lock.synchronize {
+          @vm_lock.synchronize do
             #TODO document each vm queue. change to same timing
             @deploy_vms = {}
             @existed_vms = {}
             @preparing_vms = {}
             @failure_vms = {}
             @finished_vms = {}
-          }
+          end
           #FIXME we only support one cluster, currently
 
           #@logger.debug("#{cluster_info.inspect}")
@@ -97,7 +97,7 @@ module Serengeti
           ###########################################################
           # Cluster deploy successfully
           cluster_done(task)
-        }
+        end
       end
 
 

@@ -25,7 +25,7 @@ module Serengeti
         @connection = {}
         @connection[:con] = []
 
-        group_each_by_threads(connect_list, :callee=>'connect to cloud service') do |con|
+        group_each_by_threads(connect_list, :callee => 'connect to cloud service') do |con|
           connection = Fog::Compute.new(info)
           @connection[:con] << connection
         end
@@ -36,14 +36,16 @@ module Serengeti
         con = nil
         while con.nil? 
           @con_lock.synchronize { con = @connection[:con].first;@connection[:con].rotate!}
-          sleep(1) if con.nil?
         end
         return yield con
       end
 
       def logout
-        unless @connection.nil?
-          #destroy @connection
+        @con_lock.synchronize do
+          unless @connection.nil?
+            @connection.each {|con| }
+            #TODO destroy @connection
+          end
         end
         @connection = nil
         @logger.info("Disconnect to cloud provider ")
@@ -52,10 +54,11 @@ module Serengeti
       def clone_vm(vm, options={})
         check_connection
         info = {
-          'path'=>vm.template_id,
-          'name'=>vm.name,
-          'wait'=> 1,
-          'linked_clone'=>true,
+          #'path' => vm.template_id,
+          'vm_moid' => vm.template_id,
+          'name' => vm.name,
+          'wait' => 1,
+          'linked_clone' => true,
           'datastore_moid' => vm.sys_datastore_moid, #'datastore-460',
           'rp_moid' => vm.resource_pool_moid, #'resgroup-509',
           'host_moid' => vm.host_mob, #'host-456'
@@ -74,7 +77,7 @@ module Serengeti
 
       def vm_destroy(vm)
         check_connection
-        task_state = fog_op {|con| con.vm_destroy('instance_uuid' =>vm.instance_uuid)}
+        task_state = fog_op {|con| con.vm_destroy('instance_uuid' => vm.instance_uuid)}
       end
 
       # TODO add option to force hard/soft reboot
@@ -186,7 +189,7 @@ module Serengeti
       def vm_update_network(vm, card)
         check_connection
         #TODO test port group later
-        fog_op {|con| con.vm_update_network('instance_uuid'=>vm.instance_uuid, 
+        fog_op {|con| con.vm_update_network('instance_uuid' => vm.instance_uuid, 
                                       'adapter_name' => "Network adapter #{card+1}", 
                                       'portgroup_name' => vm.network_res.port_group(card))}
 

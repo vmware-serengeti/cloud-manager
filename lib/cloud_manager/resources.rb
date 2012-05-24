@@ -184,7 +184,8 @@ module Serengeti
         clusters_req = @vhelper.vc_req_rps
 
         clusters = {}
-        group_each_by_threads(cluster_mobs, :callee=>"fetch cluster in datacenter #{datacenter.name}") do |cluster_mob|
+        group_each_by_threads(cluster_mobs, \
+            :callee => "fetch cluster in datacenter #{datacenter.name}") do |cluster_mob|
           attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
           # chose cluster in cluster_names
           next unless cluster_names.include?(attr["name"])
@@ -201,8 +202,10 @@ module Serengeti
           cluster.mob                 = attr["mo_ref"]
           cluster.name                = attr["name"]
           cluster.vms                 = {}
-          cluster.share_datastore_pattern = @vhelper.input_cluster_info["vc_shared_datastore_pattern"] || datacenter.share_datastore_pattern || []
-          cluster.local_datastore_pattern = @vhelper.input_cluster_info["vc_local_datastore_pattern"] || datacenter.local_datastore_pattern || []
+          cluster.share_datastore_pattern = @vhelper.input_cluster_info["vc_shared_datastore_pattern"] || 
+                                                                    datacenter.share_datastore_pattern || []
+          cluster.local_datastore_pattern = @vhelper.input_cluster_info["vc_local_datastore_pattern"]  || 
+                                                                    datacenter.local_datastore_pattern || []
 
           @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
@@ -246,7 +249,7 @@ module Serengeti
             rp.free_memory  = rp.limit_mem - rp.host_used_mem - rp.guest_used_mem
           end
           rp.unaccounted_memory = 0
-          @logger.debug("Can use rp: #{rp.name} free mem:#{rp.free_memory} \n=> #{attr.pretty_inspect}")
+          @logger.debug("Can use rp: #{rp.name} free mem:#{rp.free_memory} \n => #{attr.pretty_inspect}")
           resource_pools[rp.name] = rp
         end
 
@@ -258,7 +261,7 @@ module Serengeti
       def fetch_hosts(cluster, cluster_mob)
         hosts = {}
         host_mobs = @client.get_hosts_by_cs_mob(cluster_mob)
-        group_each_by_threads(host_mobs, :callee=>"fetch hosts in cluster #{cluster.name}") do |host_mob|
+        group_each_by_threads(host_mobs, :callee => "fetch hosts in cluster #{cluster.name}") do |host_mob|
           attr = @client.ct_mob_ref_to_attr_hash(host_mob, "HS")
           connection_state   = attr["connection_state"]
           if connection_state != 'connected'

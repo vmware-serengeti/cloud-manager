@@ -18,6 +18,7 @@ require "lib/cloud_manager/cloud_progress"
 require "lib/cloud_manager/cloud_create"
 require "lib/cloud_manager/cloud_operations"
 require 'lib/cloud_manager/cloud'
+require 'lib/cloud_manager/cluster'
 
 module Serengeti
   module CloudManager
@@ -25,7 +26,7 @@ module Serengeti
       def self.cluster_helper(parameter, options={})
         cloud = nil
         begin
-          cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+          cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'])
           if (options[:wait])
             yield cloud
           else
