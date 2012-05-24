@@ -52,17 +52,15 @@ module Serengeti
 
       def add_2existed_vm(vm)
         @logger.debug("Add existed vm")
-        @vm_lock.synchronize {
-          @existed_vms[vm.name] = vm
-        }
+        @vm_lock.synchronize { @existed_vms[vm.name] = vm }
       end
 
       def mov_vm(vm, src_vms, des_vms)
-        @vm_lock.synchronize {
+        @vm_lock.synchronize do
           return if !src_vms.has_key?(vm.name)
           src_vms.delete(vm.name)
           des_vms[vm.name] = vm
-        }
+        end
       end
 
       def req_clusters_rp_to_hash(a)
@@ -114,18 +112,21 @@ module Serengeti
         end
       end
 
-      def update_input_group_by_existed(vm_groups_input, vm_groups_existed)
+      def update_input_group_by_existed(vm_groups_input, vm_groups_existed, cluster_data)
         # remove ips associated with existing vms from input ip pool
         vm_groups_existed.each_value do |exist_group|
           input_group = vm_groups_input[exist_group.name]
+          #cluster_data_instances = cluster_data['group'].select {|group| group['name'] == exist_group.name}
           next if input_group.nil?
           @logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
           # TODO: multiple vnics
-          exist_group.vm_ids.each_value {|vm| input_group.network_res.ip_remove(0, vm.ip_address) }
+          exist_group.vm_ids.each_value do |vm|
+            input_group.network_res.ip_remove(0, vm.ip_address)
+          end
         end
       end
 
-      def prepare_working(cluster_info)
+      def prepare_working(cluster_info, cluster_data)
         ###########################################################
         # Connect to Cloud server
         #@cluster_name = cluster_info["name"]
@@ -157,7 +158,7 @@ module Serengeti
 
         setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
 
-        update_input_group_by_existed(vm_groups_input, vm_groups_existed)
+        update_input_group_by_existed(vm_groups_input, vm_groups_existed, cluster_data)
 
         @logger.info("Finish collect vm_group info from resources")
         [dc_resources, vm_groups_existed, vm_groups_input]

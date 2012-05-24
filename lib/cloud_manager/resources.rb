@@ -71,6 +71,10 @@ module Serengeti
         def inspect
           "<Cluster: #{@mob} / #{@name}>"
         end
+
+        def initialize
+          @disconnected_hosts = []
+        end
       end
 
       class ResourcePool
@@ -266,6 +270,7 @@ module Serengeti
           connection_state   = attr["connection_state"]
           if connection_state != 'connected'
             @logger.debug("host #{attr["name"]} is not connected ")
+            cluster.disconnected_hosts << attr["name"]
             next
           end
           @logger.debug("host #{attr["name"]} is connected.")

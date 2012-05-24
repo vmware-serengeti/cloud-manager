@@ -7,12 +7,12 @@ module Serengeti
         CLUSTER_STOP   => 'stop',
       }
 
-      def vhelper_vm_op(cloud_provider, cluster_info, task, action)
+      def vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, action)
         act = CLUSTER_ACTION_MESSAGE[action]
         act = 'unknown' if act.nil?
         @logger.info("enter #{act} cluster ... ")
         create_cloud_provider(cloud_provider)
-        dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
+        dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info, cluster_data)
 
         @status = action 
         matched_vms = dc_resources.clusters.values.map {|cs| cs.vms.values.select{|vm| vm_is_this_cluster?(vm.name)} }
@@ -30,7 +30,7 @@ module Serengeti
         action_process (CLOUD_WORK_LIST) do
           @logger.debug("enter list_vms...")
           create_cloud_provider(cloud_provider)
-          dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
+          dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info, cluster_data)
           cluster_done(task)
         end
         get_result.servers
@@ -38,7 +38,7 @@ module Serengeti
 
       def delete(cloud_provider, cluster_info, cluster_data, task)
         action_process (CLOUD_WORK_DELETE) do
-          vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_DELETE) do |vms|
+          vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_DELETE) do |vms|
             group_each_by_threads(vms) do |vm|
               vm.action = VM_ACTION_DELETE
               #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
@@ -56,7 +56,7 @@ module Serengeti
 
       def start(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_START) do
-          vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_START) do |vms|
+          vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_START) do |vms|
             vms.each {|vm| vm.action = VM_ACTION_START}
             cluster_wait_ready(vms)
           end
@@ -66,7 +66,7 @@ module Serengeti
 
       def stop(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_STOP) do
-          vhelper_vm_op(cloud_provider, cluster_info, task, CLUSTER_STOP) do |vms|
+          vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_STOP) do |vms|
             group_each_by_threads(vms) do |vm|
               vm.action = VM_ACTION_STOP
               @logger.debug("stop :#{vm.name}")

@@ -20,7 +20,7 @@ module Serengeti
           cluster_changes = []
 
           begin
-            dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info)
+            dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info, cluster_data)
             ###########################################################
             # Create existed vm groups
 

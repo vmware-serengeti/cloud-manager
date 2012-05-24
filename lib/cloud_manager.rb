@@ -64,7 +64,7 @@ module Serengeti
       def self.list_vms_cluster(parameter, options={})
         cloud = nil
         begin
-          cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"])
+          cloud = IaasTask.new(parameter["cluster_definition"], parameter["cloud_provider"], parameter['cluster_data'])
           return cloud.list_vms
         ensure
           cloud.release_connection if cloud
