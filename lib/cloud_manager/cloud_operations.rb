@@ -1,6 +1,6 @@
 module Serengeti
   module CloudManager
-    class VHelperCloud
+    class Cloud
       CLUSTER_ACTION_MESSAGE = {
         CLUSTER_DELETE => 'delete',
         CLUSTER_START  => 'start',

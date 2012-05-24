@@ -17,7 +17,7 @@ require "lib/cloud_manager/IaasTask"
 require "lib/cloud_manager/cloud_progress"
 require "lib/cloud_manager/cloud_create"
 require "lib/cloud_manager/cloud_operations"
-require 'lib/cloud_manager/vhelper_cloud'
+require 'lib/cloud_manager/cloud'
 
 module Serengeti
   module CloudManager

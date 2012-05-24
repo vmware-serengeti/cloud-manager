@@ -4,8 +4,8 @@ module Serengeti
       def initialize(cluster_definition, cloud_provider)
         @cluster_definition = cluster_definition
         @cloud_provider = cloud_provider
-        @logger = Serengeti::CloudManager::VHelperCloud.Logger
-        @vhelper = Serengeti::CloudManager::VHelperCloud.new(@cluster_definition)
+        @logger = Serengeti::CloudManager::Cloud.Logger
+        @vhelper = Serengeti::CloudManager::Cloud.new(@cluster_definition)
 
         @output_lock = Mutex.new
         @finished = nil

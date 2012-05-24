@@ -1,6 +1,6 @@
 module Serengeti
   module CloudManager
-    class VHelperCloud
+    class Cloud
       CLOUD_WORK_CREATE = 'create cluster'
       CLOUD_WORK_DELETE = 'delete cluster'
       CLOUD_WORK_LIST   = 'list cluster'

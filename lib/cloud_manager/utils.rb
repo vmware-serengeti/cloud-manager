@@ -54,7 +54,7 @@ module Serengeti
           @max_threads = options[:max_threads] || 1
           @available_threads = @max_threads
 
-          @logger = Serengeti::CloudManager::VHelperCloud.Logger
+          @logger = Serengeti::CloudManager::Cloud.Logger
           @boom = nil
           @original_thread = Thread.current
           @threads = []
@@ -171,7 +171,7 @@ module Serengeti
 
     end
 
-    class VHelperCloud
+    class Cloud
       VM_SPLIT_SIGN = '-'
       def gen_vm_name(cluster_name, group_name, num)
         return "#{cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"

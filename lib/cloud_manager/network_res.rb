@@ -1,7 +1,7 @@
 module Serengeti
   module CloudManager
 
-    class VHelperCloud
+    class Cloud
       class NetworkRes
         attr_accessor :config
 

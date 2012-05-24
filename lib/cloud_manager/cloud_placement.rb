@@ -1,6 +1,6 @@
 module Serengeti
   module CloudManager
-    class VHelperCloud
+    class Cloud
       # refine work: TODO
       # 1. change placement result to a hash structure
       # 2. abstract placement function to a base class

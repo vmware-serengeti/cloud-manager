@@ -8,7 +8,7 @@ module Serengeti
       CONNECTION_NUMBER = 5
       include Serengeti::CloudManager::Parallel
       def initialize()
-        @logger = Serengeti::CloudManager::VHelperCloud.Logger
+        @logger = Serengeti::CloudManager::Cloud.Logger
         @connection = nil
         @con_lock = Mutex.new
       end
@@ -97,7 +97,9 @@ module Serengeti
 
       def vm_create_disk(vm, disk, options={})
         check_connection
-        info = {'instance_uuid' => vm.instance_uuid, 'vmdk_path' => disk.fullpath, 'disk_size' => disk.size / DISK_SIZE_TIMES }
+        info = {'instance_uuid' => vm.instance_uuid, 
+          'vmdk_path' => disk.fullpath, 
+          'disk_size' => disk.size / DISK_SIZE_TIMES }
         if disk.type == DISK_TYPE_SHARE
           info['thin_provision'] = true
         end

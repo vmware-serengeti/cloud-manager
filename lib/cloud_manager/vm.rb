@@ -9,7 +9,7 @@ module Serengeti
     VM_STATE_FAIL       = {:doing => "Failure"      , :done => 'Failure'} 
     VM_STATE_POWER_ON   = {:doing => "Powering On"  , :done => 'Powered On'}
     VM_STATE_WAIT_IP    = {:doing => "Waiting for IP"   , :done => 'VM Ready'}
-    VM_STATE_READY      = {:doing => "VM Ready"     , :done => 'VM Ready'}
+    VM_STATE_READY      = {:doing => "Initializing"     , :done => 'VM Ready'}
     VM_STATE_POWER_OFF  = {:doing => "Powering Off" , :done => 'Powered Off'}
 
     VM_ACTION_CREATE  = 'create'
@@ -115,13 +115,13 @@ module Serengeti
       def datastores
         data = {}
         ds = []
-        @disks.each_value { |disk|
+        @disks.each_value do |disk|
           if data.has_key?(disk.datastore_name) 
             data[disk.datastore_name] += disk.size
           else
             data[disk.datastore_name] = disk.size
           end
-        }
+        end
         data.each {|k, v| ds << {:name=>k, :size=>v/ResourceInfo::DISK_CHANGE_TIMES}}
         ds
       end
@@ -137,7 +137,7 @@ module Serengeti
       def ipaddress; ip_address end
 
       def initialize(vm_name, req_rp = nil)
-        @logger = Serengeti::CloudManager::VHelperCloud.Logger
+        @logger = Serengeti::CloudManager::Cloud.Logger
         @lock = Mutex.new
         @disks = {}
         @name = vm_name

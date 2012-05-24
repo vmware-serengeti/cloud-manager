@@ -5,10 +5,10 @@ module Serengeti
     LOG_LEVEL = {'debug'=>Logger::DEBUG, 'info'=>Logger::INFO, 'warning'=>Logger::WARN, 'error' => Logger::ERROR,}
     LOG_LEVEL_NAME = LOG_LEVEL.invert
 
-    class VHelperLogger < Logger
+    class SerengetiLogger < Logger
       @@level = LOG_LEVEL['debug']
       def self.log_level= (log_level)
-        @@level = LOG_LEVEL[log_level]
+        @@level = LOG_LEVEL[log_level.downcase]
         @@level ||= LOG_LEVEL['debug']
       end
 
@@ -58,16 +58,16 @@ module Serengeti
       end
     end
 
-    class VHelperCloud
+    class Cloud
       @@self_logger = nil
       def self.Logger
-        @@self_logger = VHelperLogger.new if @@self_logger.nil?
+        @@self_logger = SerengetiLogger.new if @@self_logger.nil?
         @@self_logger
       end
 
       def log_level= (log_level)
         raise "Unknown log level #{log_level}, it should be in #{LOG_LEVEL.keys}" if LOG_LEVEL.has_key?(log_level)
-        VHelperLogger.log_level = LOG_LEVEL[log_level]
+        SerengetiLogger.log_level = LOG_LEVEL[log_level]
       end
     end
   end

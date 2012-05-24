@@ -1,7 +1,7 @@
 module Serengeti
   module CloudManager
 
-    class VHelperCloud
+    class Cloud
       TIMEOUT_WAIT_IP_TIME = 60*5
       SLEEP_WAIT_IP_TIME = 4
       def cluster_wait_ready(vm_pool)

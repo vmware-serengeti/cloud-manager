@@ -1,7 +1,7 @@
 module Serengeti
   module CloudManager
 
-    class VHelperCloud
+    class Cloud
       def cluster_datastore_pattern(cluster_info, type)
         if type == 'shared'
           return cluster_info["vc_shared_datastore_pattern"]
@@ -78,7 +78,7 @@ module Serengeti
       attr_accessor :network_res
       attr_accessor :vm_ids    #classes VmInfo
       def initialize(rp=nil, template_id=nil)
-        @logger = Serengeti::CloudManager::VHelperCloud.Logger
+        @logger = Serengeti::CloudManager::Cloud.Logger
         @vm_ids = {}
         @req_info = ResourceInfo.new(rp, template_id)
         @name = ""

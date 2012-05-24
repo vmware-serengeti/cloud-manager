@@ -137,7 +137,7 @@ module Serengeti
       #########################################################
       # Begin Resource functions
       def initialize(client, vhelper, mem_over_commit = 1.0)
-        @logger       = Serengeti::CloudManager::VHelperCloud.Logger
+        @logger       = Serengeti::CloudManager::Cloud.Logger
         @client       = client
         @vhelper    = vhelper
         @datacenter   = {}
@@ -184,7 +184,7 @@ module Serengeti
         clusters_req = @vhelper.vc_req_rps
 
         clusters = {}
-        group_each_by_threads(cluster_mobs, :callee=>"fetch cluster in datacenter #{datacenter.name}") { |cluster_mob|
+        group_each_by_threads(cluster_mobs, :callee=>"fetch cluster in datacenter #{datacenter.name}") do |cluster_mob|
           attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
           # chose cluster in cluster_names
           next unless cluster_names.include?(attr["name"])
@@ -201,8 +201,8 @@ module Serengeti
           cluster.mob                 = attr["mo_ref"]
           cluster.name                = attr["name"]
           cluster.vms                 = {}
-          cluster.share_datastore_pattern = @vhelper.input_cluster_info["vc_shared_datastore_pattern"] || datacenter.share_datastore_pattern
-          cluster.local_datastore_pattern = @vhelper.input_cluster_info["vc_local_datastore_pattern"] || datacenter.local_datastore_pattern
+          cluster.share_datastore_pattern = @vhelper.input_cluster_info["vc_shared_datastore_pattern"] || datacenter.share_datastore_pattern || []
+          cluster.local_datastore_pattern = @vhelper.input_cluster_info["vc_local_datastore_pattern"] || datacenter.local_datastore_pattern || []
 
           @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
@@ -219,7 +219,7 @@ module Serengeti
           cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
           clusters[cluster.name] = cluster
-        }
+        end
         clusters
       end
 
@@ -258,7 +258,7 @@ module Serengeti
       def fetch_hosts(cluster, cluster_mob)
         hosts = {}
         host_mobs = @client.get_hosts_by_cs_mob(cluster_mob)
-        group_each_by_threads(host_mobs, :callee=>"fetch hosts in cluster #{cluster.name}") { |host_mob|
+        group_each_by_threads(host_mobs, :callee=>"fetch hosts in cluster #{cluster.name}") do |host_mob|
           attr = @client.ct_mob_ref_to_attr_hash(host_mob, "HS")
           connection_state   = attr["connection_state"]
           if connection_state != 'connected'
@@ -298,7 +298,7 @@ module Serengeti
 
           host.vms = fetch_vms_by_host(cluster, host, host_mob)
           hosts[host.name] = host
-        }
+        end
         hosts
       end
 
@@ -310,7 +310,7 @@ module Serengeti
         vm.host_name = host_name
 
         #update disk info
-        #@logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
+        @logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
         disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
         disk_attrs.each do |attr|
           disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 

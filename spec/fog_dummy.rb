@@ -5,7 +5,7 @@ module Serengeti
       DC_CONFIG_FILE = "./spec/ut.dc.yaml"
       WORK_FILE = "./spec/ut.test.yaml"
       def initialize()
-        @logger = Serengeti::CloudManager::VHelperCloud.Logger
+        @logger = Serengeti::CloudManager::Cloud.Logger
         @ip_start = 2
         @logger.debug("Enter Fog_dummy")
         @debug_dc = YAML.load(File.open(DC_CONFIG_FILE))

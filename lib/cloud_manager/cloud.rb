@@ -1,7 +1,7 @@
 module Serengeti
   module CloudManager
 
-    class VHelperCloud
+    class Cloud
       attr_accessor :name
       attr_accessor :vc_req_resource_pools
       attr_accessor :vc_address
@@ -29,7 +29,7 @@ module Serengeti
       attr_reader :need_abort
 
       def initialize(cluster_info)
-        @logger = Serengeti::CloudManager::VHelperCloud.Logger
+        @logger = Serengeti::CloudManager::Cloud.Logger
         @dc_resource = nil
         @clusters = nil
         @vm_lock = Mutex.new
@@ -83,8 +83,8 @@ module Serengeti
         @vc_address = cloud_provider["vc_addr"]
         @vc_username = cloud_provider["vc_user"]
         @vc_password = cloud_provider["vc_pwd"]
-        @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"])
-        @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"])
+        @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"]) || []
+        @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"]) || []
         @client_name = cloud_provider["cloud_adapter"] || "fog"
         @allow_mixed_datastores = nil
         @racks = nil

@@ -1,6 +1,6 @@
 module Serengeti
   module CloudManager
-    class VHelperCloud
+    class Cloud
       DEPLOY_GROUP_PARALLEL = "group_parallel"
       DEPLOY_GROUP_ORDER    = "group_order"
       DEPLOY_GROUP_POLICY   = [DEPLOY_GROUP_PARALLEL, DEPLOY_GROUP_ORDER]

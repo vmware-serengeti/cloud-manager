@@ -1,7 +1,7 @@
 module Serengeti
   module CloudManager
 
-    class VHelperCloud
+    class Cloud
       def create_and_update(cloud_provider, cluster_info, task)
         action_process (CLOUD_WORK_CREATE) {
           @logger.info("enter create_and_update...")
