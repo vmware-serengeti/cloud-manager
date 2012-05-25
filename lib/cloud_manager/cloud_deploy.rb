@@ -38,6 +38,7 @@ module Serengeti
       def vm_deploy_op(vm, working)
         begin
           yield
+          return 'OK'
         rescue => e
           @logger.error("#{working} failed.")
           @logger.error("#{e} - #{e.backtrace.join("\n")}")
@@ -46,7 +47,6 @@ module Serengeti
           mov_vm(vm, @deploy_vms, @failure_vms)
           return nil
         end
-        'OK'
       end
 
       def deploy_vm_group(group)
