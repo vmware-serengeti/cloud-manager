@@ -116,13 +116,14 @@ module Serengeti
         # remove ips associated with existing vms from input ip pool
         vm_groups_existed.each_value do |exist_group|
           input_group = vm_groups_input[exist_group.name]
-          #cluster_data_instances = cluster_data['group'].select {|group| group['name'] == exist_group.name}
           next if input_group.nil?
+          if cluster_data && cluster_data['group']
+            cluster_data_instances = cluster_data['group'].select {|group| group[instances] if group['name'] == exist_group.name}.first
+            cluster_data_instances.each {|vm| input_group.network_res.ip_remove(0, vm['ip_address'])}
+          end
           @logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
           # TODO: multiple vnics
-          exist_group.vm_ids.each_value do |vm|
-            input_group.network_res.ip_remove(0, vm.ip_address)
-          end
+          exist_group.vm_ids.each_value {|vm| input_group.network_res.ip_remove(0, vm.ip_address) }
         end
       end
 
