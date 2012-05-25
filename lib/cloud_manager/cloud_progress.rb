@@ -78,7 +78,7 @@ module Serengeti
         vms.each_value { |vm|
           result = get_from_vm_name(vm.name)
           next if result.nil?
-          vm.cluster_name = @cluster_name #vhelper_cluster_name
+          vm.cluster_name = @cluster_name #Serengeti cluster_name
           vm.group_name = result[2]
           vm.created = options[:created]
           servers << vm

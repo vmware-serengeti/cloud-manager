@@ -140,10 +140,10 @@ module Serengeti
       include Serengeti::CloudManager::Parallel
       #########################################################
       # Begin Resource functions
-      def initialize(client, vhelper, mem_over_commit = 1.0)
+      def initialize(client, serengeti, mem_over_commit = 1.0)
         @logger       = Serengeti::CloudManager::Cloud.Logger
         @client       = client
-        @vhelper    = vhelper
+        @serengeti    = serengeti
         @datacenter   = {}
         @lock         = Mutex.new
         @mem_over_commit  = mem_over_commit
@@ -167,14 +167,14 @@ module Serengeti
 
         @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
-        raise "Missing share_datastore_pattern in director config" if @vhelper.vc_share_datastore_pattern.nil?
-        @logger.debug("share pattern:#{@vhelper.vc_share_datastore_pattern}")
-        @logger.debug("local pattern:#{@vhelper.vc_local_datastore_pattern}")
-        datacenter.share_datastore_pattern    = @vhelper.vc_share_datastore_pattern
-        datacenter.local_datastore_pattern = @vhelper.vc_local_datastore_pattern
+        raise "Missing share_datastore_pattern in director config" if @serengeti.vc_share_datastore_pattern.nil?
+        @logger.debug("share pattern:#{@serengeti.vc_share_datastore_pattern}")
+        @logger.debug("local pattern:#{@serengeti.vc_local_datastore_pattern}")
+        datacenter.share_datastore_pattern    = @serengeti.vc_share_datastore_pattern
+        datacenter.local_datastore_pattern = @serengeti.vc_local_datastore_pattern
 
-        datacenter.allow_mixed_datastores = @vhelper.allow_mixed_datastores
-        datacenter.racks = @vhelper.racks
+        datacenter.allow_mixed_datastores = @serengeti.allow_mixed_datastores
+        datacenter.racks = @serengeti.racks
 
         datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
         datacenter
@@ -183,9 +183,9 @@ module Serengeti
       def fetch_clusters(datacenter, datacenter_mob)
         cluster_mobs = @client.get_clusters_by_dc_mob(datacenter_mob)
 
-        cluster_names = @vhelper.vc_req_rps.values
-        resouce_names = @vhelper.vc_req_rps.keys
-        clusters_req = @vhelper.vc_req_rps
+        cluster_names = @serengeti.vc_req_rps.values
+        resouce_names = @serengeti.vc_req_rps.keys
+        clusters_req = @serengeti.vc_req_rps
 
         clusters = {}
         group_each_by_threads(cluster_mobs, \
@@ -206,9 +206,9 @@ module Serengeti
           cluster.mob                 = attr["mo_ref"]
           cluster.name                = attr["name"]
           cluster.vms                 = {}
-          cluster.share_datastore_pattern = @vhelper.input_cluster_info["vc_shared_datastore_pattern"] || 
+          cluster.share_datastore_pattern = @serengeti.input_cluster_info["vc_shared_datastore_pattern"] || 
                                                                     datacenter.share_datastore_pattern || []
-          cluster.local_datastore_pattern = @vhelper.input_cluster_info["vc_local_datastore_pattern"]  || 
+          cluster.local_datastore_pattern = @serengeti.input_cluster_info["vc_local_datastore_pattern"]  || 
                                                                     datacenter.local_datastore_pattern || []
 
           @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
@@ -337,7 +337,7 @@ module Serengeti
         vm_mobs.each do |vm_mob|
           #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
           vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
-          next if !@vhelper.vm_is_this_cluster?(vm_existed["name"])
+          next if !@serengeti.vm_is_this_cluster?(vm_existed["name"])
           vm = fetch_vm_by_mob(vm_existed, vm_mob, host.name)
 
           cluster.vms[vm.name] = vm

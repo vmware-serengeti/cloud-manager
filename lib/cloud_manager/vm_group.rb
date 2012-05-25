@@ -11,10 +11,10 @@ module Serengeti
         nil
       end
 
-      def create_vm_group_from_vhelper_input(cluster_info, datacenter_name)
+      def create_vm_group_from_serengeti_input(cluster_info, datacenter_name)
         vm_groups = {}
         #@logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
-        vhelper_groups = cluster_info["groups"]
+        input_groups = cluster_info["groups"]
         #template_id = "/Datacenters/#{datacenter_name}/vm/#{cluster_info["template_id"]}"
         template_id = cluster_info["template_id"] #currently, it is mob_ref
         raise "template_id should a vm mob id (like vm-1234)" if /^vm-[\d]+$/.match(template_id).nil?
@@ -26,7 +26,7 @@ module Serengeti
         network_res = NetworkRes.new(cluster_networking)
         #@logger.debug("dump network:#{network_res}")
         @logger.debug("template_id:#{template_id}")
-        vhelper_groups.each do |vm_group_req|
+        input_groups.each do |vm_group_req|
           vm_group = VmGroupInfo.new(vm_group_req)
           vm_group.req_info.template_id ||= template_id
           disk_pattern = vm_group.req_info.disk_pattern || cluster_datastore_pattern(cluster_info, vm_group.req_info.disk_type)
@@ -40,11 +40,11 @@ module Serengeti
           vm_group.network_res = network_res
           vm_groups[vm_group.name] = vm_group
         end
-        #@logger.debug("vhelper_group:#{vm_groups}")
+        #@logger.debug("input_group:#{vm_groups}")
         vm_groups
       end
 
-      def create_vm_group_from_resources(dc_res, vhelper_cluster_name)
+      def create_vm_group_from_resources(dc_res, serengeti_cluster_name)
         vm_groups = {}
         dc_res.clusters.each_value do |cluster|
           cluster.vms.each_value do |vm|
@@ -55,7 +55,7 @@ module Serengeti
             group_name = result[2]
             num = result[3]
             @logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
-            next if (cluster_name != vhelper_cluster_name)
+            next if (cluster_name != serengeti_cluster_name)
             vm_group = vm_groups[group_name]
             if vm_group.nil?
               vm_group = VmGroupInfo.new()

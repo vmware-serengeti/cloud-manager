@@ -6,7 +6,7 @@ module Serengeti
       SLEEP_WAIT_IP_TIME = 4
       def cluster_wait_ready(vm_pool)
         @logger.debug("wait all existed vms poweron and return their ip address")
-        group_each_by_threads(vm_pool) { |vm|
+        group_each_by_threads(vm_pool, :callee=>'wait vm ready') { |vm|
           @logger.debug("vm:#{vm.name} can ha?:#{vm.can_ha}, enable ? #{vm.ha_enable}")
           if !vm.ha_enable && vm.can_ha?
             next if !vm_deploy_op(vm, 'disable ha') { @client.vm_set_ha(vm, vm.ha_enable)}

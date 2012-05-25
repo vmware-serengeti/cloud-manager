@@ -24,6 +24,7 @@ module Serengeti
               end
             end
           end
+          @logger.debug("create #{work_thread.size} threads to work for #{group.size} jobs")
           work_thread.each { |t| t.join }
         end
         @logger.debug("Finish group operation for #{options[:callee]}")

@@ -7,7 +7,7 @@ module Serengeti
         CLUSTER_STOP   => 'stop',
       }
 
-      def vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, action)
+      def serengeti_vm_op(cloud_provider, cluster_info, cluster_data, task, action)
         act = CLUSTER_ACTION_MESSAGE[action]
         act = 'unknown' if act.nil?
         @logger.info("enter #{act} cluster ... ")
@@ -38,8 +38,8 @@ module Serengeti
 
       def delete(cloud_provider, cluster_info, cluster_data, task)
         action_process (CLOUD_WORK_DELETE) do
-          vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_DELETE) do |vms|
-            group_each_by_threads(vms) do |vm|
+          serengeti_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_DELETE) do |vms|
+            group_each_by_threads(vms, :callee=>'delete cluster') do |vm|
               vm.action = VM_ACTION_DELETE
               #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
               #@logger.debug("vm split to #{@cluster_name}::#{result[2]}::#{result[3]}")
@@ -56,30 +56,30 @@ module Serengeti
 
       def start(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_START) do
-          vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_START) do |vms|
+          serengeti_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_START) do |vms|
             vms.each {|vm| vm.action = VM_ACTION_START}
             cluster_wait_ready(vms)
           end
-        cluster_done(task)
         end
+        cluster_done(task)
       end
 
       def stop(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_STOP) do
-          vhelper_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_STOP) do |vms|
-            group_each_by_threads(vms) do |vm|
+          serengeti_vm_op(cloud_provider, cluster_info, cluster_data, task, CLUSTER_STOP) do |vms|
+            group_each_by_threads(vms, :callee=>'stop cluster') do |vm|
               vm.action = VM_ACTION_STOP
-              @logger.debug("stop :#{vm.name}")
               vm.status = VM_STATE_POWER_OFF
 
               next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
               next if !vm_deploy_op(vm, 'reRead') {@client.update_vm_properties_by_vm_mob(vm)}
               vm.status = VM_STATE_DONE
+              @logger.debug("stop :#{vm.name}")
               vm_finish(vm)
             end
           end
-          cluster_done(task)
         end
+        cluster_done(task)
       end
 
     end

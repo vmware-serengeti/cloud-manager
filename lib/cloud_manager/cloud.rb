@@ -142,9 +142,9 @@ module Serengeti
         @resources = Resources.new(@client, self)
 
         ###########################################################
-        # Create inputed vm_group from vhelper input
-        @logger.debug("Create vm group from vhelper input...")
-        vm_groups_input = create_vm_group_from_vhelper_input(cluster_info, @vc_req_datacenter)
+        # Create inputed vm_group from serengeti input
+        @logger.debug("Create vm group from input...")
+        vm_groups_input = create_vm_group_from_serengeti_input(cluster_info, @vc_req_datacenter)
 
         log_obj_to_file(vm_groups_input, 'vm_groups_input')
         vm_groups_existed = {}
