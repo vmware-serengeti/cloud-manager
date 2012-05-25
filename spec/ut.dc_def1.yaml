@@ -24,7 +24,7 @@ networking:
     - "10.2.100.100"
     - "10.2.100.240"
 
-template_id: /Datacenters/DatacenterCF/vm/tt
+template_id: vm-1231
 groups:
 - name: group0
   cpu: 2

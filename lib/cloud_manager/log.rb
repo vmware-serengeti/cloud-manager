@@ -67,7 +67,7 @@ module Serengeti
 
       def log_level= (log_level)
         raise "Unknown log level #{log_level}, it should be in #{LOG_LEVEL.keys}" if LOG_LEVEL.has_key?(log_level)
-        SerengetiLogger.log_level = LOG_LEVEL[log_level]
+        SerengetiLogger.log_level = LOG_LEVEL[log_level.to_s.downcase]
       end
     end
   end

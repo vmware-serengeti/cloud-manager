@@ -70,6 +70,10 @@ module Serengeti
           cloud.release_connection if cloud
         end
       end
+
+      def self.log_level=(level)
+        Serengeti::CloudManager::Cloud.log_level = level
+      end
     end
   end
 end
