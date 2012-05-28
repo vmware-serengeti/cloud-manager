@@ -191,6 +191,7 @@ module Serengeti
         rp_list.sort! {|x, y| x.used_counter <=> y.used_counter }
       end
 
+      # place cluster into cloud server
       def cluster_placement(dc_resource, vm_groups_input, vm_groups_existed, cluster_info)
         vm_placement = []
         if vm_groups_existed.size > 0
@@ -210,6 +211,7 @@ module Serengeti
           vm_group.req_rps.each do |rp_name, cluster_name|
             place_rp << dc_resource.clusters[cluster_name].resource_pools[rp_name]
           end
+
           set_best_placement_rp_list!(place_rp)
           loop_resource(place_rp) do |rp|
             #@logger.debug("Place rp:#{place_rp.pretty_inspect}")

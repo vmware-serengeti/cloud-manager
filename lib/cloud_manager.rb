@@ -71,8 +71,8 @@ module Serengeti
         end
       end
 
-      def self.log_level=(level)
-        Serengeti::CloudManager::Cloud.log_level = level
+      def self.set_log_level(level)
+        Serengeti::CloudManager::Cloud.set_log_level(level)
       end
     end
   end

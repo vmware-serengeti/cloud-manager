@@ -20,7 +20,7 @@ module Serengeti
           vm.status = VM_STATE_POWER_ON
           @logger.debug("vm:#{vm.name} power:#{vm.power_state}")
           if vm.power_state == 'poweredOff'
-            next if !vm_deploy_op(vm, 'power on') { vm_poweron(vm)}
+            next if !vm_deploy_op(vm, 'power on') { @client.vm_power_on(vm)}
             @logger.debug("#{vm.name} has poweron")
           end
 

@@ -44,19 +44,21 @@ end
 begin
   wait = true
   info = ut_test_env
+  log_level = 'debug'
   while (true)
     begin
       puts "Please input (current:#{info['type']})\n"
       puts "\t1-->UT env"
       puts "\t2-->WDC env"
       puts "\t3-->wait (current:#{wait})"
-      puts "\t4-->set log level"
+      puts "\t4-->set log level (current:#{log_level})"
 
       puts "\t5-->Create cluster\n"
       puts "\t6-->Delete cluster\n"
       puts "\t7-->List all cluster\n"
       puts "\t8-->start all vm in cluster\n"
       puts "\t9-->stop all vm in cluster\n"
+      puts "\t80-->continue working after"
       puts "\t100 --> auto testing for all known cases"
 
       opt = gets.chomp
@@ -75,6 +77,12 @@ begin
         wait = !wait
         p "set wait to #{wait}"
         next
+      when 4 then
+        p "Please input log level"
+        opt = gets.chomp.to_s
+        Serengeti::CloudManager::Manager.set_log_level(opt)
+        log_level = opt
+        next
       when 5 then
         p "##Create cluster"
         cloud = Serengeti::CloudManager::Manager.create_cluster(info, :wait => wait)
@@ -86,6 +94,7 @@ begin
         puts("UT finished")
         progress = cloud.get_progress
         puts("ut process:#{progress.inspect}")
+
       when 6 then #Delete Cluster
         puts "## Delete Cluster in UT"
         cloud = Serengeti::CloudManager::Manager.delete_cluster(info, :wait => wait)
@@ -96,26 +105,24 @@ begin
         puts("UT finished")
         progress = cloud.get_progress
         puts("ut process:#{progress.inspect}")
+
       when 7 then #List vms in Cluster
         puts("##List all vm in UT")
         result = Serengeti::CloudManager::Manager.list_vms_cluster(info)
         puts("##result:#{result.pretty_inspect}")
+
       when 8 then #Start vms in Cluster
         puts("##List all vms")
         result = Serengeti::CloudManager::Manager.start_cluster(info, :wait => wait)
         progress = result.get_progress
         puts("ut process:#{progress.inspect}")
+
       when 9 then #Stop vms in Cluster
         puts("##List all vms")
         result = Serengeti::CloudManager::Manager.stop_cluster(info, :wait => wait)
         progress = result.get_progress
         puts("##result:#{progress.inspect}")
 
-      when 100 then #show YAML file
-        p "## Test ut.dc.yaml\n"
-        CONFIG_FILE = "../test/ut.dc.yaml"
-        info = YAML.load(File.open(CONFIG_FILE))
-        puts("yaml is #{info}")
       else
         puts("Unknow test case!\n")
       end

@@ -1,3 +1,5 @@
+require 'deploy'
+
 module Serengeti
   module CloudManager
     class Cloud
@@ -80,6 +82,7 @@ module Serengeti
               @client.vm_destroy(vm)
             end
           end
+
         end
       end
 
@@ -88,17 +91,7 @@ module Serengeti
       end
 
       def vm_reconfigure_network(vm, options = {})
-        if (vm.network_res)
-          vm.network_res.card_num.times {|card| @client.vm_update_network(vm, card) }
-        end
-      end
-
-      def vm_poweroff(vm, options={})
-        @client.vm_power_off(vm)
-      end
-
-      def vm_poweron(vm, options={})
-        @client.vm_power_on(vm)
+        vm.network_res.card_num.times {|card| @client.vm_update_network(vm, card) } if vm.network_res
       end
 
       def vm_finish(vm, options={})

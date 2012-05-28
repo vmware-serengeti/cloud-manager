@@ -7,9 +7,8 @@ module Serengeti
 
     class SerengetiLogger < Logger
       @@level = LOG_LEVEL['debug']
-      def self.log_level= (log_level)
-        @@level = LOG_LEVEL[log_level.downcase]
-        @@level ||= LOG_LEVEL['debug']
+      def self.set_log_level(log_level)
+        @@level = log_level
       end
 
       def initialize(options={})
@@ -65,9 +64,10 @@ module Serengeti
         @@self_logger
       end
 
-      def log_level= (log_level)
-        raise "Unknown log level #{log_level}, it should be in #{LOG_LEVEL.keys}" if LOG_LEVEL.has_key?(log_level)
-        SerengetiLogger.log_level = LOG_LEVEL[log_level.to_s.downcase]
+      def self.set_log_level(log_level)
+        log_level = log_level.to_s.downcase
+        raise "Unknown log level #{log_level}, it should be in #{LOG_LEVEL.keys}" unless LOG_LEVEL.has_key?(log_level)
+        SerengetiLogger.set_log_level (LOG_LEVEL[log_level])
       end
     end
   end
