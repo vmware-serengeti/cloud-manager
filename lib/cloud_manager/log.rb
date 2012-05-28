@@ -19,7 +19,7 @@ module Serengeti
           "[#{datetime.rfc2822}] #{severity}: #{msg}\n"
         end
         @logger.level = @level
-        puts "initiated logger with level #{LOG_LEVEL_NAME[@level]} and output to #{log_file}"
+        @logger.debug("initiated logger with level #{LOG_LEVEL_NAME[@level]} and output to #{log_file}")
       end
 
       def info(msg)

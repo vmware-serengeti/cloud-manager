@@ -8,6 +8,9 @@ module Serengeti
       def create(parameter, options={})
       end
 
+      def update(parameter, options={})
+      end
+
       def delete(parameter, options={})
       end
 
@@ -17,7 +20,13 @@ module Serengeti
       def stop(parameter, options={})
       end
 
-      def list_vms(parameter, options={})
+      def groups()
+      end
+
+      def nodes()
+      end
+
+      def show(parameter, options={})
       end
     end
 

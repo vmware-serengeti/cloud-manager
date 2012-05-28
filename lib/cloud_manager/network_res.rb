@@ -54,17 +54,18 @@ module Serengeti
           nil
         end
 
-        def get_vm_network_json(hostname, card)
+        def get_vm_network_json(card)
           config_json = ''
           if (static?(card))
             assign_ip = ip_alloc(card)
+            #return nil if assign_ip.nil?
             config_json = {
               "device"    => "eth#{card}",
               "bootproto" => "static",
               "ipaddr"    => "#{assign_ip}",
               "netmask"   => netmask(card),
               "gateway"   => gateway(card),
-              "hostname"  => hostname.to_s,
+              "hostname"  => '',
               "dnsserver0"=> dns(card)[0],
               "dnsserver1"=> dns(card)[1],
             }.to_json
@@ -72,6 +73,14 @@ module Serengeti
             config_json = {'device'=>"eth#{card}", 'bootproto'=>'dhcp'}.to_json
           end
           config_json
+        end
+
+        def free_vm_network_json(card, config_json)
+          return 'OK' if !static?(card)
+
+          config = JSON.parse(config_json)
+          ip_remove(config['ipaddr']) if config['ipaddr']
+          'OK'
         end
 
       end

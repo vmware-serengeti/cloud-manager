@@ -148,10 +148,11 @@ module Serengeti
             sys_datastore = get_suitable_sys_datastore(vm_group.req_info, host.place_share_datastores)
 
             if sys_datastore.nil?
-              set_vm_error_msg(vm, "can not find suitable sys datastore in host #{host.name}. And try to find other host")
+              set_vm_error_msg(vm, "can not find suitable sys datastore in host"\
+                               "#{host.name}. And try to find other host")
               next 'remove'
             end
-            @logger.debug("get sys datastore :#{sys_datastore.name}")
+            @logger.debug("vm:#{vm.name} get sys datastore :#{sys_datastore.name}")
 
             #Get the datastore for this vm
             req_size = vm_group.req_info.disk_size
@@ -162,16 +163,22 @@ module Serengeti
               set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}. And try to find other host")
               next 'remove'
             end
+
+            #Get the network for this vm
+
+            vm.network_config_json = vm_group.network_res.card_num.times.collect \
+              { |card| vm_group.network_res.get_vm_network_json(card) }
+
             #Find suitable Host and datastores
             host.place_share_datastores.rotate!
-            @logger.debug("datastores: #{place_datastores.pretty_inspect}")
+            @logger.debug("vm:#{vm.name} datastores: #{place_datastores.pretty_inspect}")
             assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
             vm.action = VM_ACTION_CREATE
             vm.error_msg = nil
             ## RR for next Host
             # Find a suitable place 
             group_place << vm
-            #@logger.debug("Add #{vm.name} to preparing vms")
+            @logger.debug("Add #{vm.name} to preparing queue")
             @vm_lock.synchronize { @preparing_vms[vm.name] = vm }
             vm_group.add_vm(vm)
             break
@@ -205,12 +212,11 @@ module Serengeti
           need_next_rp = nil
 
           place_rp = []
-          @logger.debug("req_rps:#{vm_group.req_rps}")
+          @logger.debug("Group:#{vm_group.name} req_rps:#{vm_group.req_rps}")
 
           # prepareing rp for this vm_group
-          vm_group.req_rps.each do |rp_name, cluster_name|
-            place_rp << dc_resource.clusters[cluster_name].resource_pools[rp_name]
-          end
+          place_rp = vm_group.req_rps.collect {|rp_name, cluster_name|\
+            dc_resource.clusters[cluster_name].resource_pools[rp_name] }
 
           set_best_placement_rp_list!(place_rp)
           loop_resource(place_rp) do |rp|

@@ -96,6 +96,7 @@ module Serengeti
       attr_accessor :ha_enable
       def succeed?;  ready?  end
       def finished?; succeed? || !error_msg.to_s.empty? end
+      attr_accessor :network_config_json
 
       # for provisioning
       attr_accessor :created_at
@@ -127,7 +128,7 @@ module Serengeti
       end
 
       def inspect
-        "#{to_hash.pretty_inspect} #{get_error_msg}\n"
+        "#{to_hash.pretty_inspect} volumes:#{volumes.pretty_inspect} networking:#{network_config_json.pretty_inspect}\n #{get_error_msg}\n"
       end
 
       def state; @power_state end
@@ -147,8 +148,9 @@ module Serengeti
         @ip_address = ""
         @error_msg = ""
         @assign_ip = []
-        @networking = nil
+        @network_cards = []
         @ha_enable = true
+        @network_config_json = []
       end
 
       def get_progress
@@ -163,7 +165,7 @@ module Serengeti
         progress = VM_ACT_PROGRES[@action]
         attrs = {}
         attrs[:name]        = @name
-        attrs[:hostname]    = @hostname
+        attrs[:hostname]    = @host_name
         attrs[:ip_address]  = (@power_state == "poweredOn") ? @ip_address : nil
         attrs[:status]      = progress ? progress[@status][:status] : "" 
         attrs[:action]      = @status[:doing] #@status
@@ -194,6 +196,7 @@ module Serengeti
         disk
       end
 
+      DISK_VOL_NAME = "abcdefghijklmnopqrstuvwxyz"
       def delete_all_disk
         #seem no work to do
       end
@@ -204,6 +207,10 @@ module Serengeti
 
       def ready?
         @status == VM_STATE_DONE 
+      end
+
+      def volumes
+        @disks.collect {|path, disk| "/dev/sd#{DISK_VOL_NAME[disk.unit_number]}" if disk.unit_number > 0}.compact.sort
       end
     end
 

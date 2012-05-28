@@ -30,7 +30,7 @@ module Serengeti
               @status = CLUSTER_UPDATE
               nodifference, cluster_changes = cluster_diff(dc_resources, vm_groups_input, vm_groups_existed)
               if nodifference
-                @logger.info("No difference here")
+                @logger.debug("No difference here")
                 @status = CLUSTER_DONE
               else
                 log_obj_to_file(cluster_changes, 'cluster_changes')
@@ -45,7 +45,7 @@ module Serengeti
           end
           if @status == CLUSTER_DONE
             cluster_done(task)
-            @logger.info("No work need to do!")
+            @logger.info("No difference found, finish work.")
             return
           end
 

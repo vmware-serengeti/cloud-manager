@@ -13,7 +13,7 @@ module Serengeti
             @logger.debug("disable ha of vm #{vm.name}")
           elsif (!vm.can_ha? && vm.ha_enable)
             #TODO add error msg to cluster error message
-            @logger.debug("can not enable ha on unHA cluster")
+            @logger.debug("vm:#{vm.name} can not enable ha on unHA cluster")
           end
 
           # Power On vm
@@ -32,16 +32,16 @@ module Serengeti
               @client.update_vm_properties_by_vm_mob(vm)
               #FIXME check vm tools status
               wait_time = Time.now.to_i - start_time
-              @logger.debug("wait #{wait_time}/#{TIMEOUT_WAIT_IP_TIME}s #{vm.name} ip: #{vm.ip_address}")
+              @logger.debug("vm:#{vm.name} wait #{wait_time}/#{TIMEOUT_WAIT_IP_TIME}s ip: #{vm.ip_address}")
               sleep(SLEEP_WAIT_IP_TIME)
-              raise "Wait IP time out (#{wait_time}s, please check ip conflict. )" if (wait_time) > TIMEOUT_WAIT_IP_TIME
+              raise "#{vm.name} wait IP time out (#{wait_time}s, please check ip conflict. )" if (wait_time) > TIMEOUT_WAIT_IP_TIME
             end
           }
 
           #TODO add ping progress to tested target vm is working
           vm.status = VM_STATE_DONE
           vm_finish(vm)
-          @logger.debug("#{vm.name}: done")
+          @logger.debug("vm :#{vm.name} done")
         }
         @logger.info("Finish all waiting")
         "finished"

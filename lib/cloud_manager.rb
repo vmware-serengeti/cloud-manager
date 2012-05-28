@@ -4,10 +4,12 @@ require "lib/cloud_manager/network_res"
 require "lib/cloud_manager/vm"
 require "lib/cloud_manager/utils"
 require "lib/cloud_manager/resources"
+require 'lib/cloud_manager/group'
 require "lib/cloud_manager/vm_group"
 require 'lib/cloud_manager/cluster_diff'
 require "lib/cloud_manager/cloud_placement"
 require "lib/cloud_manager/wait_ready"
+require "lib/cloud_manager/deploy"
 require "lib/cloud_manager/cloud_deploy"
 require "lib/cloud_manager/client"
 require "lib/cloud_manager/client_fog"

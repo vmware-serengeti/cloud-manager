@@ -1,5 +1,3 @@
-require 'deploy'
-
 module Serengeti
   module CloudManager
     class Cloud
@@ -42,8 +40,7 @@ module Serengeti
           yield
           return 'OK'
         rescue => e
-          @logger.error("#{working} failed.")
-          @logger.error("#{e} - #{e.backtrace.join("\n")}")
+          @logger.error("vm: #{vm.name}#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
           vm.error_code = -1
           vm.error_msg = "#{working} vm:#{vm.name} failed. #{e}"
           mov_vm(vm, @deploy_vms, @failure_vms)
@@ -62,17 +59,17 @@ module Serengeti
             vm.status = VM_STATE_CLONE
             mov_vm(vm, @preparing_vms, @deploy_vms)
             next if !vm_deploy_op(vm, 'Clone') { @client.clone_vm(vm, :poweron => false)}
-            @logger.debug("#{vm.name} power:#{vm.power_state} finish clone")
+            @logger.debug("vm:#{vm.name} power:#{vm.power_state} finish clone")
 
             #is this VM can do HA?
             vm.can_ha = @client.is_vm_in_ha_cluster(vm)
 
             vm.status = VM_STATE_RECONFIG
             next if !vm_deploy_op(vm, 'Reconfigure disk') { vm_reconfigure_disk(vm)}
-            @logger.info("#{vm.name} finish reconfigure disk")
+            @logger.info("vm:#{vm.name} finish reconfigure disk")
 
             next if !vm_deploy_op(vm, 'Reconfigure network') {vm_reconfigure_network(vm)}
-            @logger.info("#{vm.name} finish reconfigure networking")
+            @logger.info("vm:#{vm.name} finish reconfigure networking")
 
             #Move deployed vm to existed queue
             #TODO Move change name mov_vm
@@ -91,7 +88,7 @@ module Serengeti
       end
 
       def vm_reconfigure_network(vm, options = {})
-        vm.network_res.card_num.times {|card| @client.vm_update_network(vm, card) } if vm.network_res
+        @client.vm_update_network(vm) unless vm.network_config_json.nil?
       end
 
       def vm_finish(vm, options={})

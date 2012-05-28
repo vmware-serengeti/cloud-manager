@@ -29,7 +29,7 @@ module Serengeti
           connection = Fog::Compute.new(info)
           @connection[:con] << connection
         end
-        @logger.info("Use #{@connection[:con].size} channels to connect cloud service}")
+        @logger.debug("Use #{@connection[:con].size} channels to connect cloud service}")
       end
 
       def fog_op
@@ -48,7 +48,7 @@ module Serengeti
           end
         end
         @connection = nil
-        @logger.info("Disconnect to cloud provider ")
+        @logger.info("Disconnect from cloud provider ")
       end
 
       def clone_vm(vm, options={})
@@ -186,16 +186,18 @@ module Serengeti
         fog_op {|con| con.get_ds_name_by_path(path)}
       end
 
-      def vm_update_network(vm, card)
+      def vm_update_network(vm)
         check_connection
-        #TODO test port group later
-        fog_op {|con| con.vm_update_network('instance_uuid' => vm.instance_uuid, 
-                                      'adapter_name' => "Network adapter #{card+1}", 
-                                      'portgroup_name' => vm.network_res.port_group(card))}
+        card = 0
+        vm.network_config_json.each do |config_json|
+          fog_op {|con| con.vm_update_network('instance_uuid' => vm.instance_uuid, 
+                                              'adapter_name' => "Network adapter #{card+1}", 
+                                              'portgroup_name' => vm.network_res.port_group(card))}
 
-        config_json = vm.network_res.get_vm_network_json(vm.hostname, card)
-        @logger.debug("network json:#{config_json}")
-        fog_op {|con| con.vm_config_ip('vm_moid' => vm.mob, 'config_json' => config_json)}
+          @logger.debug("network json:#{config_json}")
+          fog_op {|con| con.vm_config_ip('vm_moid' => vm.mob, 'config_json' => config_json)}
+          card += 1
+        end
       end
 
       def vm_set_ha(vm, enable)

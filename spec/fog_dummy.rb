@@ -85,8 +85,8 @@ module Serengeti
         end
       end
 
-      def vm_update_network(vm, card)
-        config_json = vm.network_res.get_vm_network_json(vm.hostname, card)
+      def vm_update_network(vm)
+        config_json = vm.network_config_json
         @logger.debug("network json:#{config_json}")
       end
 

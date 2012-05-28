@@ -81,8 +81,8 @@ module Serengeti
         @vc_address = cloud_provider["vc_addr"]
         @vc_username = cloud_provider["vc_user"]
         @vc_password = cloud_provider["vc_pwd"]
-        @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"]) || []
-        @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"]) || []
+        @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"]||[]) || []
+        @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"]||[]) || []
         @client_name = cloud_provider["cloud_adapter"] || "fog"
         @allow_mixed_datastores = nil
         @racks = nil
@@ -192,12 +192,10 @@ module Serengeti
 
       def change_wildcard2regex_str(str)
         str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| return "^#{out}$" } unless str.nil?
-        "^.*$"
+        "^$"
       end
 
       def change_wildcard2regex(strArray)
-        #@logger.debug("input:#{strArray.pretty_inspect}")
-        raise "inputed wildcard [#{strArray}] is not an Array!" if strArray.class != Array
         strArray.collect { |str| change_wildcard2regex_str(str) }
       end
 
