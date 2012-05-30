@@ -22,13 +22,13 @@ module Serengeti
           @cpu = rp["cpu"] || 1
           @mem = rp["memory"] || 512
           @disk_size =  rp["storage"]["size"] || 0
-          @disk_pattern = rp["storage"]["name_pattern"] 
+          @disk_pattern = rp["storage"]["name_pattern"]
           @disk_size *= DISK_CHANGE_TIMES
-          @disk_type = rp["storage"]["type"] 
+          @disk_type = rp["storage"]["type"]
           @disk_type = DISK_TYPE_SHARE if @disk_type != DISK_TYPE_LOCAL
           @affinity = rp["affinity"] || "none"
           @template_id = rp["template_id"]
-          @ha = rp["ha"] 
+          @ha = rp["ha"]
           @ha = true if @ha.nil?    #FIXME current setting is enable for all.
           @rack_id = nil
         end

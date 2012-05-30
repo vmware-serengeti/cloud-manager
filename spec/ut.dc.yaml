@@ -1,6 +1,10 @@
 ---
 - name: DatacenterCF
   mob:  dc-1
+  portgroup:
+    CFNetwork: test1
+    CFNetwork1: test2
+    CFNetwork2: test3
   clusters:
   - name: Cluster1
     mob: cs1

@@ -1,6 +1,3 @@
-require '../fog/lib/fog'
-require 'json'
-
 module Serengeti
   module CloudManager
     class FogAdapter
@@ -34,7 +31,7 @@ module Serengeti
 
       def fog_op
         con = nil
-        while con.nil? 
+        while con.nil?
           @con_lock.synchronize { con = @connection[:con].first;@connection[:con].rotate!}
         end
         return yield con
@@ -100,8 +97,8 @@ module Serengeti
 
       def vm_create_disk(vm, disk, options={})
         check_connection
-        info = {'instance_uuid' => vm.instance_uuid, 
-          'vmdk_path' => disk.fullpath, 
+        info = {'instance_uuid' => vm.instance_uuid,
+          'vmdk_path' => disk.fullpath,
           'disk_size' => disk.size / DISK_SIZE_TIMES }
         if disk.type == DISK_TYPE_SHARE
           info['thin_provision'] = true
@@ -121,16 +118,20 @@ module Serengeti
       ###################################################
       # query interface
 
+      def get_portgroups_by_dc_mob(dc_mob)
+        check_connection
+        fog_op {|con| con.get_portgroups_by_dc_mob(dc_mob)}
+      end
       # get datacenter management object by a given path (with name)
       def get_dc_mob_ref_by_path(options={})
         check_connection
-        return fog_op {|con| con.get_dc_mob_ref_by_path(options)}
+        fog_op {|con| con.get_dc_mob_ref_by_path(options)}
       end
 
       # get clusters belong to given datacenter
       def get_clusters_by_dc_mob(dc_mob_ref, options = {})
         check_connection
-        return fog_op {|con| con.get_clusters_by_dc_mob(dc_mob_ref, options)}
+        fog_op {|con| con.get_clusters_by_dc_mob(dc_mob_ref, options)}
       end
 
       def ct_mob_ref_to_attr_hash(mob_ref, attr_s)
@@ -190,8 +191,8 @@ module Serengeti
         check_connection
         card = 0
         vm.network_config_json.each do |config_json|
-          fog_op {|con| con.vm_update_network('instance_uuid' => vm.instance_uuid, 
-                                              'adapter_name' => "Network adapter #{card+1}", 
+          fog_op {|con| con.vm_update_network('instance_uuid' => vm.instance_uuid,
+                                              'adapter_name' => "Network adapter #{card + 1}",
                                               'portgroup_name' => vm.network_res.port_group(card))}
 
           @logger.debug("network json:#{config_json}")

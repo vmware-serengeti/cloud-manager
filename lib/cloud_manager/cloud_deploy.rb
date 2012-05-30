@@ -9,11 +9,11 @@ module Serengeti
 
       #TODO cluster_changes
       def cluster_deploy(cluster_changes, vm_placement, options={})
-        policy = @input_cluster_info['deploy_policy'] || DEPLOY_GROUP_POLICY.first 
+        policy = @input_cluster_info['deploy_policy'] || DEPLOY_GROUP_POLICY.first
         policy.downcase!
         policy = DEPLOY_GROUP_POLICY.first if !DEPLOY_GROUP_POLICY.include?(policy)
 
-        @logger.debug("enter cluster_deploy policy: #{policy}") 
+        @logger.debug("enter cluster_deploy policy: #{policy}")
 
         #Begin to parallel deploy vms
         unless cluster_changes.empty?
@@ -59,7 +59,7 @@ module Serengeti
             vm.status = VM_STATE_CLONE
             mov_vm(vm, @preparing_vms, @deploy_vms)
             next if !vm_deploy_op(vm, 'Clone') { @client.clone_vm(vm, :poweron => false)}
-            @logger.debug("vm:#{vm.name} power:#{vm.power_state} finish clone")
+            @logger.info("vm:#{vm.name} power:#{vm.power_state} finish clone")
 
             #is this VM can do HA?
             vm.can_ha = @client.is_vm_in_ha_cluster(vm)

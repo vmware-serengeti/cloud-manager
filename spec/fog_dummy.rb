@@ -102,6 +102,8 @@ module Serengeti
         dummy_sleep(1)
         mob["hosts"]
       end
+
+      def get_portgroups_by_dc_mob(dc_mob); dc_mob['portgroup']; end
       def get_ds_name_by_path(path, options={}) "share-ds" end
       def get_rps_by_cs_mob(cluster_mob, options={}) cluster_mob["resource_pool"] end
       def get_clusters_by_dc_mob(dc_mob, options={}); dc_mob["clusters"]; end

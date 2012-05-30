@@ -1,3 +1,5 @@
+require '../fog/lib/fog'
+require 'json'
 require "lib/cloud_manager/log"
 require "lib/cloud_manager/cloud_item"
 require "lib/cloud_manager/network_res"

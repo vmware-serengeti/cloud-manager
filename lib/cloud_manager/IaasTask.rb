@@ -19,7 +19,7 @@ module Serengeti
           while !finished?
             sleep(1)
           end
-          return @serengeti.get_result 
+          return @serengeti.get_result
         end
         nil
       end

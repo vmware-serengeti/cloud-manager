@@ -10,6 +10,7 @@ module Serengeti
       attr_accessor :waiting_start
       attr_accessor :total
       attr_accessor :servers
+      attr_accessor :error_msg
 
       def initialize
         @success = false
@@ -18,6 +19,7 @@ module Serengeti
         @total = 0
         @deploy = 0
         @waiting = 0
+        @error_msg = ""
         @waiting_start = 0
         @servers = []
       end

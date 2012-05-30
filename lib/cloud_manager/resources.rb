@@ -5,6 +5,7 @@ module Serengeti
         attr_accessor :mob
         attr_accessor :name
         attr_accessor :clusters
+        attr_accessor :port_group
         attr_accessor :racks
         attr_accessor :share_datastore_pattern
         attr_accessor :local_datastore_pattern
@@ -63,6 +64,7 @@ module Serengeti
         attr_accessor :share_datastore_pattern
         attr_accessor :local_datastore_pattern
         attr_reader   :vc_req
+        attr_accessor :disconnected_hosts
 
         def real_free_memory
           @free_memory - @unaccounted_memory * @mem_over_commit
@@ -126,7 +128,7 @@ module Serengeti
         attr_accessor :place_local_datastores
 
         def real_free_memory
-          (@free_memory - @unaccounted_memory) 
+          (@free_memory - @unaccounted_memory)
         end
 
         def inspect
@@ -176,6 +178,7 @@ module Serengeti
         datacenter.allow_mixed_datastores = @serengeti.allow_mixed_datastores
         datacenter.racks = @serengeti.racks
 
+        datacenter.port_group = @client.get_portgroups_by_dc_mob(datacenter_mob)
         datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
         datacenter
       end
@@ -206,9 +209,9 @@ module Serengeti
           cluster.mob                 = attr["mo_ref"]
           cluster.name                = attr["name"]
           cluster.vms                 = {}
-          cluster.share_datastore_pattern = @serengeti.input_cluster_info["vc_shared_datastore_pattern"] || 
+          cluster.share_datastore_pattern = @serengeti.input_cluster_info["vc_shared_datastore_pattern"] ||
                                                                     datacenter.share_datastore_pattern || []
-          cluster.local_datastore_pattern = @serengeti.input_cluster_info["vc_local_datastore_pattern"]  || 
+          cluster.local_datastore_pattern = @serengeti.input_cluster_info["vc_local_datastore_pattern"]  ||
                                                                     datacenter.local_datastore_pattern || []
 
           @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
@@ -321,7 +324,7 @@ module Serengeti
         @logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
         disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
         disk_attrs.each do |attr|
-          disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num']) 
+          disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num'])
           datastore_name = @client.get_ds_name_by_path(attr['path'])
           disk.datastore_name = datastore_name
         end

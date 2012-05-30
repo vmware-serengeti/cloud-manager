@@ -81,8 +81,8 @@ module Serengeti
         @vc_address = cloud_provider["vc_addr"]
         @vc_username = cloud_provider["vc_user"]
         @vc_password = cloud_provider["vc_pwd"]
-        @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"]||[]) || []
-        @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"]||[]) || []
+        @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"]||[])
+        @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"]||[])
         @client_name = cloud_provider["cloud_adapter"] || "fog"
         @allow_mixed_datastores = nil
         @racks = nil
@@ -100,7 +100,7 @@ module Serengeti
         "<vHelperCloud: #{@name} vc: #{@vc_address} status: #{@status} client: #{@client.inspect}>"
       end
 
-      # Setting existed vm parameter from input 
+      # Setting existed vm parameter from input
       def setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
         #@logger.debug("#{vm_groups_existed.class}")
         vm_groups_existed.each_value do |exist_group|
@@ -166,7 +166,7 @@ module Serengeti
       end
 
       def release_connection
-        if !@cloud_error_msg_que.empty? 
+        if !@cloud_error_msg_que.empty?
           @logger.debug("cloud manager have error/warning message. please chcek it, it is helpful for debugging")
           @logger.debug("#{@cloud_error_msg_que.pretty_inspect}")
         end
@@ -176,7 +176,7 @@ module Serengeti
       end
 
       def log_obj_to_file(obj, str)
-        File.open("#{str}.yaml", 'w'){|f| YAML.dump(obj, f)} 
+        File.open("#{str}.yaml", 'w'){|f| YAML.dump(obj, f)}
       end
 
       def action_process act
@@ -184,7 +184,7 @@ module Serengeti
         begin
           @logger.debug("begin action:#{act}")
           @action = act
-          result = yield 
+          result = yield
           @logger.debug("finished action:#{act}")
         end
         result

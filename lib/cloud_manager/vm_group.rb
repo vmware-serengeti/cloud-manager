@@ -30,13 +30,14 @@ module Serengeti
           vm_group = VmGroupInfo.new(vm_group_req)
           vm_group.req_info.template_id ||= template_id
           disk_pattern = vm_group.req_info.disk_pattern || cluster_datastore_pattern(cluster_info, vm_group.req_info.disk_type)
-          #@logger.debug("disk patterns:#{disk_pattern.pretty_inspect}")
+          @logger.debug("vm_group disk patterns:#{disk_pattern.pretty_inspect}")
 
           vm_group.req_info.disk_pattern = []
           disk_pattern = ['*'] if disk_pattern.nil?
-          vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map {|x| Regexp.new(x)} unless disk_pattern.empty?
+          vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map {|x| Regexp.new(x)} 
+          @logger.debug("vm_group disk ex patterns:#{vm_group.req_info.disk_pattern.pretty_inspect}")
 
-          vm_group.req_rps = (vm_group_req["vc_clusters"].nil?) ? cluster_req_rps : req_clusters_rp_to_hash(vm_group_req["vc_clusters"]) 
+          vm_group.req_rps = (vm_group_req["vc_clusters"].nil?) ? cluster_req_rps : req_clusters_rp_to_hash(vm_group_req["vc_clusters"])
           vm_group.network_res = network_res
           vm_groups[vm_group.name] = vm_group
         end
@@ -49,7 +50,7 @@ module Serengeti
         dc_res.clusters.each_value do |cluster|
           cluster.vms.each_value do |vm|
             @logger.debug("vm :#{vm.name}")
-            result = get_from_vm_name(vm.name) 
+            result = get_from_vm_name(vm.name)
             next unless result
             cluster_name = result[1]
             group_name = result[2]

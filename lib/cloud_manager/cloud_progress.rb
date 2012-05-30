@@ -94,10 +94,11 @@ module Serengeti
           result.success = @finished_vms.size
           result.failure = @failure_vms.size + @placement_failed
           result.succeed = @success && result.failure <= 0
+          result.error_msg = @cloud_error_msg_que.join if @cloud_error_msg_que
           result.running = result.deploy + result.waiting + result.waiting_start
           result.total = result.running + result.success + result.failure
           result.servers = []
-          get_result_by_vms(result.servers, @deploy_vms, :created => false) 
+          get_result_by_vms(result.servers, @deploy_vms, :created => false)
           get_result_by_vms(result.servers, @existed_vms, :created => true)
           get_result_by_vms(result.servers, @failure_vms, :created => false)
           get_result_by_vms(result.servers, @finished_vms, :created => true)
@@ -117,7 +118,7 @@ module Serengeti
           prog = CLUSTER_PROCESS[@action]
           progress.progress = prog[@status][0]
           if (progress.result.total > 0)
-            progress.progress = prog[@status][0] + 
+            progress.progress = prog[@status][0] +
               prog[@status][1] * progress.result.servers.inject(0){|sum, vm| sum += vm.get_progress} / progress.result.total / 100
           end
         else

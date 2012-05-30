@@ -9,11 +9,11 @@ module Serengeti
         work_thread = []
         if options[:order]
           #serial method
-          @logger.debug("#{options[:callee]}run in serial model")
+          @logger.debug("#{options[:callee]} run in serial model")
           group.each { |item| yield item }
         else
           #paralleled method
-          @logger.debug("#{options[:callee]}run in paralleled model")
+          @logger.debug("#{options[:callee]} run in paralleled model")
           group.each do |item|
             work_thread << Thread.new(item) do |item|
               begin

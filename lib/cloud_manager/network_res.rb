@@ -42,6 +42,10 @@ module Serengeti
         def gateway(card); @config[card]['gateway'];end
         def dns(card); @config[card]['dns']; end
         def card_num; @config.size; end
+        def not_existed_port_group(net_pg)
+          @config.each {|config| return config['port_group'] if !net_pg.key?(config['port_group'])}
+          nil
+        end
 
         def ip_num(card); @lock.synchronize { return @config[card]['ip_pool'].size}; end
 

@@ -6,7 +6,7 @@ module Serengeti
     VM_STATE_RECONFIG   = {:doing => "Reconfiging"  , :done => 'Created'}
     VM_STATE_DELETE     = {:doing => "Deleting"     , :done => 'Deleted'}
     VM_STATE_DONE       = {:doing => ""             , :done => 'Finished'}
-    VM_STATE_FAIL       = {:doing => "Failure"      , :done => 'Failure'} 
+    VM_STATE_FAIL       = {:doing => "Failure"      , :done => 'Failure'}
     VM_STATE_POWER_ON   = {:doing => "Powering On"  , :done => 'Powered On'}
     VM_STATE_WAIT_IP    = {:doing => "Waiting for IP"   , :done => 'VM Ready'}
     VM_STATE_READY      = {:doing => "Initializing"     , :done => 'VM Ready'}
@@ -67,7 +67,7 @@ module Serengeti
       attr_accessor :sys_datastore_moid #system disk's datastore
       attr_accessor :disks     #all allocated disk
       attr_accessor :req_rp    #wanted vm spec
-      attr_accessor :vm_spec   #existed vm spec 
+      attr_accessor :vm_spec   #existed vm spec
       attr_accessor :vm_group  #link to vm_group
       attr_accessor :mob
       attr_accessor :resource_pool_moid
@@ -117,7 +117,7 @@ module Serengeti
         data = {}
         ds = []
         @disks.each_value do |disk|
-          if data.has_key?(disk.datastore_name) 
+          if data.has_key?(disk.datastore_name)
             data[disk.datastore_name] += disk.size
           else
             data[disk.datastore_name] = disk.size
@@ -167,7 +167,7 @@ module Serengeti
         attrs[:name]        = @name
         attrs[:hostname]    = @host_name
         attrs[:ip_address]  = (@power_state == "poweredOn") ? @ip_address : nil
-        attrs[:status]      = progress ? progress[@status][:status] : "" 
+        attrs[:status]      = progress ? progress[@status][:status] : ""
         attrs[:action]      = @status[:doing] #@status
 
         attrs[:finished]    = ready? # FIXME should use 'vm.finished?'
@@ -196,7 +196,7 @@ module Serengeti
         disk
       end
 
-      DISK_VOL_NAME = "abcdefghijklmnopqrstuvwxyz"
+      DISK_DEV_LABEL = "abcdefghijklmnopqrstuvwxyz"
       def delete_all_disk
         #seem no work to do
       end
@@ -206,11 +206,12 @@ module Serengeti
       end
 
       def ready?
-        @status == VM_STATE_DONE 
+        @status == VM_STATE_DONE
       end
 
       def volumes
-        @disks.collect {|path, disk| "/dev/sd#{DISK_VOL_NAME[disk.unit_number]}" if disk.unit_number > 0}.compact.sort
+        @disks.collect {|path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
+          if disk.unit_number > 0}.compact.sort
       end
     end
 

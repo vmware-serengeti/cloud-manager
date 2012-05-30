@@ -14,7 +14,7 @@ module Serengeti
         create_cloud_provider(cloud_provider)
         dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info, cluster_data)
 
-        @status = action 
+        @status = action
         matched_vms = dc_resources.clusters.values.map {|cs| cs.vms.values.select{|vm| vm_is_this_cluster?(vm.name)} }
         matched_vms.flatten!
 
@@ -71,7 +71,9 @@ module Serengeti
               vm.action = VM_ACTION_STOP
               vm.status = VM_STATE_POWER_OFF
 
-              next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
+              if vm.power_state == 'poweredOn'
+                next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
+              end
               next if !vm_deploy_op(vm, 'reRead') {@client.update_vm_properties_by_vm_mob(vm)}
               vm.status = VM_STATE_DONE
               @logger.debug("stop :#{vm.name}")

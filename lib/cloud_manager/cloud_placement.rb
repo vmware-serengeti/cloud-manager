@@ -8,13 +8,13 @@ module Serengeti
       # 4. extend RR class from base class
       ##########################################################
       # template placement
-      def gem_template_name(template_name, datastore) 
+      def gem_template_name(template_name, datastore)
         return "#{template_name}-#{datastore.mob}"
       end
 
       def template_place(dc_resources, vm_groups_existed, vm_groups_input, placement)
         t_place = []
-        # TODO check template vm 
+        # TODO check template vm
         temp_hash = {}
 
         # TODO calc template should clone to which hosts/datastores
@@ -46,7 +46,7 @@ module Serengeti
         datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
         datastores.each do |datastore|
           #next if !datastore_group_match?(req_info, datastore.name)
-          if datastore.real_free_space > REMAIDER_DISK_SIZE 
+          if datastore.real_free_space > REMAIDER_DISK_SIZE
             datastore.unaccounted_space += HOST_SYS_DISK_SIZE
             return datastore
           end
@@ -62,10 +62,10 @@ module Serengeti
           next 'remove' if datastore.real_free_space < REMAIDER_DISK_SIZE
           next 'remove' if !datastore_group_match?(req_info, datastore.name)
           free_size = datastore.real_free_space - REMAIDER_DISK_SIZE
-          free_size = req_size if free_size > req_size 
+          free_size = req_size if free_size > req_size
           used_datastores << {:datastore => datastore, :size => free_size, :type => req_info.disk_type}
           req_size -= free_size.to_i
-          return used_datastores if req_size.to_i <= 0 
+          return used_datastores if req_size.to_i <= 0
           false
         end
         used_datastores
@@ -76,7 +76,7 @@ module Serengeti
         cur_rp.unaccounted_memory += req_mem
         host.unaccounted_memory += req_mem
 
-        vm.host_name  = host.name 
+        vm.host_name  = host.name
         vm.host_mob   = host.mob
         vm.req_rp     = vm_group.req_info
 
@@ -91,7 +91,7 @@ module Serengeti
         cur_rp.used_counter += 1
 
         used_datastores.each do |datastore|
-          fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk" 
+          fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk"
           @logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}")
           datastore[:datastore].unaccounted_space += datastore[:size].to_i
           disk = vm.disk_add(datastore[:size].to_i, fullpath)
@@ -125,6 +125,9 @@ module Serengeti
         # FIXME change instances to wanted create number
         (vm_group.size...vm_group.instances).each do |num|
           return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
+
+          #Check portgroup
+
           vm_name = gen_vm_name(@cluster_name, vm_group.name, num)
           if (@existed_vms.has_key?(vm_name))
             @logger.debug("do not support change existed VM's setting")
@@ -148,7 +151,7 @@ module Serengeti
             sys_datastore = get_suitable_sys_datastore(vm_group.req_info, host.place_share_datastores)
 
             if sys_datastore.nil?
-              set_vm_error_msg(vm, "can not find suitable sys datastore in host"\
+              set_vm_error_msg(vm, "can not find suitable sys datastore in host "\
                                "#{host.name}. And try to find other host")
               next 'remove'
             end
@@ -165,7 +168,6 @@ module Serengeti
             end
 
             #Get the network for this vm
-
             vm.network_config_json = vm_group.network_res.card_num.times.collect \
               { |card| vm_group.network_res.get_vm_network_json(card) }
 
@@ -176,7 +178,7 @@ module Serengeti
             vm.action = VM_ACTION_CREATE
             vm.error_msg = nil
             ## RR for next Host
-            # Find a suitable place 
+            # Find a suitable place
             group_place << vm
             @logger.debug("Add #{vm.name} to preparing queue")
             @vm_lock.synchronize { @preparing_vms[vm.name] = vm }
@@ -207,11 +209,20 @@ module Serengeti
 
         #Placement logical here
         vm_groups_input.each_value do |vm_group|
-          #Check and find suitable resource_pool
+          #Check port group for vm_group
+          unknown_pg = vm_group.network_res.not_existed_port_group(dc_resource.port_group)
+          if unknown_pg
+            error_msg = "group #{vm_group.name}: can not find port group:#{unknown_pg} in dc."\
+              " Please check your configurations."
+            @logger.error(error_msg)
+            @cloud_error_msg_que << error_msg
+            break
+          end
+
           group_place = []
           need_next_rp = nil
 
-          place_rp = []
+          #Check and find suitable resource_pool
           @logger.debug("Group:#{vm_group.name} req_rps:#{vm_group.req_rps}")
 
           # prepareing rp for this vm_group
@@ -219,12 +230,14 @@ module Serengeti
             dc_resource.clusters[cluster_name].resource_pools[rp_name] }
 
           set_best_placement_rp_list!(place_rp)
+
           loop_resource(place_rp) do |rp|
             #@logger.debug("Place rp:#{place_rp.pretty_inspect}")
             cluster = rp.cluster
             @logger.debug("used rp:#{rp.name} in cluster:#{cluster.name}")
             need_next_rp = nil
             hosts = hosts_prepare_in_cluster(cluster)
+
             need_next_rp = vm_group_placement(vm_group, group_place, hosts, rp)
             next 'remove' if need_next_rp
             break

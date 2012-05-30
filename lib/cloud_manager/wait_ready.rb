@@ -12,7 +12,6 @@ module Serengeti
             next if !vm_deploy_op(vm, 'disable ha') { @client.vm_set_ha(vm, vm.ha_enable)}
             @logger.debug("disable ha of vm #{vm.name}")
           elsif (!vm.can_ha? && vm.ha_enable)
-            #TODO add error msg to cluster error message
             @logger.debug("vm:#{vm.name} can not enable ha on unHA cluster")
           end
 
@@ -38,7 +37,6 @@ module Serengeti
             end
           }
 
-          #TODO add ping progress to tested target vm is working
           vm.status = VM_STATE_DONE
           vm_finish(vm)
           @logger.debug("vm :#{vm.name} done")
