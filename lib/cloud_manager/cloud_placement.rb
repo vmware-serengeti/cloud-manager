@@ -1,6 +1,10 @@
 module Serengeti
   module CloudManager
     class Cloud
+      VM_PLACE_SWAP_DISK  = true
+      VM_DATA_DISK_NUMBER = (VM_PLACE_SWAP_DISK) ? 1 : 0
+      SWAP_MEM_SIZE = [2048, 4096, 16384, 65536]
+      SWAP_DISK_SIZE = [1024, 2048, 4096, 8192]
       # refine work: TODO
       # 1. change placement result to a hash structure
       # 2. abstract placement function to a base class
@@ -36,13 +40,13 @@ module Serengeti
         true
       end
 
-      def datastore_group_match?(req_info, ds_name)
-        @logger.debug("datastore pattern: #{req_info.disk_pattern.pretty_inspect}, name:#{ds_name}")
-        req_info.disk_pattern.each {|d_pattern| return true unless d_pattern.match(ds_name).nil?}
+      def datastore_group_match?(disk_pattern, ds_name)
+        @logger.debug("datastore pattern: #{disk_pattern.pretty_inspect}, name:#{ds_name}")
+        disk_pattern.each {|d_pattern| return true unless d_pattern.match(ds_name).nil?}
         false
       end
 
-      def get_suitable_sys_datastore(req_info, datastores)
+      def get_suitable_sys_datastore(datastores)
         datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
         datastores.each do |datastore|
           #next if !datastore_group_match?(req_info, datastore.name)
@@ -54,21 +58,23 @@ module Serengeti
         nil
       end
 
-      def get_suitable_datastores(datastores, req_info)
-        req_size = req_info.disk_size
+      def get_suitable_datastores(datastores, used_datastores, disk_pattern, req_size, disk_type, can_split)
         datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
-        used_datastores = []
         loop_resource(datastores) do |datastore|
           next 'remove' if datastore.real_free_space < REMAIDER_DISK_SIZE
-          next 'remove' if !datastore_group_match?(req_info, datastore.name)
+          next 'remove' if !datastore_group_match?(disk_pattern, datastore.name)
           free_size = datastore.real_free_space - REMAIDER_DISK_SIZE
-          free_size = req_size if free_size > req_size
-          used_datastores << {:datastore => datastore, :size => free_size, :type => req_info.disk_type}
+          if free_size > req_size
+            free_size = req_size
+          else
+            if !can_split
+            end
+          end
+          used_datastores << {:datastore => datastore, :size => free_size, :type => disk_type}
           req_size -= free_size.to_i
-          return used_datastores if req_size.to_i <= 0
-          false
+          return true if req_size.to_i <= 0
         end
-        used_datastores
+        false
       end
 
       def assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
@@ -90,14 +96,23 @@ module Serengeti
         vm.ha_enable = vm_group.req_info.ha
         cur_rp.used_counter += 1
 
+        sys_datastore.unaccounted_space += HOST_SYS_DISK_SIZE
+        disk = vm.disk_add(HOST_SYS_DISK_SIZE, 'system disk')
+        disk.datastore_name = sys_datastore.name
+        disk.type = 'shared'
+        unit_number = 0
+        disk.unit_number = unit_number
         used_datastores.each do |datastore|
           fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk"
           @logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}")
           datastore[:datastore].unaccounted_space += datastore[:size].to_i
           disk = vm.disk_add(datastore[:size].to_i, fullpath)
           disk.datastore_name = datastore[:datastore].name
+          unit_number += 1
+          disk.unit_number = unit_number
           disk.type = datastore[:type]
         end
+
       end
 
       def hosts_prepare_in_cluster (cluster)
@@ -122,7 +137,6 @@ module Serengeti
       end
 
       def vm_group_placement(vm_group, group_place, hosts, cur_rp)
-        # FIXME change instances to wanted create number
         (vm_group.size...vm_group.instances).each do |num|
           return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
 
@@ -148,7 +162,7 @@ module Serengeti
             #The host's memory is suitable for this VM
 
             #Get the sys_datastore for clone
-            sys_datastore = get_suitable_sys_datastore(vm_group.req_info, host.place_share_datastores)
+            sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
 
             if sys_datastore.nil?
               set_vm_error_msg(vm, "can not find suitable sys datastore in host "\
@@ -157,11 +171,22 @@ module Serengeti
             end
             @logger.debug("vm:#{vm.name} get sys datastore :#{sys_datastore.name}")
 
-            #Get the datastore for this vm
-            req_size = vm_group.req_info.disk_size
             place_datastores = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
               host.place_local_datastores : host.place_share_datastores
-            used_datastores = get_suitable_datastores(place_datastores, vm_group.req_info)
+            used_datastores = []
+            #Get the swap for this vm
+            if VM_PLACE_SWAP_DISK
+              swap_size = SWAP_MEM_SIZE.each_index {|i| break SWAP_DISK_SIZE[i] if req_mem < SWAP_MEM_SIZE[i]}
+              get_suitable_datastores(place_datastores, used_datastores,
+                                    vm_group.req_info.disk_pattern, swap_size,
+                                    vm_group.req_info.disk_type, false)
+              @logger.debug("Place swap #{swap_size}MB in #{used_datastores.pretty_inspect}")
+            end
+            #Get the datastore for this vm
+            req_size = vm_group.req_info.disk_size
+            get_suitable_datastores(place_datastores, used_datastores,
+                                    vm_group.req_info.disk_pattern, req_size,
+                                    vm_group.req_info.disk_type, true)
             if used_datastores.empty?
               set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}. And try to find other host")
               next 'remove'
@@ -259,7 +284,7 @@ module Serengeti
 
       def loop_resource(res)
         while !res.empty?
-          res.shift if yield res.first
+          res.shift if ((yield res.first) == 'remove')
           res.rotate!
         end
       ensure

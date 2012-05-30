@@ -14,8 +14,6 @@ module Serengeti
             @failure_vms = {}
             @finished_vms = {}
           end
-          #FIXME we only support one cluster, currently
-
           #@logger.debug("#{cluster_info.inspect}")
           cluster_changes = []
 
@@ -49,7 +47,6 @@ module Serengeti
             return
           end
 
-          # FIXME add networking/port group/resource check
           retry_num = 1
 
           retry_num.times do |cycle_num|

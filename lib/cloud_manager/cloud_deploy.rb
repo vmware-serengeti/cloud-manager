@@ -84,7 +84,7 @@ module Serengeti
       end
 
       def vm_reconfigure_disk(vm, options={})
-        vm.disks.each_value { |disk| @client.vm_create_disk(vm, disk)}
+        vm.disks.each_value { |disk| @client.vm_create_disk(vm, disk) if disk.unit_number > 0}
       end
 
       def vm_reconfigure_network(vm, options = {})
