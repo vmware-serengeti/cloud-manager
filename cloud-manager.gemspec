@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = "cloud-manager"
-  s.version = "1.0.0"
+  s.version = "0.5.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = [""]
@@ -77,7 +77,7 @@ Gem::Specification.new do |s|
     "spec/ut.wdc.yaml"
   ]
 
-  s.add_dependency(%q<fog>, ["~> 1.3.1"])
+  s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])
 
 end
 

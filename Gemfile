@@ -7,7 +7,7 @@ source "http://rubygems.org"
 # Include everything needed to run rake, tests, features, etc.
 # -*- encoding: utf-8 -*-
 
-gem 'fog'
+gem 'fog', "~> 1.3.1.serengeti.1"
 
 group :development do
   gem 'bundler'
