@@ -2,7 +2,7 @@ module Serengeti
   module CloudManager
     class Cloud
       VM_PLACE_SWAP_DISK  = true
-      VM_DATA_DISK_NUMBER = (VM_PLACE_SWAP_DISK) ? 1 : 0
+      VM_DATA_DISK_NUMBER = (VM_PLACE_SWAP_DISK) ? 2 : 1
       SWAP_MEM_SIZE = [2048, 4096, 16384, 65536]
       SWAP_DISK_SIZE = [1024, 2048, 4096, 8192]
       # refine work: TODO
@@ -28,8 +28,8 @@ module Serengeti
 
       ############################################################
       # Only RR for rps/hosts/datastores selected
-      REMAIDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 8
-      HOST_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 4
+      REMAINDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 8
+      VM_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 4
 
       def is_suitable_resource_pool?(rp, req_info)
         @logger.debug("limit:#{rp.limit_mem},real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
@@ -47,34 +47,36 @@ module Serengeti
       end
 
       def get_suitable_sys_datastore(datastores)
-        datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
+        datastores.delete_if {|datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
         datastores.each do |datastore|
           #next if !datastore_group_match?(req_info, datastore.name)
-          if datastore.real_free_space > REMAIDER_DISK_SIZE
-            datastore.unaccounted_space += HOST_SYS_DISK_SIZE
+          if datastore.real_free_space > REMAINDER_DISK_SIZE
+            datastore.unaccounted_space += VM_SYS_DISK_SIZE
             return datastore
           end
         end
         nil
       end
 
-      def get_suitable_datastores(datastores, used_datastores, disk_pattern, req_size, disk_type, can_split)
-        datastores.delete_if {|datastore| datastore.real_free_space < REMAIDER_DISK_SIZE }
+      def get_suitable_datastores(datastores, disk_pattern, req_size, disk_type, can_split)
+        datastores.delete_if {|datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
+        used_datastores = []
         loop_resource(datastores) do |datastore|
-          next 'remove' if datastore.real_free_space < REMAIDER_DISK_SIZE
+          next 'remove' if datastore.real_free_space < REMAINDER_DISK_SIZE
           next 'remove' if !datastore_group_match?(disk_pattern, datastore.name)
-          free_size = datastore.real_free_space - REMAIDER_DISK_SIZE
+          free_size = datastore.real_free_space - REMAINDER_DISK_SIZE
+          @logger.debug("free size :#{free_size}MB, req size:#{req_size}MB")
           if free_size > req_size
             free_size = req_size
           else
-            if !can_split
-            end
+            @logger.debug("in datastore:#{datastore.name} can not split to different disks, req size:#{req_size}MB")
+            next 'remove' if !can_split
           end
           used_datastores << {:datastore => datastore, :size => free_size, :type => disk_type}
           req_size -= free_size.to_i
-          return true if req_size.to_i <= 0
+          break if req_size.to_i <= 0
         end
-        false
+        used_datastores
       end
 
       def assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
@@ -96,15 +98,15 @@ module Serengeti
         vm.ha_enable = vm_group.req_info.ha
         cur_rp.used_counter += 1
 
-        sys_datastore.unaccounted_space += HOST_SYS_DISK_SIZE
-        disk = vm.disk_add(HOST_SYS_DISK_SIZE, 'system disk')
+        sys_datastore.unaccounted_space += VM_SYS_DISK_SIZE
+        disk = vm.disk_add(VM_SYS_DISK_SIZE, 'system disk')
         disk.datastore_name = sys_datastore.name
-        disk.type = 'shared'
+        disk.type = 'system'
         unit_number = 0
         disk.unit_number = unit_number
         used_datastores.each do |datastore|
-          fullpath = "[#{datastore[:datastore].name}] #{vm.name}/data.vmdk"
-          @logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}")
+          fullpath = "[#{datastore[:datastore].name}] #{vm.name}/#{datastore[:type]}#{unit_number}.vmdk"
+          @logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}MB")
           datastore[:datastore].unaccounted_space += datastore[:size].to_i
           disk = vm.disk_add(datastore[:size].to_i, fullpath)
           disk.datastore_name = datastore[:datastore].name
@@ -171,24 +173,32 @@ module Serengeti
             end
             @logger.debug("vm:#{vm.name} get sys datastore :#{sys_datastore.name}")
 
-            place_datastores = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
+            place_datastores_used = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
               host.place_local_datastores : host.place_share_datastores
+            place_datastores = place_datastores_used.dup
             used_datastores = []
+            swap_datastores = []
             #Get the swap for this vm
             if VM_PLACE_SWAP_DISK
               swap_size = SWAP_MEM_SIZE.each_index {|i| break SWAP_DISK_SIZE[i] if req_mem < SWAP_MEM_SIZE[i]}
-              get_suitable_datastores(place_datastores, used_datastores,
+              swap_datastores = get_suitable_datastores(place_datastores,
                                     vm_group.req_info.disk_pattern, swap_size,
-                                    vm_group.req_info.disk_type, false)
-              @logger.debug("Place swap #{swap_size}MB in #{used_datastores.pretty_inspect}")
+                                    'swap', false)
+              @logger.debug("Place swap #{swap_size}MB in #{swap_datastores.pretty_inspect}")
+              if swap_datastores.empty?
+                set_vm_error_msg(vm, "No enough disk spaces for #{vm_name}'s swap. req:#{swap_size}. And try to find other host")
+                next 'remove'
+              end
             end
             #Get the datastore for this vm
             req_size = vm_group.req_info.disk_size
-            get_suitable_datastores(place_datastores, used_datastores,
+
+            place_datastores = place_datastores_used.dup
+            data_datastores = get_suitable_datastores(place_datastores,
                                     vm_group.req_info.disk_pattern, req_size,
-                                    vm_group.req_info.disk_type, true)
-            if used_datastores.empty?
-              set_vm_error_msg(vm, "No enough disk for #{vm_name}. req:#{req_size}. And try to find other host")
+                                    'data', true)
+            if data_datastores.empty?
+              set_vm_error_msg(vm, "No enough disk spaces for #{vm_name}'s data. req:#{req_size}. And try to find other host")
               next 'remove'
             end
 
@@ -199,10 +209,12 @@ module Serengeti
             #Find suitable Host and datastores
             host.place_share_datastores.rotate!
             @logger.debug("vm:#{vm.name} datastores: #{place_datastores.pretty_inspect}")
+
+            used_datastores = swap_datastores + data_datastores
             assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
             vm.action = VM_ACTION_CREATE
             vm.error_msg = nil
-            ## RR for next Host
+            # RR for next Host
             # Find a suitable place
             group_place << vm
             @logger.debug("Add #{vm.name} to preparing queue")
@@ -232,6 +244,7 @@ module Serengeti
           #TODO add changed placement logical
         end
 
+        @dc_template_vm = dc_resource.vm_template
         #Placement logical here
         vm_groups_input.each_value do |vm_group|
           #Check port group for vm_group

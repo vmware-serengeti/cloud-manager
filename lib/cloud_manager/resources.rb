@@ -6,6 +6,7 @@ module Serengeti
         attr_accessor :name
         attr_accessor :clusters
         attr_accessor :port_group
+        attr_accessor :vm_template
         attr_accessor :racks
         attr_accessor :share_datastore_pattern
         attr_accessor :local_datastore_pattern
@@ -155,7 +156,13 @@ module Serengeti
         mob = @client.get_vm_mob_ref_by_path(path)
       end
 
-      def fetch_datacenter(datacenter_name)
+      def fetch_vm_by_moid(vm_ref)
+        mob = @client.get_vm_mob_ref_by_moid(vm_ref)
+        vm = fetch_vm_by_mob(mob, false)
+        @logger.debug("template vm:#{vm.pretty_inspect}")
+      end
+
+      def fetch_datacenter(datacenter_name, template_ref)
         datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
         if datacenter_mob.nil?
           @logger.debug("Do not find the datacenter: #{datacenter_name}")
@@ -178,6 +185,7 @@ module Serengeti
         datacenter.allow_mixed_datastores = @serengeti.allow_mixed_datastores
         datacenter.racks = @serengeti.racks
 
+        datacenter.vm_template = fetch_vm_by_moid(template_ref)
         datacenter.port_group = @client.get_portgroups_by_dc_mob(datacenter_mob)
         datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
         datacenter
@@ -313,12 +321,13 @@ module Serengeti
         hosts
       end
 
-      def fetch_vm_by_mob(vm_existed, vm_mob, host_name)
+      def fetch_vm_by_mob(vm_mob, check_this_cluster)
+        vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
+        return nil if check_this_cluster && !@serengeti.vm_is_this_cluster?(vm_existed["name"])
         vm = Serengeti::CloudManager::VmInfo.new(vm_existed["name"])
 
         #update vm info with properties
         @client.update_vm_with_properties_string(vm, vm_existed)
-        vm.host_name = host_name
 
         #update disk info
         @logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
@@ -339,10 +348,10 @@ module Serengeti
         return vms if vm_mobs.nil?
         vm_mobs.each do |vm_mob|
           #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
-          vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
-          next if !@serengeti.vm_is_this_cluster?(vm_existed["name"])
-          vm = fetch_vm_by_mob(vm_existed, vm_mob, host.name)
+          vm = fetch_vm_by_mob(vm_mob, true)
+          next if vm.nil?
 
+          vm.host_name = host.name
           cluster.vms[vm.name] = vm
           vms[vm.name] = vm
         end

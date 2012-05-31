@@ -77,7 +77,7 @@ module Serengeti
               break if successful
 
               @status = CLUSTER_RE_FETCH_INFO
-              dc_resources = @resources.fetch_datacenter
+              dc_resources = @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id'])
               #TODO add all kinds of error handlers here
               @logger.info("reload datacenter resources from cloud")
 

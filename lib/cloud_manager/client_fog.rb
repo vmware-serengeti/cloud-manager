@@ -103,6 +103,7 @@ module Serengeti
         if disk.type == DISK_TYPE_SHARE
           info['thin_provision'] = true
         end
+        @logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB")
         result = fog_op {|con| con.vm_create_disk(info)}
         # TODO add update disk and vm's info
       end
@@ -117,6 +118,11 @@ module Serengeti
 
       ###################################################
       # query interface
+
+      def get_vm_mob_ref_by_moid(vm_ref)
+        check_connection
+        fog_op {|con| con.get_vm_mob_ref_by_moid(vm_ref)}
+      end
 
       def get_portgroups_by_dc_mob(dc_mob)
         check_connection

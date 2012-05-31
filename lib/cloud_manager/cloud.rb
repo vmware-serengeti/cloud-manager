@@ -28,6 +28,8 @@ module Serengeti
       attr_reader :racks
       attr_reader :need_abort
 
+      CLOUD_DEBUG_ON = false 
+
       def initialize(cluster_info)
         @logger = Serengeti::CloudManager::Cloud.Logger
         @dc_resource = nil
@@ -150,7 +152,7 @@ module Serengeti
         vm_groups_existed = {}
         dc_resources = {}
         @status = CLUSTER_FETCH_INFO
-        dc_resources = @resources.fetch_datacenter(@vc_req_datacenter)
+        dc_resources = @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id'])
 
         log_obj_to_file(dc_resources, 'dc_resource-first')
         @logger.debug("Create vm group from resources...")
@@ -176,16 +178,17 @@ module Serengeti
       end
 
       def log_obj_to_file(obj, str)
+        return if !CLOUD_DEBUG_ON
         File.open("#{str}.yaml", 'w'){|f| YAML.dump(obj, f)}
       end
 
       def action_process act
         result = nil
         begin
-          @logger.debug("begin action:#{act}")
+          @logger.info("begin action:#{act}")
           @action = act
           result = yield
-          @logger.debug("finished action:#{act}")
+          @logger.info("finished action:#{act}")
         end
         result
       end
