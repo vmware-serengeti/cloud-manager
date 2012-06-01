@@ -40,7 +40,7 @@ module Serengeti
           yield
           return 'OK'
         rescue => e
-          @logger.error("vm: #{vm.name}#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
+          @logger.error("#{working} vm:#{vm.name} failed.\n #{e} - #{e.backtrace.join("\n")}")
           vm.error_code = -1
           vm.error_msg = "#{working} vm:#{vm.name} failed. #{e}"
           mov_vm(vm, @deploy_vms, @failure_vms)
@@ -58,7 +58,7 @@ module Serengeti
             end
             vm.status = VM_STATE_CLONE
             mov_vm(vm, @preparing_vms, @deploy_vms)
-            next if !vm_deploy_op(vm, 'Clone') { @client.clone_vm(vm, :poweron => false)}
+            next if !vm_deploy_op(vm, 'clone') { @client.clone_vm(vm, :poweron => false)}
             @logger.info("vm:#{vm.name} power:#{vm.power_state} finish clone")
 
             #is this VM can do HA?

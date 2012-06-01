@@ -211,7 +211,7 @@ module Serengeti
 
       def volumes
         @disks.collect {|path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
-          if disk.unit_number >= Serengeti::CloudManager::Cloud::VM_DATA_DISK_NUMBER}.compact.sort
+          if disk.unit_number >= Serengeti::CloudManager::Cloud::VM_DATA_DISK_START_INDEX}.compact.sort
       end
     end
 

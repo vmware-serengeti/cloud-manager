@@ -160,6 +160,7 @@ module Serengeti
         mob = @client.get_vm_mob_ref_by_moid(vm_ref)
         vm = fetch_vm_by_mob(mob, false)
         @logger.debug("template vm:#{vm.pretty_inspect}")
+        vm
       end
 
       def fetch_datacenter(datacenter_name, template_ref)
@@ -176,7 +177,7 @@ module Serengeti
 
         @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
-        raise "Missing share_datastore_pattern in director config" if @serengeti.vc_share_datastore_pattern.nil?
+        #raise "Missing share_datastore_pattern in director config" if @serengeti.vc_share_datastore_pattern.nil?
         @logger.debug("share pattern:#{@serengeti.vc_share_datastore_pattern}")
         @logger.debug("local pattern:#{@serengeti.vc_local_datastore_pattern}")
         datacenter.share_datastore_pattern    = @serengeti.vc_share_datastore_pattern
@@ -330,7 +331,6 @@ module Serengeti
         @client.update_vm_with_properties_string(vm, vm_existed)
 
         #update disk info
-        @logger.debug("vm_ex:#{vm_existed.pretty_inspect}")
         disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
         disk_attrs.each do |attr|
           disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num'])

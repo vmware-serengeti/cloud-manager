@@ -153,6 +153,9 @@ module Serengeti
         dc_resources = {}
         @status = CLUSTER_FETCH_INFO
         dc_resources = @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id'])
+        @vm_sys_disk_size  = nil
+        dc_resources.vm_template.disks.each_value {|disk| break @vm_sys_disk_size = disk.size if disk.unit_number == 0}
+        @logger.debug("template vm disk size: #{@vm_sys_disk_size}")
 
         log_obj_to_file(dc_resources, 'dc_resource-first')
         @logger.debug("Create vm group from resources...")

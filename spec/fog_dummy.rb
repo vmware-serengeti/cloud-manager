@@ -50,7 +50,7 @@ module Serengeti
       end
 
       def clone_vm(vm, options={})
-        @logger.debug("clone vm#{vm.name}")
+        @logger.debug("clone vm #{vm.name}")
         dummy_sleep(8)
         vm.power_state = (options[:power_on] == true)? "poweredOn":"poweredOff"
         @vm_prop[vm.name] = vm

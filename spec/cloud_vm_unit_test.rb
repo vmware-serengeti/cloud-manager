@@ -23,7 +23,7 @@ def ut_test_env
   cluster_req_1 = YAML.load(File.open(DC_DEF_CONFIG_FILE_1))
   info["cluster_definition"] = cluster_req_1
   info["cloud_provider"] = vcenter
-  info['type'] = 'ut'
+  info['type'] = 'UT'
   puts("cluster_def : #{cluster_req_1}")
   puts("provider: #{vcenter}")
   info
@@ -35,32 +35,36 @@ def wdc_test_env
   cluster_req_1 = YAML.load(File.open(WDC_DEF_CONFIG_FILE_1))
   info["cluster_definition"] = cluster_req_1
   info["cloud_provider"] = vcenter
-  info['type'] = 'wdc'
+  info['type'] = 'WDC'
   puts("cluster_def : #{cluster_req_1}")
   puts("provider: #{vcenter}")
   info
 end
 
+def print_parameter(wait, info, log_level)
+  puts "Please select"
+  puts "\t1-->UT env \t2-->WDC env \tcurrent:#{info['type']}"
+  puts "\t3-->wait (current:#{wait})"
+  puts "\t4-->set log level (current:#{log_level})"
+  puts "\t"
+
+  puts "\t5-->Create cluster\n"
+  puts "\t6-->Delete cluster\n"
+  puts "\t7-->List all cluster\n"
+  puts "\t8-->start all vm in cluster\n"
+  puts "\t9-->stop all vm in cluster\n"
+  puts "\t10-->exited test\n"
+  puts "\t100 --> auto testing for all known cases (not finish)"
+
+end
+
 begin
   wait = true
-  info = ut_test_env
+  info = wdc_test_env
   log_level = 'debug'
   while (true)
+    print_parameter(wait, info, log_level)
     begin
-      puts "Please input (current:#{info['type']})\n"
-      puts "\t1-->UT env"
-      puts "\t2-->WDC env"
-      puts "\t3-->wait (current:#{wait})"
-      puts "\t4-->set log level (current:#{log_level})"
-
-      puts "\t5-->Create cluster\n"
-      puts "\t6-->Delete cluster\n"
-      puts "\t7-->List all cluster\n"
-      puts "\t8-->start all vm in cluster\n"
-      puts "\t9-->stop all vm in cluster\n"
-      puts "\t80-->continue working after"
-      puts "\t100 --> auto testing for all known cases"
-
       opt = gets.chomp
       opt = opt.to_i
       puts "You select #{opt}"
@@ -68,21 +72,19 @@ begin
       when 1 then
         p "##Select UT env"
         info = ut_test_env
-        next
       when 2 then
         p "##Select WDC env"
         info = wdc_test_env
-        next
       when 3 then
         wait = !wait
         p "set wait to #{wait}"
-        next
       when 4 then
         p "Please input log level"
         opt = gets.chomp.to_s
         Serengeti::CloudManager::Manager.set_log_level(opt)
         log_level = opt
-        next
+
+
       when 5 then
         p "##Create cluster"
         cloud = Serengeti::CloudManager::Manager.create_cluster(info, :wait => wait)
@@ -123,12 +125,16 @@ begin
         progress = result.get_progress
         puts("##result:#{progress.inspect}")
 
+      when 10 then
+        puts ("Finish testing")
+        break
+
       else
         puts("Unknow test case!\n")
       end
-      break
     rescue => e
       puts("#{e} - #{e.backtrace.join("\n")}")
+      break
     end
   end
 end

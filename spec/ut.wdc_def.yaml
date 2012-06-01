@@ -1,7 +1,8 @@
 ---
 name: vhelper2
 channel_id: provsion
-template_id: vm-2513
+#template_id: vm-2513
+template_id: vm-5019
 networking:
   - port_group: wdc-vhadp-pub2
     type: static

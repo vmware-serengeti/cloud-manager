@@ -2,7 +2,8 @@ module Serengeti
   module CloudManager
     class Cloud
       VM_PLACE_SWAP_DISK  = true
-      VM_DATA_DISK_NUMBER = (VM_PLACE_SWAP_DISK) ? 2 : 1
+      VM_SYS_LOCAL_ENABLE = true
+      VM_DATA_DISK_START_INDEX = (VM_PLACE_SWAP_DISK) ? 2 : 1
       SWAP_MEM_SIZE = [2048, 4096, 16384, 65536]
       SWAP_DISK_SIZE = [1024, 2048, 4096, 8192]
       # refine work: TODO
@@ -28,8 +29,8 @@ module Serengeti
 
       ############################################################
       # Only RR for rps/hosts/datastores selected
-      REMAINDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 8
-      VM_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 4
+      REMAINDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 16
+      VM_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 5
 
       def is_suitable_resource_pool?(rp, req_info)
         @logger.debug("limit:#{rp.limit_mem},real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
@@ -46,14 +47,16 @@ module Serengeti
         false
       end
 
+      def vm_sys_disk_size
+        return @vm_sys_disk_size if @vm_sys_disk_size
+        VM_SYS_DISK_SIZE
+      end
+
       def get_suitable_sys_datastore(datastores)
-        datastores.delete_if {|datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
+        datastores.delete_if {|datastore| datastore.real_free_space < REMAINDER_DISK_SIZE}
         datastores.each do |datastore|
           #next if !datastore_group_match?(req_info, datastore.name)
-          if datastore.real_free_space > REMAINDER_DISK_SIZE
-            datastore.unaccounted_space += VM_SYS_DISK_SIZE
-            return datastore
-          end
+          return datastore if datastore.real_free_space > REMAINDER_DISK_SIZE
         end
         nil
       end
@@ -98,8 +101,8 @@ module Serengeti
         vm.ha_enable = vm_group.req_info.ha
         cur_rp.used_counter += 1
 
-        sys_datastore.unaccounted_space += VM_SYS_DISK_SIZE
-        disk = vm.disk_add(VM_SYS_DISK_SIZE, 'system disk')
+        sys_datastore.unaccounted_space += vm_sys_disk_size
+        disk = vm.disk_add(vm_sys_disk_size, 'system disk')
         disk.datastore_name = sys_datastore.name
         disk.type = 'system'
         unit_number = 0
@@ -163,9 +166,20 @@ module Serengeti
             end
             #The host's memory is suitable for this VM
 
+            #Place Disks system/swap/data disks
+            #FIXME add roll back operations later
+            place_datastores_used = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
+              host.place_local_datastores : host.place_share_datastores
+            place_datastores = place_datastores_used.dup
+            sys_datastore = []
             #Get the sys_datastore for clone
-            sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
+            if VM_SYS_LOCAL_ENABLE
+              sys_datastore = get_suitable_sys_datastore(place_datastores)
+            else
+              sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
+            end
 
+            #Get the swap for this vm
             if sys_datastore.nil?
               set_vm_error_msg(vm, "can not find suitable sys datastore in host "\
                                "#{host.name}. And try to find other host")
@@ -173,8 +187,6 @@ module Serengeti
             end
             @logger.debug("vm:#{vm.name} get sys datastore :#{sys_datastore.name}")
 
-            place_datastores_used = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
-              host.place_local_datastores : host.place_share_datastores
             place_datastores = place_datastores_used.dup
             used_datastores = []
             swap_datastores = []
