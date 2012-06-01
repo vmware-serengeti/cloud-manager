@@ -49,7 +49,7 @@ module Serengeti
         @success = false
         @finished = false
         @placement_failed = 0
-        @cluster_failed = 0
+        @cluster_failed_num = 0
         @cloud_error_msg_que = []
       end
 
@@ -135,9 +135,9 @@ module Serengeti
           return 'OK'
         rescue => e
           @logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
-          cloud.cloud_error_msg_que = "#{working} failed. #{e}"
-          @cluster_failed += 1
-          #
+          cloud.cloud_error_msg_que << "#{working} failed. #{e}"
+          @cluster_failed_num += 1
+          cluster_failed
           raise e
         end
       end
@@ -198,13 +198,17 @@ module Serengeti
         File.open("#{str}.yaml", 'w'){|f| YAML.dump(obj, f)}
       end
 
-      def action_process act
+      def action_process(act, task)
         result = nil
         begin
           @logger.info("begin action:#{act}")
           @action = act
           result = yield
           @logger.info("finished action:#{act}")
+        rescue => e
+          @logger.info("#{act} failed with #{e}")
+          cluster_failed(task)
+          return 'failed'
         end
         result
       end

@@ -21,11 +21,17 @@ module Serengeti
         }
         @connection = {}
         @connection[:con] = []
-
+        @connection[:err] = []
         group_each_by_threads(connect_list, :callee => 'connect to cloud service') do |con|
-          connection = Fog::Compute.new(info)
-          @connection[:con] << connection
+          begin
+            connection = Fog::Compute.new(info)
+            @connection[:con] << connection
+          rescue => e
+            @connection[:err] << e
+          end
         end
+        raise "#{@connection[:err].size} connections failed: reason is below:"\
+          "#{@connection[:err].join}" if @connection[:err].size > 0
         @logger.debug("Use #{@connection[:con].size} channels to connect cloud service}")
       end
 

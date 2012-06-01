@@ -3,7 +3,7 @@ module Serengeti
 
     class Cloud
       def create_and_update(cloud_provider, cluster_info, cluster_data, task)
-        action_process (CLOUD_WORK_CREATE) do
+        action_process(CLOUD_WORK_CREATE, task) do
           @logger.info("enter create_and_update...")
           create_cloud_provider(cloud_provider)
           @vm_lock.synchronize do

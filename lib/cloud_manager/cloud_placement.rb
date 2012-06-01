@@ -217,7 +217,7 @@ module Serengeti
 
             #Find suitable Host and datastores
             host.place_share_datastores.rotate!
-            @logger.debug("vm:#{vm.name} datastores: #{place_datastores.pretty_inspect}")
+            @logger.debug("vm:#{vm.name} datastores: #{place_datastores_used.pretty_inspect}")
 
             used_datastores = swap_datastores + data_datastores
             assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)

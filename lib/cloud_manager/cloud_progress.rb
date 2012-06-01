@@ -92,7 +92,7 @@ module Serengeti
           result.deploy = @deploy_vms.size
           result.waiting_start = @existed_vms.size
           result.success = @finished_vms.size
-          result.failure = @failure_vms.size + @placement_failed + @cluster_failed
+          result.failure = @failure_vms.size + @placement_failed + @cluster_failed_num
           result.succeed = @success && result.failure <= 0
           result.error_msg = @cloud_error_msg_que.join if @cloud_error_msg_que
           result.running = result.deploy + result.waiting + result.waiting_start
