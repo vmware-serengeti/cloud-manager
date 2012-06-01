@@ -49,6 +49,7 @@ module Serengeti
         @success = false
         @finished = false
         @placement_failed = 0
+        @cluster_failed = 0
         @cloud_error_msg_que = []
       end
 
@@ -128,6 +129,19 @@ module Serengeti
         end
       end
 
+      def client_op(cloud, working)
+        begin
+          yield
+          return 'OK'
+        rescue => e
+          @logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
+          cloud.cloud_error_msg_que = "#{working} failed. #{e}"
+          @cluster_failed += 1
+          #
+          raise e
+        end
+      end
+
       def prepare_working(cluster_info, cluster_data)
         ###########################################################
         # Connect to Cloud server
@@ -137,7 +151,7 @@ module Serengeti
         @status = CLUSTER_CONNECT
         @client = ClientFactory.create(@client_name)
         #client connect need more connect sessions
-        @client.login(@vc_address, @vc_username, @vc_password)
+        client_op(self, 'Cloud provider login') {@client.login(@vc_address, @vc_username, @vc_password)}
 
         @logger.debug("Create Resources ...")
         @resources = Resources.new(@client, self)

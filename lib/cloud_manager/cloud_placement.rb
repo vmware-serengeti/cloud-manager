@@ -170,11 +170,10 @@ module Serengeti
             #FIXME add roll back operations later
             place_datastores_used = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
               host.place_local_datastores : host.place_share_datastores
-            place_datastores = place_datastores_used.dup
             sys_datastore = []
             #Get the sys_datastore for clone
             if VM_SYS_DISK_COLOCATED_WITH_DATA_DISK
-              sys_datastore = get_suitable_sys_datastore(place_datastores)
+              sys_datastore = get_suitable_sys_datastore(place_datastores_used)
             else
               sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
             end
@@ -187,13 +186,12 @@ module Serengeti
             end
             @logger.debug("vm:#{vm.name} get sys datastore :#{sys_datastore.name}")
 
-            place_datastores = place_datastores_used.dup
             used_datastores = []
             swap_datastores = []
             #Get the swap for this vm
             if VM_PLACE_SWAP_DISK
               swap_size = SWAP_MEM_SIZE.each_index {|i| break SWAP_DISK_SIZE[i] if req_mem < SWAP_MEM_SIZE[i]}
-              swap_datastores = get_suitable_datastores(place_datastores,
+              swap_datastores = get_suitable_datastores(place_datastores_used,
                                     vm_group.req_info.disk_pattern, swap_size,
                                     'swap', false)
               @logger.debug("Place swap #{swap_size}MB in #{swap_datastores.pretty_inspect}")
@@ -205,8 +203,7 @@ module Serengeti
             #Get the datastore for this vm
             req_size = vm_group.req_info.disk_size
 
-            place_datastores = place_datastores_used.dup
-            data_datastores = get_suitable_datastores(place_datastores,
+            data_datastores = get_suitable_datastores(place_datastores_used,
                                     vm_group.req_info.disk_pattern, req_size,
                                     'data', true)
             if data_datastores.empty?
