@@ -135,7 +135,7 @@ module Serengeti
           return 'OK'
         rescue => e
           @logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
-          cloud.cloud_error_msg_que << "#{working} failed. #{e}"
+          cloud.cloud_error_msg_que << "#{working} failed."
           @cluster_failed_num += 1
           cluster_failed
           raise e
@@ -151,7 +151,7 @@ module Serengeti
         @status = CLUSTER_CONNECT
         @client = ClientFactory.create(@client_name)
         #client connect need more connect sessions
-        client_op(self, 'Cloud provider login') {@client.login(@vc_address, @vc_username, @vc_password)}
+        client_op(self, 'vSphere login') { @client.login(@vc_address, @vc_username, @vc_password) }
 
         @logger.debug("Create Resources ...")
         @resources = Resources.new(@client, self)

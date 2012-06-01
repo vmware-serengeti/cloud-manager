@@ -30,9 +30,11 @@ module Serengeti
             @connection[:err] << e
           end
         end
-        raise "#{@connection[:err].size} connections failed: reason is below:"\
-          "#{@connection[:err].join}" if @connection[:err].size > 0
-        @logger.debug("Use #{@connection[:con].size} channels to connect cloud service}")
+        if @connection[:err].size > 0
+          @logger.error("#{@connection[:err].size} connections fail to login.\n error is:\n#{@connection[:err].join("\n")}")
+          raise "#{@connection[:err].size} connections fail to login."
+        end
+        @logger.debug("Use #{@connection[:con].size} channels to connect cloud service\n}")
       end
 
       def fog_op
