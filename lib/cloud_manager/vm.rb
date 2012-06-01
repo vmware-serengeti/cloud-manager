@@ -123,7 +123,7 @@ module Serengeti
             data[disk.datastore_name] = disk.size
           end
         end
-        data.each {|k, v| ds << {:name => k, :size => v/ResourceInfo::DISK_CHANGE_TIMES}}
+        data.each {|k, v| ds << {:name => k, :size => v/ResourceInfo::DISK_SIZE_UNIT_CONVERTER}}
         ds
       end
 
