@@ -2,7 +2,7 @@ module Serengeti
   module CloudManager
     class Cloud
       VM_PLACE_SWAP_DISK  = true
-      VM_SYS_LOCAL_ENABLE = true
+      VM_SYS_DISK_COLOCATED_WITH_DATA_DISK = true
       VM_DATA_DISK_START_INDEX = (VM_PLACE_SWAP_DISK) ? 2 : 1
       SWAP_MEM_SIZE = [2048, 4096, 16384, 65536]
       SWAP_DISK_SIZE = [1024, 2048, 4096, 8192]
@@ -29,8 +29,8 @@ module Serengeti
 
       ############################################################
       # Only RR for rps/hosts/datastores selected
-      REMAINDER_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 16
-      VM_SYS_DISK_SIZE = ResourceInfo::DISK_CHANGE_TIMES * 5
+      REMAINDER_DISK_SIZE = ResourceInfo::DISK_SIZE_UNIT_CONVERTER * 16
+      VM_SYS_DISK_SIZE = ResourceInfo::DISK_SIZE_UNIT_CONVERTER * 5
 
       def is_suitable_resource_pool?(rp, req_info)
         @logger.debug("limit:#{rp.limit_mem},real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
@@ -173,7 +173,7 @@ module Serengeti
             place_datastores = place_datastores_used.dup
             sys_datastore = []
             #Get the sys_datastore for clone
-            if VM_SYS_LOCAL_ENABLE
+            if VM_SYS_DISK_COLOCATED_WITH_DATA_DISK
               sys_datastore = get_suitable_sys_datastore(place_datastores)
             else
               sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)

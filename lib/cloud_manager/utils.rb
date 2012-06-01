@@ -19,8 +19,7 @@ module Serengeti
               begin
                 yield item
               rescue => e
-                @logger.debug("#{options[:callee]} threads failed")
-                @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+                @logger.debug("#{options[:callee]} threads failed #{e} - #{e.backtrace.join("\n")}")
               end
             end
           end

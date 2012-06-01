@@ -7,7 +7,7 @@ module Serengeti
     DISK_TYPE_SHARE = 'shared'
     DISK_TYPE_LOCAL = 'local'
     class ResourceInfo
-      DISK_CHANGE_TIMES = 1024
+      DISK_SIZE_UNIT_CONVERTER = 1024
       attr_accessor :cpu
       attr_accessor :mem
       attr_accessor :disk_type
@@ -23,7 +23,7 @@ module Serengeti
           @mem = rp["memory"] || 512
           @disk_size =  rp["storage"]["size"] || 0
           @disk_pattern = rp["storage"]["name_pattern"]
-          @disk_size *= DISK_CHANGE_TIMES
+          @disk_size *= DISK_SIZE_UNIT_CONVERTER
           @disk_type = rp["storage"]["type"]
           @disk_type = DISK_TYPE_SHARE if @disk_type != DISK_TYPE_LOCAL
           @affinity = rp["affinity"] || "none"
