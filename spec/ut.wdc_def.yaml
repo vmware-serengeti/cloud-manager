@@ -2,7 +2,8 @@
 name: vhelper2
 channel_id: provsion
 #template_id: vm-2513
-template_id: vm-5019
+#template_id: vm-5019
+template_id: vm-4670
 networking:
   - port_group: wdc-vhadp-pub2
     type: static
@@ -10,19 +11,13 @@ networking:
     - "10.141.72.61-10.141.72.70"
     netmask: "255.255.254.0"
     gateway: "10.141.73.253"
-    dns: 
+    dns:
     - "10.132.71.1"
     - "10.132.71.2"
-vc_clusters:
-  - name: cluster-integration
-    vc_rps:
-    - resource_pool1
-    - test-1
-    - rp3
 
-#vc_clusters: 
+#vc_clusters:
 groups:
-- name: NameNode 
+- name: NameNode
   cpu: 2
   memory: 1024
   storage:

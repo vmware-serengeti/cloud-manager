@@ -243,8 +243,8 @@ module Serengeti
       end
 
       #Select best placement order
-      def set_best_placement_rp_list!(rp_list)
-        rp_list.sort! { |x, y| x.used_counter <=> y.used_counter }
+      def set_best_placement_rp_list(rp_list)
+        rp_list.sort { |x, y| x.used_counter <=> y.used_counter }
       end
 
       # place cluster into cloud server
@@ -275,11 +275,9 @@ module Serengeti
 
           # prepareing rp for this vm_group
           place_rp = vm_group.req_rps.map do |cluster_name, rps|
-            rps.map { |rp_name| dc_resource.clusters[cluster_name].resource_pools[rp_name] }
+            rps.map { |rp_name| dc_resource.clusters[cluster_name].resource_pools[rp_name] if dc_resource.clusters[cluster_name]}
           end
-          place_rp = place_rp.flatten.compact
-
-          set_best_placement_rp_list!(place_rp)
+          place_rp = set_best_placement_rp_list(place_rp.flatten.compact)
 
           loop_resource(place_rp) do |rp|
             #@logger.debug("Place rp:#{place_rp.pretty_inspect}")

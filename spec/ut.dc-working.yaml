@@ -34,7 +34,7 @@
     hosts:
     - name: host1
       mob: hs1
-      cpu: 1 
+      cpu: 1
       mem: 4096
       used_mem: 1200
       cpu_limit: 9000
@@ -43,7 +43,7 @@
 
     - name: host2
       mob: hs2
-      cpu: 4 
+      cpu:
       mem: 16000
       used_mem: 1300
       total_memory: 12000
@@ -52,7 +52,7 @@
 
     - name: host3
       mob: hs3
-      cpu: 2 
+      cpu: 2
       mem: 10000
       used_mem: 1100
       total_memory: 16000

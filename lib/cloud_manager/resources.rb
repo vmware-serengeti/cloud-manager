@@ -266,7 +266,7 @@ module Serengeti
         end
 
         # Get list of resource pools under this cluster
-        @logger.info("Could not find requested resource pool #{resource_pool_names} under cluster #{cluster_mob}") if resource_pools.empty?
+        @logger.warn("Could not find requested resource pool #{resource_pool_names} under cluster #{cluster_mob}") if resource_pools.empty?
         resource_pools
       end
 

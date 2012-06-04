@@ -4,23 +4,23 @@ channel_id: provsion
 networking:
   - port_group: CFNetwork
     type: static
-    ip: 
+    ip:
     - "10.1.1.17-10.1.1.52"
     netmask: "255.255.255.0"
     gateway: "10.1.1.254"
-    dns: 
+    dns:
     - "10.1.100.100"
     - "10.1.100.240"
   - port_group: CFNetwork1
     type: dhcp
   - port_group: CFNetwork2
     type: static
-    ip: 
+    ip:
     - "10.2.1.190-10.2.1.202"
     - "10.2.1.10-10.2.1.20"
     netmask: "255.255.255.0"
     gateway: "10.2.1.254"
-    dns: 
+    dns:
     - "10.2.100.100"
     - "10.2.100.240"
 
