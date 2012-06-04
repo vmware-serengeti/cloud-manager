@@ -5,8 +5,8 @@ Gem::Specification.new do |s|
   s.version = "0.5.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = [""]
-  s.date = "2012-05-29"
+  s.authors = ["VMware serengeti team (haiyu wang, Jun Xiao)"]
+  s.date = "2012-06-02"
   s.description = "Cloud-manager"
   s.email = "hadoop-bj@vmware.com"
   s.extra_rdoc_files = [
@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/cloud_placement.rb",
     "lib/cloud_manager/cluster_diff.rb",
     "lib/cloud_manager/exception.rb",
-    "lib/cloud_manager/IaasResult.rb",
+    "lib/cloud_manager/iaas_result.rb",
     "lib/cloud_manager/network_res.rb",
     "lib/cloud_manager/utils.rb",
     "lib/cloud_manager/client.rb",
@@ -33,9 +33,7 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/cloud_progress.rb",
     "lib/cloud_manager/cluster.rb",
     "lib/cloud_manager/group.rb",
-    "lib/cloud_manager/IaasProgress.rb",
-    "lib/cloud_manager/IaasResult.rb",
-    "lib/cloud_manager/IaasTask.rb",
+    "lib/cloud_manager/iaas_task.rb",
     "lib/cloud_manager/placement.rb",
     "lib/cloud_manager/vm_group.rb",
     "lib/cloud_manager/wait_ready.rb",
@@ -43,7 +41,7 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/cloud_operations.rb",
     "lib/cloud_manager/cloud.rb",
     "lib/cloud_manager/deploy.rb",
-    "lib/cloud_manager/IaasProgress.rb",
+    "lib/cloud_manager/iaas_progress.rb",
     "lib/cloud_manager/log.rb",
     "lib/cloud_manager/resources.rb",
     "lib/cloud_manager/vm.rb",
@@ -63,7 +61,7 @@ Gem::Specification.new do |s|
   s.licenses = [""]
   s.require_paths = ["lib"]
   s.rubygems_version = "1.8.15"
-  s.summary = ""
+  s.summary = "manage the cloud, easilier"
   s.test_files = [
     "spec/cloud_vm_unit_test.rb",
     "spec/config.rb",
