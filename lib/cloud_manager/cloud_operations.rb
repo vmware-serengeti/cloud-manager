@@ -45,7 +45,7 @@ module Serengeti
               #@logger.debug("vm split to #{@cluster_name}::#{result[2]}::#{result[3]}")
               @logger.debug("delete vm : #{vm.name}")
               vm.status = VM_STATE_DELETE
-              next if !vm_deploy_op(vm, 'delete') { @client.vm_destroy(vm) }
+              next if !vm_deploy_op(vm, 'Delete') { @client.vm_destroy(vm) }
               vm.status = VM_STATE_DONE
               vm_finish(vm)
             end
@@ -72,9 +72,9 @@ module Serengeti
               vm.status = VM_STATE_POWER_OFF
 
               if vm.power_state == 'poweredOn'
-                next if !vm_deploy_op(vm, 'stop') { @client.vm_power_off(vm) }
+                next if !vm_deploy_op(vm, 'Stop') { @client.vm_power_off(vm) }
               end
-              next if !vm_deploy_op(vm, 'reRead') {@client.update_vm_properties_by_vm_mob(vm)}
+              next if !vm_deploy_op(vm, 'Reread') {@client.update_vm_properties_by_vm_mob(vm)}
               vm.status = VM_STATE_DONE
               @logger.debug("stop :#{vm.name}")
               vm_finish(vm)

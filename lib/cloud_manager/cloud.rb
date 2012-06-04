@@ -21,10 +21,8 @@ module Serengeti
       attr_reader :vc_share_datastore_pattern
       attr_reader :vc_local_datastore_pattern
       attr_reader :vc_req_datacenter
-      attr_reader :vc_req_clusters
       attr_reader :vc_req_rps
 
-      attr_reader :allow_mixed_datastores
       attr_reader :racks
       attr_reader :need_abort
 
@@ -38,7 +36,7 @@ module Serengeti
         @deploy_vms = {}
         @existed_vms = {}
         @finished_vms = {}
-        @failure_vms = {}
+        @failed_vms = {}
         @preparing_vms = {}
         @need_abort = nil
         @cluster_name = cluster_info["name"]
@@ -69,25 +67,31 @@ module Serengeti
       def req_clusters_rp_to_hash(a)
         rps = {}
         # FIXME resource_pool's name can be the same between different clusters
-        a.map {|v| v["vc_rps"].each { |rp| rps[rp] = v["name"] } }
+        a.map {|v| rps[v['name']] = v["vc_rps"]}
         rps
       end
 
       def create_cloud_provider(cloud_provider)
         @cloud_provider = cloud_provider
         @name = cloud_provider["name"]
+        raise "cloud provider name is nil!" if @name.nil?
         @vc_req_datacenter = cloud_provider["vc_datacenter"]
-        @vc_req_clusters = cloud_provider["vc_clusters"]
-        @vc_req_rps = req_clusters_rp_to_hash(@vc_req_clusters)
+        raise "datacenter's name is nil!" if @vc_req_datacenter.nil?
+
+        raise "vc_clusters is nil" if cloud_provider["vc_clusters"].nil?
+        @vc_req_rps = req_clusters_rp_to_hash(cloud_provider["vc_clusters"])
+        @logger.debug("req_rps:#{@vc_req_rps.pretty_inspect}")
+
         @logger.debug("Show clusters_req:#{@vc_req_rps}")
 
         @vc_address = cloud_provider["vc_addr"]
+        raise "cloud_provider's IP address is nil." if @vc_address.nil?
+
         @vc_username = cloud_provider["vc_user"]
         @vc_password = cloud_provider["vc_pwd"]
         @vc_share_datastore_pattern = change_wildcard2regex(cloud_provider["vc_shared_datastore_pattern"]||[])
         @vc_local_datastore_pattern = change_wildcard2regex(cloud_provider["vc_local_datastore_pattern"]||[])
         @client_name = cloud_provider["cloud_adapter"] || "fog"
-        @allow_mixed_datastores = nil
         @racks = nil
       end
 
@@ -131,11 +135,10 @@ module Serengeti
 
       def client_op(cloud, working)
         begin
-          yield
-          return 'OK'
+          return yield
         rescue => e
           @logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
-          cloud.cloud_error_msg_que << "#{working} failed."
+          cloud.cloud_error_msg_que << "#{working} failed. Reason: #{e}"
           @cluster_failed_num += 1
           cluster_failed
           raise e
@@ -165,7 +168,8 @@ module Serengeti
         vm_groups_existed = {}
         dc_resources = {}
         @status = CLUSTER_FETCH_INFO
-        dc_resources = @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id'])
+        dc_resources = client_op(self, 'Fetch vSphere info') { \
+          @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id'])}
         @vm_sys_disk_size  = nil
         dc_resources.vm_template.disks.each_value {|disk| break @vm_sys_disk_size = disk.size if disk.unit_number == 0}
         @logger.debug("template vm disk size: #{@vm_sys_disk_size}")
@@ -206,7 +210,8 @@ module Serengeti
           result = yield
           @logger.info("finished action:#{act}")
         rescue => e
-          @logger.info("#{act} failed with #{e}")
+          @logger.error("#{act} failed with #{e}")
+          @cloud_error_msg_que << "#{act} failed with #{e}"
           cluster_failed(task)
           return 'failed'
         end

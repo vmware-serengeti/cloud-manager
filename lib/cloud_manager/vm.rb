@@ -108,10 +108,6 @@ module Serengeti
       attr_accessor :action
 
       def can_ha?; @can_ha;end
-      def get_error_msg
-        return "OK" if @error_msg.to_s.empty?
-        "VM ERROR: #{error_msg}"
-      end
 
       def datastores
         data = {}
@@ -128,7 +124,8 @@ module Serengeti
       end
 
       def inspect
-        "#{to_hash.pretty_inspect} volumes:#{volumes.pretty_inspect} networking:#{network_config_json.pretty_inspect}\n #{get_error_msg}\n"
+        "#{to_hash.pretty_inspect} volumes:#{volumes.pretty_inspect} disks:#{disks.pretty_inspect}"\
+        "networking:#{network_config_json.pretty_inspect}"
       end
 
       def state; @power_state end
@@ -209,9 +206,9 @@ module Serengeti
         @status == VM_STATE_DONE
       end
 
-      def volumes
+      def volumes(limitation = Serengeti::CloudManager::Cloud::VM_DATA_DISK_START_INDEX)
         @disks.collect {|path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
-          if disk.unit_number >= Serengeti::CloudManager::Cloud::VM_DATA_DISK_START_INDEX}.compact.sort
+          if disk.unit_number >= limitation}.compact.sort
       end
     end
 

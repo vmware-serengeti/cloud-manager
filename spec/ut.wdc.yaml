@@ -2,8 +2,7 @@
 name: vsphere
 vc_addr: 10.141.7.39
 vc_user: administrator
-#vc_pwd: ca$hc0w
-vc_pwd: ca$dd
+vc_pwd: ca$hc0w
 vc_datacenter: Datacenter2012
 vc_clusters:
   - name: cluster-integration

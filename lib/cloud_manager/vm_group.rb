@@ -15,7 +15,6 @@ module Serengeti
         vm_groups = {}
         #@logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
         input_groups = cluster_info["groups"]
-        #template_id = "/Datacenters/#{datacenter_name}/vm/#{cluster_info["template_id"]}"
         template_id = cluster_info["template_id"] #currently, it is mob_ref
         raise "template_id should a vm mob id (like vm-1234)" if /^vm-[\d]+$/.match(template_id).nil?
         cluster_req_rps = @vc_req_rps
@@ -34,7 +33,7 @@ module Serengeti
 
           vm_group.req_info.disk_pattern = []
           disk_pattern = ['*'] if disk_pattern.nil?
-          vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map {|x| Regexp.new(x)} 
+          vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map { |x| Regexp.new(x) } 
           @logger.debug("vm_group disk ex patterns:#{vm_group.req_info.disk_pattern.pretty_inspect}")
 
           vm_group.req_rps = (vm_group_req["vc_clusters"].nil?) ? cluster_req_rps : req_clusters_rp_to_hash(vm_group_req["vc_clusters"])

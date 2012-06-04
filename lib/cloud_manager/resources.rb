@@ -10,7 +10,6 @@ module Serengeti
         attr_accessor :racks
         attr_accessor :share_datastore_pattern
         attr_accessor :local_datastore_pattern
-        attr_accessor :allow_mixed_datastores
         attr_accessor :spec
         def inspect
           "<Datacenter: #{@mob} / #{@name}>"
@@ -183,7 +182,6 @@ module Serengeti
         datacenter.share_datastore_pattern    = @serengeti.vc_share_datastore_pattern
         datacenter.local_datastore_pattern = @serengeti.vc_local_datastore_pattern
 
-        datacenter.allow_mixed_datastores = @serengeti.allow_mixed_datastores
         datacenter.racks = @serengeti.racks
 
         datacenter.vm_template = fetch_vm_by_moid(template_ref)
@@ -192,25 +190,23 @@ module Serengeti
         datacenter
       end
 
+      # Fetch clusters information
       def fetch_clusters(datacenter, datacenter_mob)
         cluster_mobs = @client.get_clusters_by_dc_mob(datacenter_mob)
-
-        cluster_names = @serengeti.vc_req_rps.values
-        resouce_names = @serengeti.vc_req_rps.keys
-        clusters_req = @serengeti.vc_req_rps
 
         clusters = {}
         group_each_by_threads(cluster_mobs, \
             :callee => "fetch cluster in datacenter #{datacenter.name}") do |cluster_mob|
           attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
           # chose cluster in cluster_names
-          next unless cluster_names.include?(attr["name"])
+          next unless @serengeti.vc_req_rps.key?(attr["name"])
 
+          resouce_names = @serengeti.vc_req_rps[attr['name']]
           @logger.debug("Use cluster :#{attr["name"]} and checking resource pools")
           cluster                     = Cluster.new
           resource_pools = fetch_resource_pool(cluster, cluster_mob, resouce_names)
           if resource_pools.empty?
-            @logger.debug("Do not find any reqired resources #{clusters_req.pretty_inspect} in cluster :#{attr["name"]}")
+            @logger.debug("Do not find any reqired resource #{resouce_names.pretty_inspect} in cluster :#{attr["name"]}")
             next
           end
 

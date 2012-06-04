@@ -92,7 +92,7 @@ module Serengeti
           result.deploy = @deploy_vms.size
           result.waiting_start = @existed_vms.size
           result.success = @finished_vms.size
-          result.failure = @failure_vms.size + @placement_failed + @cluster_failed_num
+          result.failure = @failed_vms.size + @placement_failed + @cluster_failed_num
           result.succeed = @success && result.failure <= 0
           result.error_msg = @cloud_error_msg_que.join if @cloud_error_msg_que
           result.running = result.deploy + result.waiting + result.waiting_start
@@ -100,7 +100,7 @@ module Serengeti
           result.servers = []
           get_result_by_vms(result.servers, @deploy_vms, :created => false)
           get_result_by_vms(result.servers, @existed_vms, :created => true)
-          get_result_by_vms(result.servers, @failure_vms, :created => false)
+          get_result_by_vms(result.servers, @failed_vms, :created => false)
           get_result_by_vms(result.servers, @finished_vms, :created => true)
         }
         result

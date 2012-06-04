@@ -6,6 +6,7 @@ module Serengeti
       VM_DATA_DISK_START_INDEX = (VM_PLACE_SWAP_DISK) ? 2 : 1
       SWAP_MEM_SIZE = [2048, 4096, 16384, 65536]
       SWAP_DISK_SIZE = [1024, 2048, 4096, 8192]
+      MAX_SWAP_DISK_SIZE = 12288
       # refine work: TODO
       # 1. change placement result to a hash structure
       # 2. abstract placement function to a base class
@@ -141,16 +142,14 @@ module Serengeti
         @logger.warn("#{msg}")
       end
 
-      def vm_group_placement(vm_group, group_place, hosts, cur_rp)
+      def vm_group_placement(vm_group, group_place, existed_vms, hosts, cur_rp)
         (vm_group.size...vm_group.instances).each do |num|
           return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
 
-          #Check portgroup
-
-          vm_name = gen_vm_name(@cluster_name, vm_group.name, num)
-          if (@existed_vms.has_key?(vm_name))
+          vm_name = gen_cluster_vm_name(vm_group.name, num)
+          if (existed_vms.has_key?(vm_name))
             @logger.debug("do not support change existed VM's setting")
-            @existed_vms[vm_name].action = VM_ACTION_START
+            existed_vms[vm_name].action = VM_ACTION_START
             next
           end
           vm = Serengeti::CloudManager::VmInfo.new(vm_name)
@@ -180,7 +179,7 @@ module Serengeti
 
             #Get the swap for this vm
             if sys_datastore.nil?
-              set_vm_error_msg(vm, "can not find suitable sys datastore in host "\
+              set_vm_error_msg(vm, "Can not find suitable sys datastore in host "\
                                "#{host.name}. And try to find other host")
               next 'remove'
             end
@@ -191,6 +190,7 @@ module Serengeti
             #Get the swap for this vm
             if VM_PLACE_SWAP_DISK
               swap_size = SWAP_MEM_SIZE.each_index {|i| break SWAP_DISK_SIZE[i] if req_mem < SWAP_MEM_SIZE[i]}
+              swap_size = MAX_SWAP_DISK_SIZE if swap_size.nil?
               swap_datastores = get_suitable_datastores(place_datastores_used,
                                     vm_group.req_info.disk_pattern, swap_size,
                                     'swap', false)
@@ -233,7 +233,7 @@ module Serengeti
           end
           if vm.error_msg
             #NO resource for this vm_group
-            set_vm_error_msg(vm, "vm can not get resources in rp:#{cur_rp.name}. Try to look for other resource pool\n"\
+            set_vm_error_msg(vm, "VM can not get resources in rp:#{cur_rp.name}. Try to look for other resource pool\n"\
                              "And the group:#{vm_group.name} has no resources to alloced rest #{vm_group.instances - num} vm")
             return vm
           end
@@ -273,8 +273,8 @@ module Serengeti
           @logger.debug("Group:#{vm_group.name} req_rps:#{vm_group.req_rps}")
 
           # prepareing rp for this vm_group
-          place_rp = vm_group.req_rps.collect {|rp_name, cluster_name|\
-            dc_resource.clusters[cluster_name].resource_pools[rp_name] }
+          place_rp = vm_group.req_rps.collect {|cluster_name, rp_names| rp_names.map {|rp_name| \
+            dc_resource.clusters[cluster_name].resource_pools[rp_name] } }.flatten.compact
 
           set_best_placement_rp_list!(place_rp)
 
@@ -285,14 +285,14 @@ module Serengeti
             need_next_rp = nil
             hosts = hosts_prepare_in_cluster(cluster)
 
-            need_next_rp = vm_group_placement(vm_group, group_place, hosts, rp)
+            need_next_rp = vm_group_placement(vm_group, group_place, @existed_vms, hosts, rp)
             next 'remove' if need_next_rp
             break
           end
           if need_next_rp
             ## can not alloc vm_group anymore
             vm = need_next_rp
-            @cloud_error_msg_que << vm.error_msg
+            @cloud_error_msg_que << "Can not alloc resource for vm. Reason: #{vm.error_msg}"
             group_failed = vm_group.instances - vm_group.vm_ids.size
             @placement_failed += group_failed
             @logger.error("Can not place #{vm.name}, Try to place #{vm_group.vm_ids.size} / (#{vm_group.instances})")

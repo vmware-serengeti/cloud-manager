@@ -48,7 +48,7 @@ module Serengeti
       def logout
         @con_lock.synchronize do
           unless @connection.nil?
-            @connection.each { |con| }
+            @connection.each { |con| } #con.close}
             #TODO destroy @connection
           end
         end

@@ -173,8 +173,8 @@ module Serengeti
 
     class Cloud
       VM_SPLIT_SIGN = '-'
-      def gen_vm_name(cluster_name, group_name, num)
-        return "#{cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"
+      def gen_cluster_vm_name(group_name, num)
+        return "#{@cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"
       end
 
       def vm_is_this_cluster?(vm_name)

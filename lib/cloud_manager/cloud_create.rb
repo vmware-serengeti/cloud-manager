@@ -11,7 +11,7 @@ module Serengeti
             @deploy_vms = {}
             @existed_vms = {}
             @preparing_vms = {}
-            @failure_vms = {}
+            @failed_vms = {}
             @finished_vms = {}
           end
           #@logger.debug("#{cluster_info.inspect}")
@@ -35,7 +35,7 @@ module Serengeti
               end
             end
           rescue => e
-            @logger.debug("Prepare working failed.")
+            @logger.error("Prepare working failed.")
             @logger.debug("#{e} - #{e.backtrace.join("\n")}")
             cluster_failed(task)
             #TODO add all kinds of error handlers here
