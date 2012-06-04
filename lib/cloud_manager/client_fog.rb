@@ -48,7 +48,7 @@ module Serengeti
       def logout
         @con_lock.synchronize do
           unless @connection.nil?
-            @connection.each { |con| } #con.close}
+            @connection.each { |con| }#con.close }
             #TODO destroy @connection
           end
         end
@@ -107,7 +107,7 @@ module Serengeti
         info = { 'instance_uuid' => vm.instance_uuid,
           'vmdk_path' => disk.fullpath,
           'disk_size' => disk.size / DISK_SIZE_TIMES }
-        info['thin_provision'] = true if disk.type == DISK_TYPE_SHARE
+        info['thin_provision'] = disk.shared
         @logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB")
         result = fog_op { |con| con.vm_create_disk(info) }
         # TODO add update disk and vm's info
@@ -176,20 +176,20 @@ module Serengeti
       #get datadstores accessible from a given host
       def get_datastores_by_host_mob(host_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_datastores_by_host_mob(host_mob_ref,options) }
+        fog_op { |con| con.get_datastores_by_host_mob(host_mob_ref, options) }
       end
 
       #get vm list provision from a given host
       def get_vms_by_host_mob(host_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_vms_by_host_mob(host_mob_ref,options) }
+        fog_op { |con| con.get_vms_by_host_mob(host_mob_ref, options) }
       end
 
       #get disk list for a specific vm
       #return a array with hash as each hash {\'path\', \'size\', \'scsi_num\'}
       def get_disks_by_vm_mob(vm_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_disks_by_vm_mob(vm_mob_ref,options) }
+        fog_op { |con| con.get_disks_by_vm_mob(vm_mob_ref, options) }
       end
 
       def get_ds_name_by_path(path)

@@ -54,7 +54,7 @@ module Serengeti
         dummy_sleep(8)
         vm.power_state = (options[:power_on] == true)? "poweredOn":"poweredOff"
         @vm_prop[vm.name] = vm
-        return unless @write_to_dc 
+        return unless @write_to_dc
       end
 
       def update_vm_with_properties_string(vm, vm_properties)
@@ -98,7 +98,7 @@ module Serengeti
       end
 
       def ct_mob_ref_to_attr_hash(mob, type, options={}) mob end
-      def get_hosts_by_cs_mob(mob, options={}) 
+      def get_hosts_by_cs_mob(mob, options={})
         dummy_sleep(1)
         mob["hosts"]
       end
@@ -108,9 +108,9 @@ module Serengeti
       def get_rps_by_cs_mob(cluster_mob, options={}) cluster_mob["resource_pool"] end
       def get_clusters_by_dc_mob(dc_mob, options={}); dc_mob["clusters"]; end
       def get_datastores_by_cs_mob(cluster_mob, options={}); cluster_mob["datastores"]; end
-      def get_datastores_by_host_mob(host_mob, options={}); 
+      def get_datastores_by_host_mob(host_mob, options={});
         dummy_sleep(1)
-        host_mob["datastores"]; 
+        host_mob["datastores"];
       end
       def vm_set_ha(vm, enable) end
       def is_vm_in_ha_cluster(vm) true end

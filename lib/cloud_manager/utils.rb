@@ -7,12 +7,12 @@ module Serengeti
 
       def group_each_by_threads(group, options={})
         work_thread = []
-        if options[:order]
+        if options[:order] || group.size <= 1
           #serial method
           @logger.debug("#{options[:callee]} run in serial model")
           group.each { |item| yield item }
         else
-          #paralleled method
+          #paralleled method for multi-work
           @logger.debug("#{options[:callee]} run in paralleled model")
           group.each do |item|
             work_thread << Thread.new(item) do |item|
@@ -23,7 +23,7 @@ module Serengeti
               end
             end
           end
-          @logger.debug("create #{work_thread.size} threads to work for #{group.size} jobs")
+          @logger.debug("Created #{work_thread.size} threads to work for #{group.size} jobs")
           work_thread.each { |t| t.join }
         end
         @logger.debug("Finish group operation for #{options[:callee]}")

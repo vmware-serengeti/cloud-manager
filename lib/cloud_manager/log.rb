@@ -2,7 +2,7 @@ require 'logger'
 module Serengeti
   module CloudManager
 
-    LOG_LEVEL = {'debug'=>Logger::DEBUG, 'info'=>Logger::INFO, 'warning'=>Logger::WARN, 'error' => Logger::ERROR,}
+    LOG_LEVEL = {'debug'=>Logger::DEBUG, 'info'=>Logger::INFO, 'warning'=>Logger::WARN, 'error' => Logger::ERROR}
     LOG_LEVEL_NAME = LOG_LEVEL.invert
 
     class SerengetiLogger < Logger

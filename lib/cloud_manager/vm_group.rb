@@ -11,6 +11,9 @@ module Serengeti
         nil
       end
 
+      # fetch vm_group information from user input (cluster_info)
+      # It will assign template/rps/networking/datastores info to each vm group
+      # Return: the vm_group structure
       def create_vm_group_from_serengeti_input(cluster_info, datacenter_name)
         vm_groups = {}
         #@logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
@@ -33,7 +36,7 @@ module Serengeti
 
           vm_group.req_info.disk_pattern = []
           disk_pattern = ['*'] if disk_pattern.nil?
-          vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map { |x| Regexp.new(x) } 
+          vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map { |x| Regexp.new(x) }
           @logger.debug("vm_group disk ex patterns:#{vm_group.req_info.disk_pattern.pretty_inspect}")
 
           vm_group.req_rps = (vm_group_req["vc_clusters"].nil?) ? cluster_req_rps : req_clusters_rp_to_hash(vm_group_req["vc_clusters"])
@@ -44,6 +47,9 @@ module Serengeti
         vm_groups
       end
 
+      # fetch vm_group information from dc resources came from vSphere (dc_res)
+      # It will assign existed vm to each vm group, and put them to VM_STATE_READY status.
+      # Return: the vm_group structure
       def create_vm_group_from_resources(dc_res, serengeti_cluster_name)
         vm_groups = {}
         dc_res.clusters.each_value do |cluster|
@@ -72,11 +78,12 @@ module Serengeti
       end
     end
 
+    # This structure contains the group information
     class VmGroupInfo
-      attr_accessor :name
-      attr_accessor :req_info  #class ResourceInfo
+      attr_accessor :name       #Group name
+      attr_accessor :req_info   #class ResourceInfo
       attr_reader   :vc_req
-      attr_accessor :instances
+      attr_accessor :instances  #wanted number of instance
       attr_accessor :req_rps
       attr_accessor :network_res
       attr_accessor :vm_ids    #classes VmInfo

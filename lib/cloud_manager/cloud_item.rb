@@ -41,6 +41,7 @@ module Serengeti
       attr_accessor :size
       attr_accessor :unit_number
       attr_accessor :datastore_name
+      attr_accessor :shared
     end
 
   end

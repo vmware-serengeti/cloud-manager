@@ -27,8 +27,10 @@ module Serengeti
       def succeed? ; @succeed end
 
       def inspect
-        msg = "succeed? #{succeed?} total:#{total} success:#{success} failed:#{failure} running:#{running} [waiting:#{waiting} waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
-        servers.each {|vm| msg<<vm.inspect}
+        msg = "succeed? #{succeed?} total:#{total} success:#{success} "\
+              "failed:#{failure} running:#{running} [waiting:#{waiting} "\
+              "waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
+        servers.each { |vm| msg<<vm.inspect }
         msg
       end
     end

@@ -8,25 +8,26 @@ module Serengeti
         IP = '(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])'
         def initialize(networking)
           @config = networking
-          # TODO ip range handle
+          @logger = Serengeti::CloudManager::Cloud.Logger
 
           range_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}-#{IP}\.#{IP}\.#{IP}\.#{IP}$")
           ip_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}$")
-          @config.each {|conf|
+          @config.each do |conf|
             conf['ip_pool'] = {}
             next if (conf['type'] != 'static')
-            conf['ip'].each { |ip|
+            conf['ip'].each do |ip|
               next if put_range_to_ip_pool(ip, conf['ip_pool'], range_check)
               single_result = ip_check.match(ip)
               conf['ip_pool'][ip] = 1 if (single_result)
-            }
-          }
+            end
+          end
+          @logger.debug("IP config:#{@config.pretty_inspect}")
           @lock = Mutex.new
         end
 
         def range_extend(range, level, out_ip, out_range)
           return out_range[out_ip] = 1 if (level >= 5)
-          (range[level]..range[level+4]).each {|ip| range_extend(range, level+1, "#{out_ip}.#{ip}", out_range)}
+          (range[level]..range[level+4]).each { |ip| range_extend(range, level+1, "#{out_ip}.#{ip}", out_range) }
         end
 
         def put_range_to_ip_pool(ip_range, pool, range_check)
@@ -43,7 +44,7 @@ module Serengeti
         def dns(card); @config[card]['dns']; end
         def card_num; @config.size; end
         def not_existed_port_group(net_pg)
-          @config.each {|config| return config['port_group'] if !net_pg.key?(config['port_group'])}
+          @config.each { |config| return config['port_group'] if !net_pg.key?(config['port_group']) }
           nil
         end
 

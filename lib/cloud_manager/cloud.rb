@@ -26,7 +26,7 @@ module Serengeti
       attr_reader :racks
       attr_reader :need_abort
 
-      CLOUD_DEBUG_ON = false 
+      CLOUD_DEBUG_ON = false
 
       def initialize(cluster_info)
         @logger = Serengeti::CloudManager::Cloud.Logger
@@ -67,7 +67,7 @@ module Serengeti
       def req_clusters_rp_to_hash(a)
         rps = {}
         # FIXME resource_pool's name can be the same between different clusters
-        a.map {|v| rps[v['name']] = v["vc_rps"]}
+        a.map { |v| rps[v['name']] = v["vc_rps"] }
         rps
       end
 
@@ -115,7 +115,7 @@ module Serengeti
           input_group = vm_groups_input[exist_group.name]
           next if input_group.nil?
           @logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
-          exist_group.vm_ids.each_value {|vm| vm.ha_enable = input_group.req_info.ha }
+          exist_group.vm_ids.each_value { |vm| vm.ha_enable = input_group.req_info.ha }
         end
       end
 
@@ -125,11 +125,12 @@ module Serengeti
           input_group = vm_groups_input[exist_group.name]
           next if input_group.nil?
           if cluster_data && cluster_data['group']
-            cluster_data_instances = cluster_data['group'].select {|group| group[instances] if group['name'] == exist_group.name}.first
-            cluster_data_instances.each {|vm| input_group.network_res.ip_remove(0, vm['ip_address'])}
+            cluster_data_instances = cluster_data['group'].select \
+              { |group| group[instances] if group['name'] == exist_group.name}.first
+            cluster_data_instances.each { |vm| input_group.network_res.ip_remove(0, vm['ip_address']) }
           end
           @logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
-          exist_group.vm_ids.each_value {|vm| input_group.network_res.ip_remove(0, vm.ip_address) }
+          exist_group.vm_ids.each_value { |vm| input_group.network_res.ip_remove(0, vm.ip_address) }
         end
       end
 
@@ -169,9 +170,9 @@ module Serengeti
         dc_resources = {}
         @status = CLUSTER_FETCH_INFO
         dc_resources = client_op(self, 'Fetch vSphere info') { \
-          @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id'])}
+          @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id']) }
         @vm_sys_disk_size  = nil
-        dc_resources.vm_template.disks.each_value {|disk| break @vm_sys_disk_size = disk.size if disk.unit_number == 0}
+        dc_resources.vm_template.disks.each_value { |disk| break @vm_sys_disk_size = disk.size if disk.unit_number == 0 }
         @logger.debug("template vm disk size: #{@vm_sys_disk_size}")
 
         log_obj_to_file(dc_resources, 'dc_resource-first')
@@ -199,7 +200,7 @@ module Serengeti
 
       def log_obj_to_file(obj, str)
         return if !CLOUD_DEBUG_ON
-        File.open("#{str}.yaml", 'w'){|f| YAML.dump(obj, f)}
+        File.open("#{str}.yaml", 'w'){ |f| YAML.dump(obj, f) }
       end
 
       def action_process(act, task)
@@ -219,7 +220,7 @@ module Serengeti
       end
 
       def change_wildcard2regex_str(str)
-        str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap {|out| return "^#{out}$" } unless str.nil?
+        str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap { |out| return "^#{out}$" } unless str.nil?
         "^$"
       end
 

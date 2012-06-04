@@ -39,7 +39,7 @@ module Serengeti
       def is_vc_req_rp?(resource_pool, vc_req)
         return false if resource_pool.nil?
         return true if vc_req['vc_rps'].nil?
-        vc_req['vc_rps'].each {|rp_name| return true if rp_name.eql?(resource_pool.name)}
+        vc_req['vc_rps'].each { |rp_name| return true if rp_name.eql?(resource_pool.name) }
         false
       end
 
@@ -133,8 +133,8 @@ module Serengeti
 
         def inspect
           msg = "<Host: #{@mob} / #{@name}, #{real_free_memory}MB/#{@free_memory}MB/#{@total_memory}MB>, vm #{@vms.size}\n datastores:\n"
-          share_datastores.each_value {|datastore|msg<<"share "<<datastore.inspect}
-          local_datastores.each_value {|datastore|msg<<"local "<<datastore.inspect}
+          share_datastores.each_value { |datastore|msg<<"share "<<datastore.inspect }
+          local_datastores.each_value { |datastore|msg<<"local "<<datastore.inspect }
           msg
         end
       end

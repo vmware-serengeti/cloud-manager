@@ -34,7 +34,7 @@ module Serengeti
       VM_SYS_DISK_SIZE = ResourceInfo::DISK_SIZE_UNIT_CONVERTER * 5
 
       def is_suitable_resource_pool?(rp, req_info)
-        @logger.debug("limit:#{rp.limit_mem},real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
+        @logger.debug("limit:#{rp.limit_mem}, real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
         if rp.limit_mem != -1 && (rp.real_free_memory < req_info.mem)
           @logger.debug("No memory give to vm")
           return false
@@ -44,7 +44,7 @@ module Serengeti
 
       def datastore_group_match?(disk_pattern, ds_name)
         @logger.debug("datastore pattern: #{disk_pattern.pretty_inspect}, name:#{ds_name}")
-        disk_pattern.each {|d_pattern| return true unless d_pattern.match(ds_name).nil?}
+        disk_pattern.each { |d_pattern| return true unless d_pattern.match(ds_name).nil? }
         false
       end
 
@@ -54,7 +54,7 @@ module Serengeti
       end
 
       def get_suitable_sys_datastore(datastores)
-        datastores.delete_if {|datastore| datastore.real_free_space < REMAINDER_DISK_SIZE}
+        datastores.delete_if { |datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
         datastores.each do |datastore|
           #next if !datastore_group_match?(req_info, datastore.name)
           return datastore if datastore.real_free_space > REMAINDER_DISK_SIZE
@@ -63,7 +63,7 @@ module Serengeti
       end
 
       def get_suitable_datastores(datastores, disk_pattern, req_size, disk_type, can_split)
-        datastores.delete_if {|datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
+        datastores.delete_if { |datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
         used_datastores = []
         loop_resource(datastores) do |datastore|
           next 'remove' if datastore.real_free_space < REMAINDER_DISK_SIZE
@@ -76,7 +76,7 @@ module Serengeti
             @logger.debug("in datastore:#{datastore.name} can not split to different disks, req size:#{req_size}MB")
             next 'remove' if !can_split
           end
-          used_datastores << {:datastore => datastore, :size => free_size, :type => disk_type}
+          used_datastores << { :datastore => datastore, :size => free_size, :type => disk_type }
           req_size -= free_size.to_i
           break if req_size.to_i <= 0
         end
@@ -114,6 +114,7 @@ module Serengeti
           datastore[:datastore].unaccounted_space += datastore[:size].to_i
           disk = vm.disk_add(datastore[:size].to_i, fullpath)
           disk.datastore_name = datastore[:datastore].name
+          disk.shared = (vm_group.req_info.disk_type == DISK_TYPE_SHARE)
           unit_number += 1
           disk.unit_number = unit_number
           disk.type = datastore[:type]
@@ -189,7 +190,7 @@ module Serengeti
             swap_datastores = []
             #Get the swap for this vm
             if VM_PLACE_SWAP_DISK
-              swap_size = SWAP_MEM_SIZE.each_index {|i| break SWAP_DISK_SIZE[i] if req_mem < SWAP_MEM_SIZE[i]}
+              swap_size = SWAP_MEM_SIZE.each_index { |i| break SWAP_DISK_SIZE[i] if req_mem < SWAP_MEM_SIZE[i] }
               swap_size = MAX_SWAP_DISK_SIZE if swap_size.nil?
               swap_datastores = get_suitable_datastores(place_datastores_used,
                                     vm_group.req_info.disk_pattern, swap_size,
@@ -243,7 +244,7 @@ module Serengeti
 
       #Select best placement order
       def set_best_placement_rp_list!(rp_list)
-        rp_list.sort! {|x, y| x.used_counter <=> y.used_counter }
+        rp_list.sort! { |x, y| x.used_counter <=> y.used_counter }
       end
 
       # place cluster into cloud server
@@ -273,8 +274,10 @@ module Serengeti
           @logger.debug("Group:#{vm_group.name} req_rps:#{vm_group.req_rps}")
 
           # prepareing rp for this vm_group
-          place_rp = vm_group.req_rps.collect {|cluster_name, rp_names| rp_names.map {|rp_name| \
-            dc_resource.clusters[cluster_name].resource_pools[rp_name] } }.flatten.compact
+          place_rp = vm_group.req_rps.map do |cluster_name, rps|
+            rps.map { |rp_name| dc_resource.clusters[cluster_name].resource_pools[rp_name] }
+          end
+          place_rp = place_rp.flatten.compact
 
           set_best_placement_rp_list!(place_rp)
 
