@@ -2,10 +2,10 @@
 
 Gem::Specification.new do |s|
   s.name = "cloud-manager"
-  s.version = "0.5.1"
+  s.version = "0.5.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["VMware serengeti team (haiyu wang, Jun Xiao)"]
+  s.authors = ["VMware Serengeti team (Haiyu Wang, Jun Xiao)"]
   s.date = "2012-06-02"
   s.description = "Cloud-manager"
   s.email = "hadoop-bj@vmware.com"

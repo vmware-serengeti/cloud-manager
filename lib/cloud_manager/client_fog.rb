@@ -25,9 +25,9 @@ module Serengeti
         group_each_by_threads(connect_list, :callee => 'connect to cloud service') do |con|
           begin
             connection = Fog::Compute.new(info)
-            @connection[:con] << connection
+            @con_lock.synchronize { @connection[:con] << connection }
           rescue => e
-            @connection[:err] << e
+            @con_lock.synchronize { @connection[:err] << e }
           end
         end
         if @connection[:err].size > 0
