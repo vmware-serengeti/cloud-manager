@@ -143,14 +143,14 @@ module Serengeti
         @logger.warn("#{msg}")
       end
 
-      def vm_group_placement(vm_group, group_place, existed_vm_que, hosts, cur_rp)
+      def vm_group_placement(vm_group, group_place, existed_vms, hosts, cur_rp)
         (vm_group.size...vm_group.instances).each do |num|
           return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
 
           vm_name = gen_cluster_vm_name(vm_group.name, num)
-          if (existed_vm_que.has_key?(vm_name))
+          if (existed_vms.has_key?(vm_name))
             @logger.debug("do not support change existed VM's setting")
-            existed_vm_que[vm_name].action = VM_ACTION_START
+            existed_vms[vm_name].action = VM_ACTION_START
             next
           end
           vm = Serengeti::CloudManager::VmInfo.new(vm_name)
@@ -228,7 +228,7 @@ module Serengeti
             # Find a suitable place
             group_place << vm
             @logger.debug("Add #{vm.name} to preparing queue")
-            @vm_lock.synchronize { @prepare_vm_que[vm.name] = vm }
+            @vm_lock.synchronize { @prepare_vms[vm.name] = vm }
             vm_group.add_vm(vm)
             break
           end
@@ -260,11 +260,11 @@ module Serengeti
           #Check port group for vm_group
           unknown_pg = vm_group.network_res.not_existed_port_group(dc_resource.port_group)
           if unknown_pg
-            group_failed = vm_group.instances - vm_group.vm_ids.size
+            failed_vms = vm_group.instances - vm_group.vm_ids.size
             error_msg = "group #{vm_group.name}: can not find port group:#{unknown_pg} in dc."\
               " Please check your configurations."
             @logger.error(error_msg)
-            @placement_failed += group_failed
+            @placement_failed += failed_vms
             @cloud_error_msg_que << error_msg
             break
           end
@@ -288,7 +288,7 @@ module Serengeti
             need_next_rp = nil
             hosts = hosts_prepare_in_cluster(cluster)
 
-            need_next_rp = vm_group_placement(vm_group, group_place, @existed_vm_que, hosts, rp)
+            need_next_rp = vm_group_placement(vm_group, group_place, @existed_vms, hosts, rp)
             next 'remove' if need_next_rp
             break
           end
@@ -296,10 +296,10 @@ module Serengeti
             ## can not alloc vm_group anymore
             vm = need_next_rp
             @cloud_error_msg_que << "Can not alloc resource for vm. Reason: #{vm.error_msg}"
-            group_failed = vm_group.instances - vm_group.vm_ids.size
-            @placement_failed += group_failed
+            failed_vms = vm_group.instances - vm_group.vm_ids.size
+            @placement_failed += failed_vms
             @logger.error("Can not place #{vm.name}, Try to place #{vm_group.vm_ids.size} / (#{vm_group.instances})")
-            @logger.error("VM group #{vm_group.name} failed to place #{group_failed} vm, total failed: #{@placement_failed}.")
+            @logger.error("VM group #{vm_group.name} failed to place #{failed_vms} vm, total failed: #{@placement_failed}.")
           end
           vm_placement << group_place
         end

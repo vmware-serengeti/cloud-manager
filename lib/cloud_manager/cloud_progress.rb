@@ -88,20 +88,20 @@ module Serengeti
       def get_result
         result = IaasResult.new
         @vm_lock.synchronize {
-          result.waiting = @prepare_vm_que.size
-          result.deploy = @deploy_vm_que.size
-          result.waiting_start = @existed_vm_que.size
-          result.success = @finished_vm_que.size
-          result.failure = @failed_vm_que.size + @placement_failed + @cluster_failed_num
+          result.waiting = @prepare_vms.size
+          result.deploy = @deploy_vms.size
+          result.waiting_start = @existed_vms.size
+          result.success = @finished_vms.size
+          result.failure = @failed_vms.size + @placement_failed + @cluster_failed_num
           result.succeed = @success && result.failure <= 0
           result.error_msg = @cloud_error_msg_que.join if @cloud_error_msg_que
           result.running = result.deploy + result.waiting + result.waiting_start
           result.total = result.running + result.success + result.failure
           result.servers = []
-          get_result_by_vms(result.servers, @deploy_vm_que, :created => false)
-          get_result_by_vms(result.servers, @existed_vm_que, :created => true)
-          get_result_by_vms(result.servers, @failed_vm_que, :created => false)
-          get_result_by_vms(result.servers, @finished_vm_que, :created => true)
+          get_result_by_vms(result.servers, @deploy_vms, :created => false)
+          get_result_by_vms(result.servers, @existed_vms, :created => true)
+          get_result_by_vms(result.servers, @failed_vms, :created => false)
+          get_result_by_vms(result.servers, @finished_vms, :created => true)
         }
         result
       end
