@@ -6,7 +6,7 @@ module Serengeti
         if type == 'shared'
           return cluster_info["vc_shared_datastore_pattern"]
         elsif type == 'local'
-          return cluster_info["vc_local_datastore_patten"]
+          return cluster_info["vc_local_datastore_pattern"]
         end
         nil
       end

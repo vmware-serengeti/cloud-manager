@@ -33,11 +33,11 @@ module Serengeti
         @dc_resource = nil
         @clusters = nil
         @vm_lock = Mutex.new
-        @deploy_vms = {}
-        @existed_vms = {}
-        @finished_vms = {}
-        @failed_vms = {}
-        @preparing_vms = {}
+        @deploy_vm_que = {}
+        @existed_vm_que = {}
+        @finished_vm_que = {}
+        @failed_vm_que = {}
+        @prepare_vm_que = {}
         @need_abort = nil
         @cluster_name = cluster_info["name"]
 
@@ -53,7 +53,7 @@ module Serengeti
 
       def add_2existed_vm(vm)
         @logger.debug("Add existed vm")
-        @vm_lock.synchronize { @existed_vms[vm.name] = vm }
+        @vm_lock.synchronize { @existed_vm_que[vm.name] = vm }
       end
 
       def mov_vm(vm, src_vms, des_vms)

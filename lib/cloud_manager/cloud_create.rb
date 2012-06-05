@@ -8,11 +8,11 @@ module Serengeti
           create_cloud_provider(cloud_provider)
           @vm_lock.synchronize do
             #TODO document each vm queue. change to same timing
-            @deploy_vms = {}
-            @existed_vms = {}
-            @preparing_vms = {}
-            @failed_vms = {}
-            @finished_vms = {}
+            @deploy_vm_que = {}
+            @existed_vm_que = {}
+            @prepare_vm_que = {}
+            @failed_vm_que = {}
+            @finished_vm_que = {}
           end
           #@logger.debug("#{cluster_info.inspect}")
           cluster_changes = []
@@ -73,7 +73,7 @@ module Serengeti
               @logger.info("Begin waiting cluster ready")
               #Wait cluster ready
               @status = CLUSTER_WAIT_START
-              successful = cluster_wait_ready(@existed_vms.values)
+              successful = cluster_wait_ready(@existed_vm_que.values)
               break if successful
 
               @status = CLUSTER_RE_FETCH_INFO

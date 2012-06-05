@@ -95,7 +95,7 @@ module Serengeti
       attr_accessor :can_ha
       attr_accessor :ha_enable
       def succeed?;  ready?  end
-      def finished?; succeed? || !error_msg.to_s.empty? end
+      def finished?; succeed? || (@error_code.to_i != 0)  end
       attr_accessor :network_config_json
 
       # for provisioning

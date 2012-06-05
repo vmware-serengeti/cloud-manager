@@ -29,7 +29,7 @@ module Serengeti
           @affinity = rp["affinity"] || "none"
           @template_id = rp["template_id"]
           @ha = rp["ha"]
-          @ha = true if @ha.nil?    #FIXME current setting is enable for all.
+          @ha = true if @ha.nil?
           @rack_id = nil
         end
       end

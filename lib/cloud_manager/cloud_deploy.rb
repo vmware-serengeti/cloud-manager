@@ -43,7 +43,8 @@ module Serengeti
           @logger.error("#{working} vm:#{vm.name} failed.\n #{e} - #{e.backtrace.join("\n")}")
           vm.error_code = -1
           vm.error_msg = "#{working} vm:#{vm.name} failed. #{e}"
-          mov_vm(vm, @deploy_vms, @failed_vms)
+          mov_vm(vm, @deploy_vm_que, @failed_vm_que)
+          mov_vm(vm, @existed_vm_que, @failed_vm_que)
           return nil
         end
       end
@@ -57,7 +58,7 @@ module Serengeti
               next
             end
             vm.status = VM_STATE_CLONE
-            mov_vm(vm, @preparing_vms, @deploy_vms)
+            mov_vm(vm, @prepare_vm_que, @deploy_vm_que)
             next if !vm_deploy_op(vm, 'Clone') { @client.clone_vm(vm, :poweron => false)}
             @logger.info("vm:#{vm.name} power:#{vm.power_state} finish clone")
 
@@ -73,7 +74,7 @@ module Serengeti
 
             #Move deployed vm to existed queue
             #TODO Move change name mov_vm
-            mov_vm(vm, @deploy_vms, @existed_vms)
+            mov_vm(vm, @deploy_vm_que, @existed_vm_que)
           ensure
             if vm.error_code.to_i != 0
               @client.vm_destroy(vm)
@@ -92,7 +93,7 @@ module Serengeti
       end
 
       def vm_finish(vm, options={})
-        mov_vm(vm, @existed_vms, @finished_vms)
+        mov_vm(vm, @existed_vm_que, @finished_vm_que)
       end
 
       ###################################
