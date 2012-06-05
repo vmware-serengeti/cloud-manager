@@ -139,7 +139,7 @@ module Serengeti
       end
 
       def set_vm_error_msg(vm, msg)
-        vm.error_msg = "#{vm.error_msg}\n#{msg}"
+        vm.error_msg = "#{msg}"
         @logger.warn("#{msg}")
       end
 
@@ -295,7 +295,8 @@ module Serengeti
           if need_next_rp
             ## can not alloc vm_group anymore
             vm = need_next_rp
-            @cloud_error_msg_que << "Can not alloc resource for vm. Reason: #{vm.error_msg}"
+            @cloud_error_msg_que << "Can not alloc resource for vm. The latest reason: #{vm.error_msg} "\
+                                    "You had better to see log file to find previous error messages"
             failed_vms = vm_group.instances - vm_group.vm_ids.size
             @placement_failed += failed_vms
             @logger.error("Can not place #{vm.name}, Try to place #{vm_group.vm_ids.size} / (#{vm_group.instances})")

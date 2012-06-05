@@ -56,9 +56,10 @@ module Serengeti
         @vm_lock.synchronize { @existed_vms[vm.name] = vm }
       end
 
-      def mov_vm(vm, src_vms, des_vms)
+      def mov_vm_if_existed(vm, src_vms, des_vms)
         @vm_lock.synchronize do
           return if !src_vms.has_key?(vm.name)
+          # vm in this vms, move to des vms
           src_vms.delete(vm.name)
           des_vms[vm.name] = vm
         end
@@ -66,7 +67,7 @@ module Serengeti
 
       def req_clusters_rp_to_hash(a)
         rps = {}
-        # FIXME resource_pool's name can be the same between different clusters
+        # resource_pool's name can be the same between different clusters
         a.map { |v| rps[v['name']] = v["vc_rps"] }
         rps
       end

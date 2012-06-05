@@ -46,6 +46,7 @@ module Serengeti
               @logger.debug("delete vm : #{vm.name}")
               vm.status = VM_STATE_DELETE
               next if !vm_deploy_op(vm, 'Delete') { @client.vm_destroy(vm) }
+              vm.deleted = true
               vm.status = VM_STATE_DONE
               vm_finish(vm)
             end
