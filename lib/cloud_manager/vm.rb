@@ -174,7 +174,7 @@ module Serengeti
         attrs[:succeed]     = ready? # FIXME should use 'vm.succeed?'
         attrs[:progress]    = get_progress
 
-        attrs[:created]     = @created
+        attrs[:created]     = deleted ? false : @created
         attrs[:deleted]     = deleted
 
         attrs[:error_code]  = @error_code

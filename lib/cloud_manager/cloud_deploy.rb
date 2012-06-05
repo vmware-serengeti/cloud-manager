@@ -35,7 +35,7 @@ module Serengeti
         "finished"
       end
 
-      def vm_deploy_op(vm, working)
+      def vm_deploy_op(vm, working, vms = @existed_vms)
         begin
           yield
           return 'OK'
@@ -43,9 +43,7 @@ module Serengeti
           @logger.error("#{working} vm:#{vm.name} failed.\n #{e} - #{e.backtrace.join("\n")}")
           vm.error_code = -1
           vm.error_msg = "#{working} vm:#{vm.name} failed. #{e}"
-          vm.deleted = true
-          mov_vm_if_existed(vm, @deploy_vms, @failed_vms)
-          mov_vm_if_existed(vm, @existed_vms, @failed_vms)
+          mov_vm_if_existed(vm, vms, @failed_vms)
           return nil
         end
       end
@@ -60,17 +58,17 @@ module Serengeti
             end
             vm.status = VM_STATE_CLONE
             mov_vm_if_existed(vm, @prepare_vms, @deploy_vms)
-            next if !vm_deploy_op(vm, 'Clone') { @client.clone_vm(vm, :poweron => false)}
+            next if !vm_deploy_op(vm, 'Clone', @deploy_vms) { @client.clone_vm(vm, :poweron => false)}
             @logger.info("vm:#{vm.name} power:#{vm.power_state} finish clone")
 
             #is this VM can do HA?
             vm.can_ha = @client.is_vm_in_ha_cluster(vm)
 
             vm.status = VM_STATE_RECONFIG
-            next if !vm_deploy_op(vm, 'Reconfigure disk') { vm_reconfigure_disk(vm)}
+            next if !vm_deploy_op(vm, 'Reconfigure disk', @deploy_vms) { vm_reconfigure_disk(vm)}
             @logger.info("vm:#{vm.name} finish reconfigure disk")
 
-            next if !vm_deploy_op(vm, 'Reconfigure network') {vm_reconfigure_network(vm)}
+            next if !vm_deploy_op(vm, 'Reconfigure network', @deploy_vms) {vm_reconfigure_network(vm)}
             @logger.info("vm:#{vm.name} finish reconfigure networking")
 
             #Move deployed vm to existed queue
@@ -79,6 +77,7 @@ module Serengeti
             if vm.error_code.to_i != 0
               vm.status = VM_STATE_DELETE
               @client.vm_destroy(vm)
+              vm.deleted = true
             end
           end
 
