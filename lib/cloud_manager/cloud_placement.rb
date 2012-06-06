@@ -1,3 +1,22 @@
+###############################################################################
+#    Copyright (c) 2012 VMware, Inc. All Rights Reserved.
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#   
+#        http://www.apache.org/licenses/LICENSE-2.0
+#   
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+################################################################################
+
+# @since serengeti 0.5.0
+# @version 0.5.0
+# @author haiyu wang
+
 module Serengeti
   module CloudManager
     class Cloud
@@ -73,8 +92,10 @@ module Serengeti
           if free_size > req_size
             free_size = req_size
           else
-            @logger.debug("in datastore:#{datastore.name} can not split to different disks, req size:#{req_size}MB")
-            next 'remove' if !can_split
+            if !can_split
+              @logger.debug("in datastore:#{datastore.name} can not split to different disks, req size:#{req_size}MB")
+              next 'remove' 
+            end
           end
           used_datastores << { :datastore => datastore, :size => free_size, :type => disk_type }
           req_size -= free_size.to_i
@@ -233,11 +254,10 @@ module Serengeti
             vm_group.add_vm(vm)
             break
           end
+
+          return vm.error_msg
           if vm.error_msg
             #NO resource for this vm_group
-            set_vm_error_msg(vm, "VM can not get resources in rp:#{cur_rp.name}. Try to look for other resource pool\n"\
-                             "And the group:#{vm_group.name} has no resources to alloced rest #{vm_group.instances - num} vm")
-            return vm.error_msg
           end
         end
         false
@@ -262,8 +282,7 @@ module Serengeti
           unknown_pg = vm_group.network_res.not_existed_port_group(dc_resource.port_group)
           if unknown_pg
             failed_vms = vm_group.instances - vm_group.vm_ids.size
-            error_msg = "group #{vm_group.name}: can not find port group:#{unknown_pg} in dc."\
-              " Please check your configurations."
+            error_msg = "group #{vm_group.name}: can not find port group:#{unknown_pg} in vSphere."
             @logger.error(error_msg)
             @placement_failed += failed_vms
             @cloud_error_msg_que << error_msg
@@ -271,7 +290,7 @@ module Serengeti
           end
 
           group_place = []
-          need_next_rp = nil
+          place_err_msg = nil
 
           #Check and find suitable resource_pool
           @logger.debug("Group:#{vm_group.name} req_rps:#{vm_group.req_rps}")
@@ -286,18 +305,17 @@ module Serengeti
             #@logger.debug("Place rp:#{place_rp.pretty_inspect}")
             cluster = rp.cluster
             @logger.debug("used rp:#{rp.name} in cluster:#{cluster.name}")
-            need_next_rp = nil
+            place_err_msg = nil
             hosts = hosts_prepare_in_cluster(cluster)
 
-            need_next_rp = vm_group_placement(vm_group, group_place, @existed_vms, hosts, rp)
-            next 'remove' if need_next_rp
+            place_err_msg = vm_group_placement(vm_group, group_place, @existed_vms, hosts, rp)
+            next 'remove' if place_err_msg
             break
           end
-          if need_next_rp
+          if place_err_msg
             ## can not alloc vm_group anymore
             @cloud_error_msg_que << "Can not alloc resource for vm group #{vm_group.name}."\
-                                    " The latest reason or action: #{need_next_rp} "\
-                                    "You had better to see log file to find warn/error messages."
+                                    " The latest reason: #{place_err_msg} "
             failed_vms = vm_group.instances - vm_group.vm_ids.size
             @placement_failed += failed_vms
             @logger.error("VM group #{vm_group.name} failed to place #{failed_vms} vm, total failed: #{@placement_failed}.")
