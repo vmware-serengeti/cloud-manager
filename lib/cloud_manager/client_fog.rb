@@ -15,7 +15,6 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
-# @author haiyu wang
 
 module Serengeti
   module CloudManager
@@ -142,7 +141,7 @@ module Serengeti
       ###################################################
       # query interface
 
-      def get_vm_mob_ref_by_moid(vm_ref)
+      def get_vm_mob_ref_by_moid(vm_ref, dc_mob)
         check_connection
         fog_op { |con| con.get_vm_mob_ref_by_moid(vm_ref) }
       end

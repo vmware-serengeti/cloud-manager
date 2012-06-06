@@ -15,7 +15,6 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
-# @author haiyu wang
 
 module Serengeti
   module CloudManager
@@ -62,7 +61,7 @@ module Serengeti
           @logger.error("#{working} vm:#{vm.name} failed.\n #{e} - #{e.backtrace.join("\n")}")
           vm.error_code = -1
           vm.error_msg = "#{working} vm:#{vm.name} failed. #{e}"
-          mov_vm_if_existed(vm, vms, @failed_vms)
+          mov_vm(vm, vms, @failed_vms)
           return nil
         end
       end
@@ -70,13 +69,12 @@ module Serengeti
       def deploy_vm_group(group)
         group_each_by_threads(group, :callee=>'deploy vms') do |vm|
           begin
-            # Existed VM is same as will be deployed?
-            if (!vm.error_msg.nil?)
-              @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg} and check ready")
+            if (vm.error_code.to_i != 0)
+              @logger.debug("vm #{vm.name} can not deploy because:#{vm.error_msg}.")
               next
             end
             vm.status = VM_STATE_CLONE
-            mov_vm_if_existed(vm, @placed_vms, @deploy_vms)
+            mov_vm(vm, @placed_vms, @deploy_vms)
             next if !vm_deploy_op(vm, 'Clone', @deploy_vms) { @client.clone_vm(vm, :poweron => false)}
             @logger.info("vm:#{vm.name} power:#{vm.power_state} finish clone")
 
@@ -91,11 +89,11 @@ module Serengeti
             @logger.info("vm:#{vm.name} finish reconfigure networking")
 
             #Move deployed vm to existed queue
-            mov_vm_if_existed(vm, @deploy_vms, @existed_vms)
+            mov_vm(vm, @deploy_vms, @existed_vms)
           ensure
             if vm.error_code.to_i != 0
-              vm.status = VM_STATE_DELETE
               @client.vm_destroy(vm)
+              vm.status = VM_STATE_DELETED
               vm.deleted = true
             end
           end
@@ -112,7 +110,7 @@ module Serengeti
       end
 
       def vm_finish(vm, options={})
-        mov_vm_if_existed(vm, @existed_vms, @finished_vms)
+        mov_vm(vm, @existed_vms, @finished_vms)
       end
 
       ###################################

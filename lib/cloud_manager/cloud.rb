@@ -15,7 +15,6 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
-# @author haiyu wang
 
 module Serengeti
   module CloudManager
@@ -75,7 +74,7 @@ module Serengeti
         @vm_lock.synchronize { @existed_vms[vm.name] = vm }
       end
 
-      def mov_vm_if_existed(vm, src_vms, des_vms)
+      def mov_vm(vm, src_vms, des_vms)
         @vm_lock.synchronize do
           return if !src_vms.has_key?(vm.name)
           # vm in this vms, move to des vms

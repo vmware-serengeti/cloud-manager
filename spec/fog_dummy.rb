@@ -112,6 +112,11 @@ module Serengeti
         dummy_sleep(1)
         host_mob["datastores"];
       end
+
+      def get_vm_mob_ref_by_moid(vm_moid, dc_mob)
+        dc_mob['template_vm']
+      end
+
       def vm_set_ha(vm, enable) end
       def is_vm_in_ha_cluster(vm) true end
 

@@ -15,7 +15,6 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
-# @author haiyu wang
 
 module Serengeti
   module CloudManager
@@ -48,7 +47,7 @@ module Serengeti
       def inspect
         msg = "succeed? #{succeed?} total:#{total} success:#{success} "\
               "failed:#{failure} running:#{running} [waiting:#{waiting} "\
-              "waiting_start:#{waiting_start} deploy:#{deploy} ]\n"
+              "waiting_start:#{waiting_start} deploy:#{deploy} ]\nerror_msg:#{error_msg}"
         servers.each { |vm| msg<<vm.inspect }
         msg
       end

@@ -1,66 +1,132 @@
 == cloud-manager
 
 cloud-manager is the Ruby cloud manager library, top to bottom:
-* It can create cluster on vsphere
-* It also can 
+* It manages cluster on vSphere, which want to create/start/stop/delete/resize hadoop cluster.
+* It 
 
 == Verrsion description
-  
+
   version = 0.5.0
 
-== Contributing to cloud-manager
- 
-* Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.
-* Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.
-* Fork the project.
-* Start a feature/bugfix branch.
-* Commit and push until you are happy with your contribution.
-* Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
-* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+== Placement idea (round robin)
+
+Currently, we use round robin strategy to put all kinds of hadoop cluster's VMs into vSphere Cloud.
+We have five type resources in vSphere: clusters, resource pools, hosts, datastores and networking.
+We use loop_resource() to round robin by those resources. Firstly, we round robin resouce pools in
+one cluster. In the resource pool, we round robin every host. In one host, we round robin every
+datastore belong to this host, and assign networking for it. If we meet the suitable resource for
+the VM, we will assign all resources to this VM and record the resouces cost.
+
+== How hadoop cluster are layout
+
+We use GROUP to define master, worker, client, and other same functional VMs to one unit. Therefore,
+in one GROUP, each VM has same configuration. So we could place massive VMs in a simple way.
+
 
 == Getting Started
 
+=== install
+
   sudo gem install cloud-manager
 
-== cloud provider definition
+=== cloud provider definition
+
+We use json string to describe cloud provider.
+
 cloud_provider: {
-  "name": "vsphere",
-  "vc_addr": "FQDN/IP",
-  "vc_user": "administrator",
-  "vc_pwd": "123456",
-  "vc_datacenter": "DatacenterName",
-  "vc_clusters": [ #define the cluster/resource pool
-  {
-    "name": "Cluster1",
-    "vc_rps": ["resource_pool1", "resource_pool2", "rp3"]
-  }
-  {
-    "name": "Cluster2",
-    "vc_rps": ["rp-hadoop"]
-  }
+  "name": "vsphere",      # Provider name
+  "vc_addr": "FQDN/IP",   # vSphere address
+  "vc_user": "administrator", #vSphere user name
+  "vc_pwd": "123456",         #vSphere password
+  "vc_datacenter": "DatacenterName",  #Accessed datacenter name
+#define the cluster:resource pool pair
+  "vc_clusters": [
+  { "name": "Cluster1",
+    "vc_rps": ["resource_pool1", "resource_pool2", "rp3"] },
+  { "name": "Cluster2",
+    "vc_rps": ["rp-hadoop"] },
   ],
   "vc_shared_datastore_pattern": ["share", "san*"], #define the datastore_pattern for share storage
-  "vc_local_datastore_pattern": ["local", "vmfs*"], #define the datastore_pattern for local storage
-  "cloud_adapter": "fog" #We use fog to connect to cloud provider, currently.
+  "vc_local_datastore_pattern": ["local*", "vmfs*"], #define the datastore_pattern for local storage
+#We use fog to connect to cloud provider, currently.
+  "cloud_adapter": "fog"
 }
 
-== cluster definition
+=== cluster definition
+
+We use json string to describe cluster definition
+
+cluster_definition: {
+  "name": "hadoop_cluster_test",
+    "template_id": "vm_template_mob_in_vc", #such like this: 'vm-1234'
+    "deploy_policy":"group_parallel", // default is ‘group_parallel’, can choose 'group_order'
+    "vc_clusters": [ #Cluster can rewrite the cluster/resource pool requirement
+    {
+      "name": "Cluster1",
+      "vc_rps": ["resource_pool1", "resource_pool2"]
+    }
+  ],
+#Cluster should define networking configuration
+    "networking": [{
+      "port_group": "CFNetwork",
+      "type" : "static", # or "dhcp",
+      "ip": ["10.1.1.10-10.1.1.11", "10.1.1.17"],
+      "netmask": "255.255.255.0",
+      "gateway": "10.1.1.254",
+      "dns": ["10.1.100.100", "10.1.100.240"]
+    }],
+#Cluster can add a filter to select more the datastore pattern like this
+    "vc_shared_datastore_pattern": ["share", "san*"],   # We can use wildcard to select more
+    "vc_local_datastore_pattern": ["local*", "vmfs?-*"], # datastores, both '*' and '?'
+#Cluster define groups in below:
+    "groups": [
+    {
+      "name": "master",   # Group name
+      "instance_num": 1,  # Wanted instance number in this group
+      "cpu": 2,           # CPU core number
+      "memory": 2048,     # Memory size: 2048M
+      "storage": {
+        "name_pattern": ["share"], # This pattern will overwrite the cluster's datastore pattern
+        "size": 10        # Disk size: 10G
+      }
+      "ha":true
+    },
+#Another group for 'worker'
+    {
+      "name": "worker",
+      "instance_num": 3,
+      "cpu": 1,
+      "memory": 1024,
+  #group can redefine the cluster:resource pool pair
+      "vc_clusters": {
+        "name": "Cluster1",
+        "vc_rps": ["resource_pool2"]
+      }
+      "storage": {
+        "name_pattern": ["local", "vmfs*"],
+        "size": 50
+      }
+      "ha":false
+    },
+  ]
+}
 
 == example
 
 Here is an example of wading through server creation/start/stop/delete for vSphere Cloud:
 # create a cluster
-  IaasTask task = Iaas.create_cluster(parameter, :options => { :wait => false })
+  IaasTask task = Iaas.create_cluster(parameter, :wait => false)
         # parameter["cluster_definition"] is a Hash object which contains the definition of this cluster
         # parameter["cloud_provider"] is a Hash object, which contains how to login the cloud server and the resource requirement.
-   
+        # options[:wait] can make object running in synchronous(wait = true) or asynchronous(wait = false) model
+
 # if caller doesn't care the progress, call this method to wait until this task is finished.
   IaasResult result = task.wait_for_completion()
-   
+
 # if caller cares the progress, call this method
   while !task.finished?
     IaasProgress prog = task.get_progress()
-    # print out progess info
+    # you could print out progess info here
   end
 
 # if caller want to know the result of the task, call:
@@ -70,7 +136,7 @@ Here is an example of wading through server creation/start/stop/delete for vSphe
     else
       handle failure ... ...
       end
-       
+
 # start the cluster
   IaasTask task = Iaas.start_cluster(parameter, :options => { :wait => true })
 # stop the cluster
@@ -78,8 +144,29 @@ Here is an example of wading through server creation/start/stop/delete for vSphe
 # delete the cluster
   IaasTask task = Iaas.delete_cluster(parameter, :options => { :wait => true })
 
+== Contributing to cloud-manager
+
+* Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.
+* Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.
+* Fork the project.
+* Start a feature/bugfix branch.
+* Commit and push until you are happy with your contribution.
+* Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
+* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+
+
 == Copyright
 
-Copyright (c) 2012 vmware. See LICENSE.txt for
-further details.
+Copyright (c) 2012 vmware. 
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

@@ -15,7 +15,6 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
-# @author haiyu wang
 
 module Serengeti
   module CloudManager
@@ -24,6 +23,7 @@ module Serengeti
     VM_STATE_CLONE      = { :doing => "Cloning"       , :done => 'Created' }
     VM_STATE_RECONFIG   = { :doing => "Reconfiguring" , :done => 'Created' }
     VM_STATE_DELETE     = { :doing => "Deleting"      , :done => 'Deleted' }
+    VM_STATE_DELETED    = { :doing => ""              , :done => 'Deleted' }
     VM_STATE_DONE       = { :doing => ""              , :done => 'Finished' }
     VM_STATE_FAIL       = { :doing => "Failure"       , :done => 'Failure' }
     VM_STATE_POWER_ON   = { :doing => "Powering On"   , :done => 'Powered On' }
@@ -46,7 +46,7 @@ module Serengeti
       VM_STATE_POWER_ON => { :progress =>  70, :status => VM_STATE_RECONFIG[:done] },
       VM_STATE_WAIT_IP  => { :progress =>  80, :status => VM_STATE_POWER_ON[:done] },
       VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_WAIT_IP[:done] },
-      VM_STATE_DELETE   => { :progress => 100, :status => VM_STATE_DELETE[:done] },
+      VM_STATE_DELETED  => { :progress => 100, :status => VM_STATE_DELETE[:done] },
     }
 
     VM_DELETE_PROCESS = {
@@ -151,9 +151,12 @@ module Serengeti
 
       def state; @power_state end
       def dns_name; @hostname end
-      def public_ip_address; @ip_address end
-      def private_ip_address; @ip_address end
+      def public_ip_address; ip_address end
+      def private_ip_address; ip_address end
       def ipaddress; ip_address end
+      def ip_address
+        (@power_state == "poweredOn" && !deleted) ? @ip_address : ''
+      end
 
       def initialize(vm_name, req_rp = nil)
         @logger = Serengeti::CloudManager::Cloud.Logger
@@ -164,6 +167,7 @@ module Serengeti
         @vm_group = nil
         @status = VM_STATE_BIRTH
         @ip_address = ""
+        @error_code = 0
         @error_msg = ""
         @assign_ip = []
         @network_cards = []
@@ -185,7 +189,7 @@ module Serengeti
         attrs = {}
         attrs[:name]        = @name
         attrs[:hostname]    = @host_name
-        attrs[:ip_address]  = (@power_state == "poweredOn" && !deleted) ? @ip_address : nil
+        attrs[:ip_address]  = ip_address
         attrs[:status]      = progress ? progress[@status][:status] : ""
         attrs[:action]      = @status[:doing] #@status
 
@@ -196,8 +200,8 @@ module Serengeti
         attrs[:created]     = deleted ? false : @created
         attrs[:deleted]     = deleted
 
-        attrs[:error_code]  = @error_code
-        attrs[:error_msg]   = @error_msg
+        attrs[:error_code]  = @error_code.to_i
+        attrs[:error_msg]   = @error_msg.to_s
         attrs[:datastores]  = datastores
         attrs[:vc_cluster]  = {:name => @rp_cluster_name, :vc_rp => @rp_name}
         attrs[:ha]          = @ha_enable

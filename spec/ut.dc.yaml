@@ -1,6 +1,11 @@
 ---
 - name: DatacenterCF
   mob:  dc-1
+  template_vm:
+    disks:
+    - size: 3000
+      path: "[test-ds] template_vm/system.vmdk"
+      scsi_num: 0
   portgroup:
     CFNetwork: test1
     CFNetwork1: test2

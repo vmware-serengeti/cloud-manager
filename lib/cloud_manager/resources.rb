@@ -15,7 +15,6 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
-# @author haiyu wang
 
 module Serengeti
   module CloudManager
@@ -174,8 +173,8 @@ module Serengeti
         mob = @client.get_vm_mob_ref_by_path(path)
       end
 
-      def fetch_vm_by_moid(vm_ref)
-        mob = @client.get_vm_mob_ref_by_moid(vm_ref)
+      def fetch_vm_by_moid(vm_ref, dc_mob)
+        mob = @client.get_vm_mob_ref_by_moid(vm_ref, dc_mob)
         vm = fetch_vm_by_mob(mob, false)
         @logger.debug("template vm:#{vm.pretty_inspect}")
         vm
@@ -203,7 +202,7 @@ module Serengeti
 
         datacenter.racks = @serengeti.racks
 
-        datacenter.vm_template = fetch_vm_by_moid(template_ref)
+        datacenter.vm_template = fetch_vm_by_moid(template_ref, datacenter_mob)
         datacenter.port_group = @client.get_portgroups_by_dc_mob(datacenter_mob)
         datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
         datacenter

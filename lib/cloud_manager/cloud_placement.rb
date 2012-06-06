@@ -15,7 +15,6 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
-# @author haiyu wang
 
 module Serengeti
   module CloudManager
@@ -186,10 +185,10 @@ module Serengeti
           vm.status = VM_STATE_PLACE
           loop_resource(hosts) do |host|
             req_mem = vm_group.req_info.mem
-            #@logger.debug("req mem #{req_mem}  ===> host :#{host.inspect}")
+            # Add memory overcommmitment later
             if host.real_free_memory < req_mem
-              set_vm_error_msg(vm, "#{host.name} haven't enough memory for #{vm_name} req:#{req_mem}, host has :#{host.real_free_memory}."\
-                               "And try to get next host.")
+              set_vm_error_msg(vm, "#{host.name} doesn't have enough memory for #{vm_name}"\
+                               "(#{req_mem}MB required), it only has #{host.real_free_memory}MB avaiable.")
               next 'remove'
             end
             #The host's memory is suitable for this VM
@@ -199,6 +198,7 @@ module Serengeti
             place_datastores_used = (vm_group.req_info.disk_type == DISK_TYPE_LOCAL) ? \
               host.place_local_datastores : host.place_share_datastores
             sys_datastore = []
+
             #Get the sys_datastore for clone
             if VM_SYS_DISK_COLOCATED_WITH_DATA_DISK
               sys_datastore = get_suitable_sys_datastore(place_datastores_used)
@@ -206,10 +206,8 @@ module Serengeti
               sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
             end
 
-            #Get the swap for this vm
             if sys_datastore.nil?
-              set_vm_error_msg(vm, "Can not find suitable sys datastore in host "\
-                               "#{host.name}. And try to find other host")
+              set_vm_error_msg(vm, "Can not find enough disk space for creating vm #{vm.name} in host #{host.name}.")
               next 'remove'
             end
             @logger.debug("vm:#{vm.name} get sys datastore :#{sys_datastore.name}")
@@ -225,7 +223,7 @@ module Serengeti
                                     'swap', false)
               @logger.debug("Place swap #{swap_size}MB in #{swap_datastores.pretty_inspect}")
               if swap_datastores.empty?
-                set_vm_error_msg(vm, "No enough disk spaces for #{vm_name}'s swap. req:#{swap_size}. And try to find other host")
+                set_vm_error_msg(vm, "No enough disk space for #{vm_name}'s swap disk (#{swap_size}MB required).")
                 next 'remove'
               end
             end
@@ -236,7 +234,7 @@ module Serengeti
                                     vm_group.req_info.disk_pattern, req_size,
                                     'data', true)
             if data_datastores.empty?
-              set_vm_error_msg(vm, "No enough disk spaces for #{vm_name}'s data. req:#{req_size}. And try to find other host")
+              set_vm_error_msg(vm, "No enough disk space for #{vm_name}'s data disk (#{req_size}MB required).")
               next 'remove'
             end
 
@@ -244,11 +242,12 @@ module Serengeti
             vm.network_config_json = vm_group.network_res.card_num.times.collect \
               { |card| vm_group.network_res.get_vm_network_json(card) }
 
-            #Find suitable Host and datastores
             host.place_share_datastores.rotate!
-            @logger.debug("vm:#{vm.name} datastores: #{place_datastores_used.pretty_inspect}")
 
             used_datastores = swap_datastores + data_datastores
+            @logger.debug("vm:#{vm.name} uses datastores: #{used_datastores.pretty_inspect}")
+
+            # Assign resource 
             assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
             vm.action = VM_ACTION_CREATE
             vm.error_msg = nil
@@ -303,6 +302,14 @@ module Serengeti
             rps.map { |rp_name| dc_resource.clusters[cluster_name].resource_pools[rp_name] if dc_resource.clusters[cluster_name]}
           end
           place_rp = set_best_placement_rp_list(place_rp.flatten.compact)
+          if place_rp.nil? || place_rp.size == 0
+            failed_vms = vm_group.instances - vm_group.vm_ids.size
+            @placement_failed += failed_vms
+            err_msg = "Can not get any resource pools for vm group #{vm_group.name}. failed to place #{failed_vms} VM"
+            @logger.error(err_msg)
+            @cloud_error_msg_que << err_msg
+            next
+          end
 
           loop_resource(place_rp) do |rp|
             #@logger.debug("Place rp:#{place_rp.pretty_inspect}")
@@ -317,8 +324,7 @@ module Serengeti
           end
           if place_err_msg
             ## can not alloc vm_group anymore
-            @cloud_error_msg_que << "Can not alloc resource for vm group #{vm_group.name}."\
-                                    " The latest reason: #{place_err_msg} "
+            @cloud_error_msg_que << "Can not alloc resource for vm group #{vm_group.name}: #{place_err_msg}"
             failed_vms = vm_group.instances - vm_group.vm_ids.size
             @placement_failed += failed_vms
             @logger.error("VM group #{vm_group.name} failed to place #{failed_vms} vm, total failed: #{@placement_failed}.")
