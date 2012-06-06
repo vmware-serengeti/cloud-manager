@@ -49,8 +49,8 @@ module Serengeti
 
       ############################################################
       # Only RR for rps/hosts/datastores selected
-      REMAINDER_DISK_SIZE = ResourceInfo::DISK_SIZE_UNIT_CONVERTER * 16
-      VM_SYS_DISK_SIZE = ResourceInfo::DISK_SIZE_UNIT_CONVERTER * 5
+      REMAINDER_DISK_SIZE = 16 * 1024 #MB
+      VM_SYS_DISK_SIZE = 5 * 1024 #MB
 
       def is_suitable_resource_pool?(rp, req_info)
         @logger.debug("limit:#{rp.limit_mem}, real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
@@ -82,12 +82,12 @@ module Serengeti
       end
 
       def get_suitable_datastores(datastores, disk_pattern, req_size, disk_type, can_split)
-        datastores.delete_if { |datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
+        datastores.delete_if { |datastore| datastore.real_free_space <= REMAINDER_DISK_SIZE }
         used_datastores = []
         loop_resource(datastores) do |datastore|
-          next 'remove' if datastore.real_free_space < REMAINDER_DISK_SIZE
+          next 'remove' if datastore.real_free_space <= REMAINDER_DISK_SIZE
           next 'remove' if !datastore_group_match?(disk_pattern, datastore.name)
-          free_size = datastore.real_free_space - REMAINDER_DISK_SIZE
+          free_size = datastore.real_free_space - (REMAINDER_DISK_SIZE + 100)
           @logger.debug("free size :#{free_size}MB, req size:#{req_size}MB")
           if free_size > req_size
             free_size = req_size
@@ -170,9 +170,13 @@ module Serengeti
               if !is_suitable_resource_pool?(cur_rp, vm_group.req_info)
 
           vm_name = gen_cluster_vm_name(vm_group.name, num)
-          if (existed_vms.has_key?(vm_name))
+          if existed_vms.key?(vm_name) 
             @logger.debug("do not support change existed VM's setting")
             existed_vms[vm_name].action = VM_ACTION_START
+            next
+          end
+          if prepare_vms.key?(vm_name)
+            @logger.debug("do not change prepared VM's setting")
             next
           end
           vm = Serengeti::CloudManager::VmInfo.new(vm_name)
@@ -255,10 +259,7 @@ module Serengeti
             break
           end
 
-          return vm.error_msg
-          if vm.error_msg
-            #NO resource for this vm_group
-          end
+          return vm.error_msg if vm.error_msg #NO resource for this vm_group
         end
         false
       end
