@@ -3,9 +3,9 @@
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-#   
+#
 #        http://www.apache.org/licenses/LICENSE-2.0
-#   
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,7 +107,7 @@ module Serengeti
       def get_result
         result = IaasResult.new
         @vm_lock.synchronize {
-          result.waiting = @prepare_vms.size
+          result.waiting = @placed_vms.size
           result.deploy = @deploy_vms.size
           result.waiting_start = @existed_vms.size
           result.success = @finished_vms.size
@@ -131,7 +131,7 @@ module Serengeti
         progress.result = get_result
         progress.status = @status
         progress.finished = @finished
-        progress.result.error_msg = "" if !@finished #Do not return error_msg, if not finished 
+        progress.result.error_msg = "" if !@finished #Do not return error_msg, if not finished
         progress.progress = 0
         case @action
         when CLOUD_WORK_CREATE, CLOUD_WORK_DELETE, CLOUD_WORK_LIST, CLOUD_WORK_START, CLOUD_WORK_STOP

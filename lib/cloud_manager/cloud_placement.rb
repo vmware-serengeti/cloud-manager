@@ -3,9 +3,9 @@
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-#   
+#
 #        http://www.apache.org/licenses/LICENSE-2.0
-#   
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -50,6 +50,7 @@ module Serengeti
       ############################################################
       # Only RR for rps/hosts/datastores selected
       REMAINDER_DISK_SIZE = 16 * 1024 #MB
+      MIN_DISK_SIZE = 1 * 1024 #MB
       VM_SYS_DISK_SIZE = 5 * 1024 #MB
 
       def is_suitable_resource_pool?(rp, req_info)
@@ -85,16 +86,17 @@ module Serengeti
         datastores.delete_if { |datastore| datastore.real_free_space <= REMAINDER_DISK_SIZE }
         used_datastores = []
         loop_resource(datastores) do |datastore|
-          next 'remove' if datastore.real_free_space <= REMAINDER_DISK_SIZE
+          next 'remove' if datastore.real_free_space.to_i <= REMAINDER_DISK_SIZE
           next 'remove' if !datastore_group_match?(disk_pattern, datastore.name)
-          free_size = datastore.real_free_space - (REMAINDER_DISK_SIZE + 100)
+          free_size = datastore.real_free_space.to_i - REMAINDER_DISK_SIZE
+          next 'skip' if free_size < MIN_DISK_SIZE
           @logger.debug("free size :#{free_size}MB, req size:#{req_size}MB")
           if free_size > req_size
             free_size = req_size
           else
             if !can_split
               @logger.debug("in datastore:#{datastore.name} can not split to different disks, req size:#{req_size}MB")
-              next 'remove' 
+              next 'skip'
             end
           end
           used_datastores << { :datastore => datastore, :size => free_size, :type => disk_type }
@@ -170,12 +172,12 @@ module Serengeti
               if !is_suitable_resource_pool?(cur_rp, vm_group.req_info)
 
           vm_name = gen_cluster_vm_name(vm_group.name, num)
-          if existed_vms.key?(vm_name) 
+          if existed_vms.key?(vm_name)
             @logger.debug("do not support change existed VM's setting")
             existed_vms[vm_name].action = VM_ACTION_START
             next
           end
-          if prepare_vms.key?(vm_name)
+          if @placed_vms.key?(vm_name)
             @logger.debug("do not change prepared VM's setting")
             next
           end
@@ -254,14 +256,14 @@ module Serengeti
             # Find a suitable place
             group_place << vm
             @logger.debug("Add #{vm.name} to preparing queue")
-            @vm_lock.synchronize { @prepare_vms[vm.name] = vm }
+            @vm_lock.synchronize { @placed_vms[vm.name] = vm }
             vm_group.add_vm(vm)
             break
           end
 
           return vm.error_msg if vm.error_msg #NO resource for this vm_group
         end
-        false
+        nil
       end
 
       #Select best placement order

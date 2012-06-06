@@ -3,9 +3,9 @@
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-#   
+#
 #        http://www.apache.org/licenses/LICENSE-2.0
-#   
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -76,7 +76,7 @@ module Serengeti
               next
             end
             vm.status = VM_STATE_CLONE
-            mov_vm_if_existed(vm, @prepare_vms, @deploy_vms)
+            mov_vm_if_existed(vm, @placed_vms, @deploy_vms)
             next if !vm_deploy_op(vm, 'Clone', @deploy_vms) { @client.clone_vm(vm, :poweron => false)}
             @logger.info("vm:#{vm.name} power:#{vm.power_state} finish clone")
 
