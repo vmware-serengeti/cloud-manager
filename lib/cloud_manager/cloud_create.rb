@@ -68,7 +68,7 @@ module Serengeti
               @logger.info("Begin deploy")
               #Begin cluster deploy
               @status = CLUSTER_DEPLOY
-              successful = cluster_deploy(cluster_changes , placement)
+              successful = cluster_deploy(cluster_changes, placement)
 
               @logger.info("Begin waiting cluster ready")
               #Wait cluster ready

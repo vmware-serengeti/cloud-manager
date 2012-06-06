@@ -42,7 +42,6 @@ module Serengeti
             group_each_by_threads(vms, :callee=>'delete cluster') do |vm|
               vm.action = VM_ACTION_DELETE
               #@logger.debug("Can we delete #{vm.name} same as #{cluster_info["name"]}?")
-              #@logger.debug("vm split to #{@cluster_name}::#{result[2]}::#{result[3]}")
               @logger.debug("delete vm : #{vm.name}")
               vm.status = VM_STATE_DELETE
               next if !vm_deploy_op(vm, 'Delete') { @client.vm_destroy(vm) }

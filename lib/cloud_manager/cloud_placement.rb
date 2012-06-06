@@ -36,7 +36,7 @@ module Serengeti
       def is_suitable_resource_pool?(rp, req_info)
         @logger.debug("limit:#{rp.limit_mem}, real_free:#{rp.real_free_memory}, req:#{req_info.mem}")
         if rp.limit_mem != -1 && (rp.real_free_memory < req_info.mem)
-          @logger.debug("No memory give to vm")
+          @logger.debug("rp:#{rp.name} has not enough memory to vm_group")
           return false
         end
         true
@@ -145,7 +145,8 @@ module Serengeti
 
       def vm_group_placement(vm_group, group_place, existed_vms, hosts, cur_rp)
         (vm_group.size...vm_group.instances).each do |num|
-          return 'next rp' unless is_suitable_resource_pool?(cur_rp, vm_group.req_info)
+          return "rp:#{cur_rp.name} has not enough memory to vm_group #{vm_group.name}" \
+              if !is_suitable_resource_pool?(cur_rp, vm_group.req_info)
 
           vm_name = gen_cluster_vm_name(vm_group.name, num)
           if (existed_vms.has_key?(vm_name))
@@ -236,7 +237,7 @@ module Serengeti
             #NO resource for this vm_group
             set_vm_error_msg(vm, "VM can not get resources in rp:#{cur_rp.name}. Try to look for other resource pool\n"\
                              "And the group:#{vm_group.name} has no resources to alloced rest #{vm_group.instances - num} vm")
-            return vm
+            return vm.error_msg
           end
         end
         false
@@ -294,12 +295,11 @@ module Serengeti
           end
           if need_next_rp
             ## can not alloc vm_group anymore
-            vm = need_next_rp
-            @cloud_error_msg_que << "Can not alloc resource for vm. The latest reason: #{vm.error_msg} "\
-                                    "You had better to see log file to find previous error messages"
+            @cloud_error_msg_que << "Can not alloc resource for vm group #{vm_group.name}."\
+                                    " The latest reason or action: #{need_next_rp} "\
+                                    "You had better to see log file to find warn/error messages."
             failed_vms = vm_group.instances - vm_group.vm_ids.size
             @placement_failed += failed_vms
-            @logger.error("Can not place #{vm.name}, Try to place #{vm_group.vm_ids.size} / (#{vm_group.instances})")
             @logger.error("VM group #{vm_group.name} failed to place #{failed_vms} vm, total failed: #{@placement_failed}.")
           end
           vm_placement << group_place

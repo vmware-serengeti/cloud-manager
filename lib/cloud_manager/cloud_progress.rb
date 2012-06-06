@@ -112,6 +112,7 @@ module Serengeti
         progress.result = get_result
         progress.status = @status
         progress.finished = @finished
+        progress.result.error_msg = "" if !@finished #Do not return error_msg, if not finished 
         progress.progress = 0
         case @action
         when CLOUD_WORK_CREATE, CLOUD_WORK_DELETE, CLOUD_WORK_LIST, CLOUD_WORK_START, CLOUD_WORK_STOP

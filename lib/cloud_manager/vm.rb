@@ -166,7 +166,7 @@ module Serengeti
         attrs = {}
         attrs[:name]        = @name
         attrs[:hostname]    = @host_name
-        attrs[:ip_address]  = (@power_state == "poweredOn") ? @ip_address : nil
+        attrs[:ip_address]  = (@power_state == "poweredOn" && !deleted) ? @ip_address : nil
         attrs[:status]      = progress ? progress[@status][:status] : ""
         attrs[:action]      = @status[:doing] #@status
 

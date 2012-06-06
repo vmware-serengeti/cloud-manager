@@ -1,8 +1,12 @@
 == cloud-manager
 
 cloud-manager is the Ruby cloud manager library, top to bottom:
-* 
+* It can create cluster on vsphere
+* It also can 
 
+== Verrsion description
+  
+  version = 0.5.0
 
 == Contributing to cloud-manager
  
@@ -18,6 +22,33 @@ cloud-manager is the Ruby cloud manager library, top to bottom:
 
   sudo gem install cloud-manager
 
+== cloud provider definition
+cloud_provider: {
+  "name": "vsphere",
+  "vc_addr": "FQDN/IP",
+  "vc_user": "administrator",
+  "vc_pwd": "123456",
+  "vc_datacenter": "DatacenterName",
+  "vc_clusters": [ #define the cluster/resource pool
+  {
+    "name": "Cluster1",
+    "vc_rps": ["resource_pool1", "resource_pool2", "rp3"]
+  }
+  {
+    "name": "Cluster2",
+    "vc_rps": ["rp-hadoop"]
+  }
+  ],
+  "vc_shared_datastore_pattern": ["share", "san*"], #define the datastore_pattern for share storage
+  "vc_local_datastore_pattern": ["local", "vmfs*"], #define the datastore_pattern for local storage
+  "cloud_adapter": "fog" #We use fog to connect to cloud provider, currently.
+}
+
+== cluster definition
+
+== example
+
+Here is an example of wading through server creation/start/stop/delete for vSphere Cloud:
 # create a cluster
   IaasTask task = Iaas.create_cluster(parameter, :options => { :wait => false })
         # parameter["cluster_definition"] is a Hash object which contains the definition of this cluster
@@ -30,20 +61,23 @@ cloud-manager is the Ruby cloud manager library, top to bottom:
   while !task.finished?
     IaasProgress prog = task.get_progress()
     # print out progess info
-   
-    # terminate the task if timed out or for other reason
-    task.abort if ...
-    end
-    IaasResult result = task.get_result()
+  end
+
+# if caller want to know the result of the task, call:
+  IaasResult result = task.get_result()
   if result.succeed?
     handle result ... ...
     else
       handle failure ... ...
       end
        
+# start the cluster
+  IaasTask task = Iaas.start_cluster(parameter, :options => { :wait => true })
+# stop the cluster
+  IaasTask task = Iaas.stop_cluster(parameter, :options => { :wait => true })
 # delete the cluster
-      IaasTask task = Iaas.delete_cluster(parameter, :options => { :wait => true })
-   
+  IaasTask task = Iaas.delete_cluster(parameter, :options => { :wait => true })
+
 == Copyright
 
 Copyright (c) 2012 vmware. See LICENSE.txt for
