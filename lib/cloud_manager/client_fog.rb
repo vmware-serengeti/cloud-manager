@@ -102,7 +102,6 @@ module Serengeti
         task_state = fog_op { |con| con.vm_destroy('instance_uuid' => vm.instance_uuid) }
       end
 
-      # TODO add option to force hard/soft reboot
       def vm_reboot(vm)
         check_connection
         task_state = fog_op { |con| con.vm_reboot('instance_uuid' => vm.instance_uuid) }
@@ -125,10 +124,9 @@ module Serengeti
         info = { 'instance_uuid' => vm.instance_uuid,
           'vmdk_path' => disk.fullpath,
           'disk_size' => disk.size / DISK_SIZE_TIMES }
-        info['provison_type'] = disk.shared ? 'thin' : nil
-        @logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB")
+        info['provison_type'] = (disk.shared && disk.type == 'data') ? 'thin' : nil
+        @logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB, type:#{info['provison_type']}")
         result = fog_op { |con| con.vm_create_disk(info) }
-        # TODO add update disk and vm's info
       end
 
       # needs vm mobid to get the properties of this vm

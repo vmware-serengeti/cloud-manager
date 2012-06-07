@@ -1,0 +1,22 @@
+---
+- name: test_vhelper_cluster
+  channel_id: provsion",
+  groups :
+  - name: group1
+    template_id: template id
+    cpu: 1
+    mem: 512
+    storage:
+    - type: share
+      size: 400
+    network: CFNetwork
+
+  - name: group2
+    template_id: template id
+    cpu: 2
+    mem: 256
+    storage:
+    - type: local
+      size: 200
+    network: CFNetwork
+

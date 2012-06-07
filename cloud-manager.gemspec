@@ -56,7 +56,7 @@ Gem::Specification.new do |s|
     "spec/ut.config.yaml",
     "spec/ut.vc.yaml",
     "spec/func.wdc_def.yaml",
-    "spec/func.wdc.yaml"
+    "spec/func.vc.yaml"
   ]
   s.homepage = ""
   s.licenses = [""]
@@ -75,7 +75,7 @@ Gem::Specification.new do |s|
     "spec/ut.config.yaml",
     "spec/ut.vc.yaml",
     "spec/func.wdc_def.yaml",
-    "spec/func.wdc.yaml"
+    "spec/func.vc.yaml"
   ]
 
   s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])
