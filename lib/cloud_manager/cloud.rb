@@ -160,7 +160,6 @@ module Serengeti
           @logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
           cloud.cloud_error_msg_que << "#{working} failed. Reason: #{e}"
           @cluster_failed_num += 1
-          cluster_failed
           raise e
         end
       end

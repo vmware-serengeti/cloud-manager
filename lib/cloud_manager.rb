@@ -51,15 +51,21 @@ module Serengeti
         begin
           cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'])
           if (options[:wait])
-            yield cloud
+            begin
+              yield cloud
+            ensure
+              cloud.release_connection if cloud
+            end
           else
             # options["sync"] == false
             Thread.new do
-              yield cloud
+              begin
+                yield cloud
+              ensure
+                cloud.release_connection if cloud
+              end
             end
           end
-        ensure
-          cloud.release_connection if cloud
         end
         cloud
       end

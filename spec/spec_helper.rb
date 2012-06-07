@@ -5,9 +5,9 @@ require 'yaml'
 require 'pp'
 require 'cloud_manager'
 
-FUNC_DEF_CONFIG_FILE_1 = "./spec/func.wdc_def.yaml"
-DC_DEF_CONFIG_FILE_1 = "./spec/ut.dc_def1.yaml"
-DC_DEF_CONFIG_FILE_2 = "./spec/ut.dc_def2.yaml"
+FUNC_DEF_CONFIG_FILE_1 = "./spec/func.cluster_def.yaml"
+DC_DEF_CONFIG_FILE_1 = "./spec/ut.cluster_def1.yaml"
+DC_DEF_CONFIG_FILE_2 = "./spec/ut.cluster_def2.yaml"
 
 def ut_test_env(config_file)
   info = {}

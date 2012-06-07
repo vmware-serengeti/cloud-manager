@@ -50,12 +50,12 @@ Gem::Specification.new do |s|
     "spec/spec_helper.rb",
     "spec/config.rb",
     "spec/fog_dummy.rb",
-    "spec/ut.dc_def1.yaml",
-    "spec/ut.dc_def2.yaml",
+    "spec/ut.cluster_def1.yaml",
+    "spec/ut.cluster_def2.yaml",
     "spec/ut.dc.yaml",
     "spec/ut.config.yaml",
     "spec/ut.vc.yaml",
-    "spec/func.wdc_def.yaml",
+    "spec/func.cluster_def.yaml",
     "spec/func.vc.yaml"
   ]
   s.homepage = ""
@@ -69,12 +69,12 @@ Gem::Specification.new do |s|
     "spec/spec_helper.rb",
     "spec/config.rb",
     "spec/fog_dummy.rb",
-    "spec/ut.dc_def1.yaml",
-    "spec/ut.dc_def2.yaml",
+    "spec/ut.cluster_def1.yaml",
+    "spec/ut.cluster_def2.yaml",
     "spec/ut.dc.yaml",
     "spec/ut.config.yaml",
     "spec/ut.vc.yaml",
-    "spec/func.wdc_def.yaml",
+    "spec/func.cluster_def.yaml",
     "spec/func.vc.yaml"
   ]
 
