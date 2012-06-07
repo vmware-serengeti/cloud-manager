@@ -46,6 +46,8 @@ module Serengeti
             vm.status = VM_STATE_WAIT_IP
             start_time = Time.now.to_i
             next if !vm_deploy_op(vm, 'Wait IP') do
+              @logger.debug("Checking vm ip address.")
+              @client.update_vm_properties_by_vm_mob(vm)
               while (vm.ip_address.nil? || vm.ip_address.empty?)
                 @client.update_vm_properties_by_vm_mob(vm)
                 #FIXME check vm tools status
