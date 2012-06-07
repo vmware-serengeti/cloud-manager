@@ -125,7 +125,7 @@ module Serengeti
         info = { 'instance_uuid' => vm.instance_uuid,
           'vmdk_path' => disk.fullpath,
           'disk_size' => disk.size / DISK_SIZE_TIMES }
-        info['thin_provision'] = disk.shared
+        info['provison_type'] = disk.shared ? 'thin' : nil
         @logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB")
         result = fog_op { |con| con.vm_create_disk(info) }
         # TODO add update disk and vm's info

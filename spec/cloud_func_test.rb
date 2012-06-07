@@ -1,10 +1,17 @@
 require 'spec_helper'
 
-describe "Cluster unit tests" do
+describe "Cloud Manager unit tests" do
 
   before(:all) do
+    provider_file = ENV["FUNC_CLOUD_PROVIDER_FILE"] || "./func.vc.yaml"
+    puts "config file:#{provider_file}"
     @wait = true
-    @info = wdc_test_env
+    @info = func_test_env(provider_file)
+  end
+
+  after(:all) do
+    @wait = nil
+    @info = nil
   end
 
   it "Create cluster" do
@@ -45,11 +52,6 @@ describe "Cluster unit tests" do
       sleep(1)
     end
     progress = cloud.get_progress
-  end
-
-  after(:all) do
-    @wait = nil
-    @info = nil
   end
 
 end

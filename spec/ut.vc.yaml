@@ -16,5 +16,4 @@ vc_clusters:
 vc_shared_datastore_pattern: ['share*', 'tta*']
 vc_local_datastore_pattern: ['*']
 cloud_adapter: ut
-template_placement: true
 

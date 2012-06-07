@@ -1,0 +1,18 @@
+---
+name: vsphere
+vc_addr: 1.1.1.1  #vsphere address or FQDN
+vc_user: vc_administrator #vsphere administrator user name
+vc_pwd: password          #vSphere administrator password
+vc_datacenter: DatacenterName
+vc_clusters:
+- name: cluster1
+  vc_rps:
+  - rp1 #resource pool name
+  - rp2
+- name: cluster2
+  vc_rps:
+  - rp3
+vc_shared_datastore_pattern: ["shared*","share-?"]
+vc_local_datastore_pattern: ["local-disk-*", "Enclosure_Local_Disk*"]
+cloud_adapter: fog
+

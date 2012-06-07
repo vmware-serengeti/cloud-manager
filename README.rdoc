@@ -10,10 +10,11 @@ cloud-manager is the Ruby cloud manager library, top to bottom:
 
 == Placement idea (round robin)
 
-Currently, we use round robin strategy to put all kinds of hadoop cluster's VMs into vSphere Cloud.
+Currently, we use round robin strategy to put hadoop cluster's VMs to vSphere Cloud.
 We have five type resources in vSphere: clusters, resource pools, hosts, datastores and networking.
-We use loop_resource() to round robin by those resources. Firstly, we round robin resouce pools in
-one cluster. In the resource pool, we round robin every host. In one host, we round robin every
+At present, our choose method is "round robin". Firstly, we choose resouce pools in
+one cluster. And then, we choose hosts one by one. In one host, we will check free memory size,
+datastores' free space and networking resources. if this host has enough resources for wanted vm,
 datastore belong to this host, and assign networking for it. If we meet the suitable resource for
 the VM, we will assign all resources to this VM and record the resouces cost.
 

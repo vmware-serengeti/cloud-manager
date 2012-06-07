@@ -20,8 +20,10 @@ end
 describe "Cluster unit tests" do
 
   before(:all) do
+    provider_file = ENV["UT_CLOUD_PROVIDER_FILE"] || "./ut.vc.yaml"
+    puts "config file:#{provider_file}"
     @wait = true
-    @info = ut_test_env
+    @info = ut_test_env(provider_file)
   end
 
   it "Create cluster" do

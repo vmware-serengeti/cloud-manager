@@ -14,11 +14,6 @@ networking:
     dns:
     - "10.132.71.1"
     - "10.132.71.2"
-vc_clusters:
-- name: cluster-resrcmgmt
-  vc_rps:
-  - haiyu-test1
-  - haiyu-test2
 
 #vc_clusters:
 groups:
