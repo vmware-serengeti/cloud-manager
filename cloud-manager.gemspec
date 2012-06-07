@@ -45,17 +45,18 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/log.rb",
     "lib/cloud_manager/resources.rb",
     "lib/cloud_manager/vm.rb",
-    "spec/cloud_vm_unit_test.rb",
+    "spec/cloud_unit_test.rb",
+    "spec/cloud_func_test.rb",
+    "spec/spec_helper.rb",
     "spec/config.rb",
     "spec/fog_dummy.rb",
     "spec/ut.dc_def1.yaml",
     "spec/ut.dc_def2.yaml",
-    "spec/ut.dc-working.yaml",
     "spec/ut.dc.yaml",
-    "spec/ut.test.yaml",
+    "spec/ut.config.yaml",
     "spec/ut.vc.yaml",
-    "spec/ut.wdc_def.yaml",
-    "spec/ut.wdc.yaml"
+    "spec/func.wdc_def.yaml",
+    "spec/func.wdc.yaml"
   ]
   s.homepage = ""
   s.licenses = [""]
@@ -63,17 +64,18 @@ Gem::Specification.new do |s|
   s.rubygems_version = "1.8.15"
   s.summary = "manage the cloud, easilier"
   s.test_files = [
-    "spec/cloud_vm_unit_test.rb",
+    "spec/cloud_unit_test.rb",
+    "spec/cloud_func_test.rb",
+    "spec/spec_helper.rb",
     "spec/config.rb",
     "spec/fog_dummy.rb",
     "spec/ut.dc_def1.yaml",
     "spec/ut.dc_def2.yaml",
-    "spec/ut.dc-working.yaml",
     "spec/ut.dc.yaml",
-    "spec/ut.test.yaml",
+    "spec/ut.config.yaml",
     "spec/ut.vc.yaml",
-    "spec/ut.wdc_def.yaml",
-    "spec/ut.wdc.yaml"
+    "spec/func.wdc_def.yaml",
+    "spec/func.wdc.yaml"
   ]
 
   s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])

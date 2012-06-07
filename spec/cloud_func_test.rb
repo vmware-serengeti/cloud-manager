@@ -52,4 +52,4 @@ describe "Cluster unit tests" do
     @info = nil
   end
 
-e
+end
