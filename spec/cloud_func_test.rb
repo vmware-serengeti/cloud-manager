@@ -1,11 +1,10 @@
 require 'spec_helper'
-require 'fog_dummy'
 
 describe "Cluster unit tests" do
 
   before(:all) do
     @wait = true
-    @info = ut_test_env
+    @info = wdc_test_env
   end
 
   it "Create cluster" do
@@ -53,4 +52,4 @@ describe "Cluster unit tests" do
     @info = nil
   end
 
-end
+e

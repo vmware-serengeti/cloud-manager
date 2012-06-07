@@ -3,7 +3,7 @@ module Serengeti
 
     class FogDummy
       DC_CONFIG_FILE = "./spec/ut.dc.yaml"
-      WORK_FILE = "./spec/ut.test.yaml"
+      WORK_FILE = "./spec/ut.config.yaml"
       def initialize()
         @logger = Serengeti::CloudManager::Cloud.Logger
         @ip_start = 2

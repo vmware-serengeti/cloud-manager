@@ -2,6 +2,8 @@
 - name: DatacenterCF
   mob:  dc-1
   template_vm:
+    name: test_template_vm
+    hostname: test_template_host
     disks:
     - size: 3000
       path: "[test-ds] template_vm/system.vmdk"
