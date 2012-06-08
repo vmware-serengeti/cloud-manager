@@ -63,7 +63,7 @@ module Serengeti
 
     VM_START_PROCESS = {
       VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_POWER_OFF[:done] },
-      VM_STATE_READY    => { :progress =>  10, :status => VM_STATE_POWER_OFF[:done] },
+      VM_STATE_READY    => { :progress =>  10, :status => VM_STATE_CLONE[:done] },
       VM_STATE_POWER_ON => { :progress =>  10, :status => VM_STATE_POWER_OFF[:done] },
       VM_STATE_WAIT_IP  => { :progress =>  50, :status => VM_STATE_POWER_ON[:done]  },
       VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_WAIT_IP[:done]   },

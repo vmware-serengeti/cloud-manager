@@ -74,6 +74,9 @@ module Serengeti
         @vm_lock.synchronize { @existed_vms[vm.name] = vm }
       end
 
+      def set_cluster_error_msg(msg)
+        @cloud_error_msg_que << msg
+      end
       def mov_vm(vm, src_vms, des_vms)
         @vm_lock.synchronize do
           return if !src_vms.has_key?(vm.name)
@@ -158,7 +161,7 @@ module Serengeti
           return yield
         rescue => e
           @logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
-          cloud.cloud_error_msg_que << "#{working} failed. Reason: #{e}"
+          set_cluster_error_msg("#{working} failed. Reason: #{e}")
           @cluster_failed_num += 1
           raise e
         end
@@ -207,9 +210,9 @@ module Serengeti
       end
 
       def release_connection
-        if !@cloud_error_msg_que.empty?
+        if !cloud_error_msg_que.empty?
           @logger.debug("cloud manager have error/warning message. please chcek it, it is helpful for debugging")
-          @logger.debug("#{@cloud_error_msg_que.pretty_inspect}")
+          @logger.debug("#{cloud_error_msg_que.pretty_inspect}")
         end
         return if @client.nil?
         @client.logout
@@ -230,7 +233,7 @@ module Serengeti
           @logger.info("finished action:#{act}")
         rescue => e
           @logger.error("#{act} failed with #{e}")
-          @cloud_error_msg_que << "#{act} failed with #{e}"
+          set_cluster_error_msg("#{act} failed with #{e}")
           cluster_failed(task)
           return 'failed'
         end

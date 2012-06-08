@@ -72,10 +72,10 @@ module Serengeti
         VM_SYS_DISK_SIZE
       end
 
-      def get_suitable_sys_datastore(datastores)
-        datastores.delete_if { |datastore| datastore.real_free_space < REMAINDER_DISK_SIZE }
+      def get_suitable_sys_datastore(datastores, disk_pattern)
+        datastores.delete_if { |datastore| datastore.real_free_space.to_i < REMAINDER_DISK_SIZE }
         datastores.each do |datastore|
-          #next if !datastore_group_match?(req_info, datastore.name)
+          next "skip" if !datastore_group_match?(disk_pattern, datastore.name)
           return datastore if datastore.real_free_space > REMAINDER_DISK_SIZE
         end
         nil
@@ -201,9 +201,11 @@ module Serengeti
 
             #Get the sys_datastore for clone
             if VM_SYS_DISK_COLOCATED_WITH_DATA_DISK
-              sys_datastore = get_suitable_sys_datastore(place_datastores_used)
+              sys_datastore = get_suitable_sys_datastore(place_datastores_used,
+                                                         vm_group.req_info.disk_pattern)
             else
-              sys_datastore = get_suitable_sys_datastore(host.place_share_datastores)
+              sys_datastore = get_suitable_sys_datastore(host.place_share_datastores,
+                                                         vm_group.req_info.disk_pattern)
             end
 
             if sys_datastore.nil?
@@ -251,7 +253,7 @@ module Serengeti
             assign_resources(vm, vm_group, cur_rp, sys_datastore, host, used_datastores)
             vm.action = VM_ACTION_CREATE
             vm.error_msg = nil
-            # RR for next Host
+
             # Find a suitable place
             group_place << vm
             @logger.debug("Add #{vm.name} to preparing queue")
@@ -287,7 +289,7 @@ module Serengeti
             error_msg = "group #{vm_group.name}: can not find port group:#{unknown_pg} in vSphere."
             @logger.error(error_msg)
             @placement_failed += failed_vms
-            @cloud_error_msg_que << error_msg
+            set_cluster_error_msg(error_msg)
             break
           end
 
@@ -307,7 +309,7 @@ module Serengeti
             @placement_failed += failed_vms
             err_msg = "Can not get any resource pools for vm group #{vm_group.name}. failed to place #{failed_vms} VM"
             @logger.error(err_msg)
-            @cloud_error_msg_que << err_msg
+            set_cluster_error_msg(err_msg)
             next
           end
 
@@ -324,7 +326,7 @@ module Serengeti
           end
           if place_err_msg
             ## can not alloc vm_group anymore
-            @cloud_error_msg_que << "Can not alloc resource for vm group #{vm_group.name}: #{place_err_msg}"
+            set_cluster_error_msg("Can not alloc resource for vm group #{vm_group.name}: #{place_err_msg}")
             failed_vms = vm_group.instances - vm_group.vm_ids.size
             @placement_failed += failed_vms
             @logger.error("VM group #{vm_group.name} failed to place #{failed_vms} vm, total failed: #{@placement_failed}.")

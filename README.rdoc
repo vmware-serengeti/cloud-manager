@@ -25,7 +25,6 @@ And then, it chooses hosts one by one. In one host, It will check free memory si
 space and networking resources. if this host has enough resources for placing vm, it assigns cpu, 
 memory, disks and networking for vm.
 
-
 == Getting Started
 
 === Install
@@ -148,6 +147,8 @@ export FUNC_CLOUD_PROVIDER_FILE='/home/serengeti/cloud-manager/your-func.vc.yaml
 == example
 
 Here is an example of wading through server creation/start/stop/delete for vSphere Cloud:
+require 'cloud-manager'
+
 # create a cluster
   IaasTask task = Iaas.create_cluster(parameter, :wait => false)
         # parameter["cluster_definition"] is a Hash object which contains the definition of this cluster
