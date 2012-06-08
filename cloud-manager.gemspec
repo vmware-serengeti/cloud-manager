@@ -10,12 +10,10 @@ Gem::Specification.new do |s|
   s.description = "Cloud-manager"
   s.email = "hadoop-bj@vmware.com"
   s.extra_rdoc_files = [
-    "LICENSE.txt",
     "README.rdoc"
   ]
   s.files = [
     "Gemfile",
-    "LICENSE.txt",
     "README.rdoc",
     "Rakefile",
     "cloud-manager.gemspec",
