@@ -1,38 +1,39 @@
 == cloud-manager
 
-cloud-manager is the Ruby cloud manager library, top to bottom:
-* It manages cluster on vSphere, which want to create/start/stop/delete/resize hadoop cluster.
-* It 
+cloud-manager is a Ruby cloud manager library, top to bottom:
+* It is a simple Rubust Reliable and Extendable IaaS to manage cluster and VMs in cloud.
+* It manages clusters on vSphere to create/start/stop/delete/resize hadoop clusters, at present.
+* It will provide fetching resources/cluster placement/cluster deploy services.
+* It will provide a pluggable framework to use your own placement algorithm
+* It supports vSpere Cloud, now. And it will support EC2 in the future.
 
-== Verrsion description
+== Version Description
 
   version = 0.5.0
 
-== Placement idea (round robin)
-
-Currently, we use round robin strategy to put hadoop cluster's VMs to vSphere Cloud.
-We have five type resources in vSphere: clusters, resource pools, hosts, datastores and networking.
-At present, our choose method is "round robin". Firstly, we choose resouce pools in
-one cluster. And then, we choose hosts one by one. In one host, we will check free memory size,
-datastores' free space and networking resources. if this host has enough resources for wanted vm,
-datastore belong to this host, and assign networking for it. If we meet the suitable resource for
-the VM, we will assign all resources to this VM and record the resouces cost.
-
 == How hadoop cluster are layout
 
-We use GROUP to define master, worker, client, and other same functional VMs to one unit. Therefore,
-in one GROUP, each VM has same configuration. So we could place massive VMs in a simple way.
+It uses GROUP to collect same functional VMs to one unit, such as master, worker, client, and etc. Therefore,
+in one GROUP, each VM has same configuration. So it places massive VMs in a simple way.
 
+== Placement Idea (round robin)
+
+Currently, It uses round robin strategy to put hadoop cluster's VMs to vSphere Cloud.
+It manages five type resources in vSphere: clusters, resource pools, hosts, datastores and networking.
+At present, our choose method is "round robin". Firstly, It chooses resouce pools in one cluster. 
+And then, it chooses hosts one by one. In one host, It will check free memory size, datastores' free
+space and networking resources. if this host has enough resources for placing vm, it assigns cpu, 
+memory, disks and networking for vm.
 
 == Getting Started
 
-=== install
+=== Install
 
   sudo gem install cloud-manager
 
 === cloud provider definition
 
-We use json string to describe cloud provider.
+It uses json string to describe cloud provider.
 
 cloud_provider: {
   "name": "vsphere",      # Provider name
@@ -49,19 +50,19 @@ cloud_provider: {
   ],
   "vc_shared_datastore_pattern": ["share", "san*"], #define the datastore_pattern for share storage
   "vc_local_datastore_pattern": ["local*", "vmfs*"], #define the datastore_pattern for local storage
-#We use fog to connect to cloud provider, currently.
+#If you want to use fog to connect to cloud provider, write 'fog' here.
   "cloud_adapter": "fog"
 }
 
 === cluster definition
 
-We use json string to describe cluster definition
+It uses json string to describe cluster definition
 
 cluster_definition: {
   "name": "hadoop_cluster_test",
     "template_id": "vm_template_mob_in_vc", #such like this: 'vm-1234'
-    "deploy_policy":"group_parallel", // default is ‘group_parallel’, can choose 'group_order'
-    "vc_clusters": [ #Cluster can rewrite the cluster/resource pool requirement
+    "deploy_policy":"group_parallel", #default is ‘group_parallel’, can choose 'group_order'
+    "vc_clusters": [    #Cluster can rewrite the cluster/resource pool requirement
     {
       "name": "Cluster1",
       "vc_rps": ["resource_pool1", "resource_pool2"]
@@ -71,13 +72,13 @@ cluster_definition: {
     "networking": [{
       "port_group": "CFNetwork",
       "type" : "static", # or "dhcp",
-      "ip": ["10.1.1.10-10.1.1.11", "10.1.1.17"],
+      "ip": ["10.1.1.10-10.1.1.11", "10.1.1.17"], # User can input ip ranges
       "netmask": "255.255.255.0",
       "gateway": "10.1.1.254",
       "dns": ["10.1.100.100", "10.1.100.240"]
     }],
 #Cluster can add a filter to select more the datastore pattern like this
-    "vc_shared_datastore_pattern": ["share", "san*"],   # We can use wildcard to select more
+    "vc_shared_datastore_pattern": ["share", "san*"],    # Using wildcard to select more 
     "vc_local_datastore_pattern": ["local*", "vmfs?-*"], # datastores, both '*' and '?'
 #Cluster define groups in below:
     "groups": [
@@ -112,9 +113,42 @@ cluster_definition: {
   ]
 }
 
+=== Placement Output
+
+Placement module will output cluster's VMs placement in two dimensional Array, like this:
+[[Group1 VM placement], [Group2 VM placement], ... [GroupN VM placement]]
+
+== How to setup UT?
+
+It uses rspec to do UT test. Change path to root of cloud-manager.
+place configuration file func.vc.yaml and ut.vc.yaml in current dir
+func.vc.yaml describes vSphere cloud provider definition.
+ut.vc.yaml describes UT cloud provider definition.
+
+unit test:
+spec/ut.config.yaml       #define some options for fog_dummy
+spec/ut.dc.yaml           #define a simulated vSphere datacenter, needed by fog_dummy
+spec/ut.vc.yaml           #define a simle vc configuration for testing
+spec/ut.cluster_def*.yaml #define UT test cases
+> spec spec/cloud_unit_test.rb
+
+func test:
+spec/func.vc.yaml           #func test vSphere configuration, include user name/password/ip address, etc.
+spec/func.cluster_def.yaml  #define func test cases
+> spec spec/cloud_func_test.rb
+
+note:
+You had better prepare your cloud provider info firstly.
+You could place you own func.vc.yaml's full-path to env variable FUNC_CLOUD_PROVIDER_FILE, and 
+ut.vc.yaml's full-path to env variable UT_CLOUD_PROVIDER_FILE
+for example: 
+export FUNC_CLOUD_PROVIDER_FILE='/home/serengeti/cloud-manager/your-func.vc.yaml'
+
 == example
 
 Here is an example of wading through server creation/start/stop/delete for vSphere Cloud:
+require 'cloud-manager'
+
 # create a cluster
   IaasTask task = Iaas.create_cluster(parameter, :wait => false)
         # parameter["cluster_definition"] is a Hash object which contains the definition of this cluster
