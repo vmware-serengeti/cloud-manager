@@ -5,7 +5,7 @@ cloud-manager is a Ruby cloud manager library, top to bottom:
 * It manages clusters on vSphere to create/start/stop/delete/resize hadoop clusters, at present.
 * It will provide fetching resources/cluster placement/cluster deploy services.
 * It will provide a pluggable framework to use your own placement algorithm
-* It supports vSpere Cloud, now. And it will support EC2 in the future.
+* It supports vSphere Cloud, now. And it will support EC2 in the future.
 
 == Version Description
 
@@ -41,8 +41,8 @@ cloud_provider: {
   "vc_user": "administrator", #vSphere user name
   "vc_pwd": "123456",         #vSphere password
   "vc_datacenter": "DatacenterName",  #Accessed datacenter name
-#define the cluster:resource pool pair
-  "vc_clusters": [
+
+  "vc_clusters": [ #define the cluster:resource pool pair
   { "name": "Cluster1",
     "vc_rps": ["resource_pool1", "resource_pool2", "rp3"] },
   { "name": "Cluster2",
@@ -50,8 +50,8 @@ cloud_provider: {
   ],
   "vc_shared_datastore_pattern": ["share", "san*"], #define the datastore_pattern for share storage
   "vc_local_datastore_pattern": ["local*", "vmfs*"], #define the datastore_pattern for local storage
-#If you want to use fog to connect to cloud provider, write 'fog' here.
-  "cloud_adapter": "fog"
+
+  "cloud_adapter": "fog" #If you want to use fog to connect to cloud provider, write 'fog' here.
 }
 
 === cluster definition
@@ -68,8 +68,8 @@ cluster_definition: {
       "vc_rps": ["resource_pool1", "resource_pool2"]
     }
   ],
-#Cluster should define networking configuration
-    "networking": [{
+
+    "networking": [{ #Cluster should define networking configuration
       "port_group": "CFNetwork",
       "type" : "static", # or "dhcp",
       "ip": ["10.1.1.10-10.1.1.11", "10.1.1.17"], # User can input ip ranges
@@ -80,8 +80,8 @@ cluster_definition: {
 #Cluster can add a filter to select more the datastore pattern like this
     "vc_shared_datastore_pattern": ["share", "san*"],    # Using wildcard to select more 
     "vc_local_datastore_pattern": ["local*", "vmfs?-*"], # datastores, both '*' and '?'
-#Cluster define groups in below:
-    "groups": [
+
+    "groups": [ #Cluster define groups in below:
     {
       "name": "master",   # Group name
       "instance_num": 1,  # Wanted instance number in this group
@@ -93,14 +93,14 @@ cluster_definition: {
       }
       "ha":true
     },
-#Another group for 'worker'
-    {
+
+    { #Another group for 'worker'
       "name": "worker",
       "instance_num": 3,
       "cpu": 1,
       "memory": 1024,
-  #group can redefine the cluster:resource pool pair
-      "vc_clusters": {
+  
+      "vc_clusters": { #group can redefine the cluster:resource pool pair
         "name": "Cluster1",
         "vc_rps": ["resource_pool2"]
       }
