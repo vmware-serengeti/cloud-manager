@@ -19,6 +19,21 @@
 module Serengeti
   module CloudManager
     class Group
+      def init(options = {})
+      end
+
+      def nodes
+      end
+
+      def to_hash
+      end
+
+      def placement()
+      end
+
+      def deploy()
+      end
+
     end
   end
 end

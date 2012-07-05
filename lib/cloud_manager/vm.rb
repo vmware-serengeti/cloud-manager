@@ -18,65 +18,82 @@
 
 module Serengeti
   module CloudManager
-    VM_STATE_BIRTH      = { :doing => "Initializing"  , :done => 'Not Exist' }
-    VM_STATE_PLACE      = { :doing => "Initializing"  , :done => 'Not Exist' }
-    VM_STATE_CLONE      = { :doing => "Cloning"       , :done => 'Created' }
-    VM_STATE_RECONFIG   = { :doing => "Reconfiguring" , :done => 'Created' }
-    VM_STATE_DELETE     = { :doing => "Deleting"      , :done => 'Deleted' }
-    VM_STATE_DELETED    = { :doing => ""              , :done => 'Deleted' }
-    VM_STATE_DONE       = { :doing => ""              , :done => 'Finished' }
-    VM_STATE_FAIL       = { :doing => "Failure"       , :done => 'Failure' }
-    VM_STATE_POWER_ON   = { :doing => "Powering On"   , :done => 'Powered On' }
-    VM_STATE_WAIT_IP    = { :doing => "Waiting for IP", :done => 'VM Ready' }
-    VM_STATE_READY      = { :doing => "Initializing"  , :done => 'VM Ready' }
-    VM_STATE_POWER_OFF  = { :doing => "Powering Off"  , :done => 'Powered Off' }
+    class Config
+      def_const_value :wait_ip_timeout_sec, 60*5
+      def_const_value :wait_ip_sleep_sec  ,  4
+      def vm_data_disk_start_index
+        vm_place_swap_disk ? 2 : 1
+      end
+    end
 
-    VM_ACTION_CREATE  = 'create'
-    VM_ACTION_DELETE  = 'delete'
-    VM_ACTION_UPDATE  = 'update'
-    VM_ACTION_START   = 'startup'
-    VM_ACTION_STOP    = 'stop'
-
-    VM_CREATE_PROCESS = {
-      VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_BIRTH[:done] },
-      VM_STATE_PLACE    => { :progress =>   2, :status => VM_STATE_BIRTH[:done] },
-      VM_STATE_CLONE    => { :progress =>  10, :status => VM_STATE_PLACE[:done] },
-      VM_STATE_RECONFIG => { :progress =>  60, :status => VM_STATE_CLONE[:done] },
-      VM_STATE_READY    => { :progress =>  60, :status => VM_STATE_CLONE[:done] },
-      VM_STATE_POWER_ON => { :progress =>  70, :status => VM_STATE_RECONFIG[:done] },
-      VM_STATE_WAIT_IP  => { :progress =>  80, :status => VM_STATE_POWER_ON[:done] },
-      VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_WAIT_IP[:done] },
-      VM_STATE_DELETED  => { :progress => 100, :status => VM_STATE_DELETE[:done] },
-    }
-
-    VM_DELETE_PROCESS = {
-      VM_STATE_READY    => { :progress =>   0, :status => VM_STATE_READY[:done] },
-      VM_STATE_DELETE   => { :progress =>  20, :status => VM_STATE_READY[:done] },
-      VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_DELETE[:done] },
-    }
-
-    VM_STOP_PROCESS = {
-      VM_STATE_READY     => { :progress =>   0 , :status => VM_STATE_READY[:done] },
-      VM_STATE_POWER_OFF => { :progress =>  20 , :status => VM_STATE_READY[:done] },
-      VM_STATE_DONE      => { :progress => 100 , :status => VM_STATE_POWER_OFF[:done] },
-    }
-
-    VM_START_PROCESS = {
-      VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_POWER_OFF[:done] },
-      VM_STATE_READY    => { :progress =>  10, :status => VM_STATE_CLONE[:done] },
-      VM_STATE_POWER_ON => { :progress =>  10, :status => VM_STATE_POWER_OFF[:done] },
-      VM_STATE_WAIT_IP  => { :progress =>  50, :status => VM_STATE_POWER_ON[:done]  },
-      VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_WAIT_IP[:done]   },
-    }
-
-    VM_ACT_PROGRES = {
-      VM_ACTION_CREATE  => VM_CREATE_PROCESS,
-      VM_ACTION_DELETE  => VM_DELETE_PROCESS,
-      VM_ACTION_START   => VM_START_PROCESS,
-      VM_ACTION_STOP    => VM_STOP_PROCESS,
-    }
+    class DiskInfo
+      attr_accessor :type
+      attr_accessor :fullpath
+      attr_accessor :size
+      attr_accessor :unit_number
+      attr_accessor :datastore_name
+      attr_accessor :shared
+    end
 
     class VmInfo
+      VM_STATE_BIRTH      = { :doing => "Initializing"  , :done => 'Not Exist' }
+      VM_STATE_PLACE      = { :doing => "Initializing"  , :done => 'Not Exist' }
+      VM_STATE_CLONE      = { :doing => "Cloning"       , :done => 'Created' }
+      VM_STATE_RECONFIG   = { :doing => "Reconfiguring" , :done => 'Created' }
+      VM_STATE_DELETE     = { :doing => "Deleting"      , :done => 'Deleted' }
+      VM_STATE_DELETED    = { :doing => ""              , :done => 'Deleted' }
+      VM_STATE_DONE       = { :doing => ""              , :done => 'Finished' }
+      VM_STATE_FAIL       = { :doing => "Failure"       , :done => 'Failure' }
+      VM_STATE_POWER_ON   = { :doing => "Powering On"   , :done => 'Powered On' }
+      VM_STATE_WAIT_IP    = { :doing => "Waiting for IP", :done => 'VM Ready' }
+      VM_STATE_READY      = { :doing => "Initializing"  , :done => 'VM Ready' }
+      VM_STATE_POWER_OFF  = { :doing => "Powering Off"  , :done => 'Powered Off' }
+
+      VM_ACTION_CREATE  = 'create'
+      VM_ACTION_DELETE  = 'delete'
+      VM_ACTION_UPDATE  = 'update'
+      VM_ACTION_START   = 'startup'
+      VM_ACTION_STOP    = 'stop'
+
+      VM_CREATE_PROCESS = {
+        VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_BIRTH[:done] },
+        VM_STATE_PLACE    => { :progress =>   2, :status => VM_STATE_BIRTH[:done] },
+        VM_STATE_CLONE    => { :progress =>  10, :status => VM_STATE_PLACE[:done] },
+        VM_STATE_RECONFIG => { :progress =>  60, :status => VM_STATE_CLONE[:done] },
+        VM_STATE_READY    => { :progress =>  60, :status => VM_STATE_CLONE[:done] },
+        VM_STATE_POWER_ON => { :progress =>  70, :status => VM_STATE_RECONFIG[:done] },
+        VM_STATE_WAIT_IP  => { :progress =>  80, :status => VM_STATE_POWER_ON[:done] },
+        VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_WAIT_IP[:done] },
+        VM_STATE_DELETED  => { :progress => 100, :status => VM_STATE_DELETE[:done] },
+      }
+
+      VM_DELETE_PROCESS = {
+        VM_STATE_READY    => { :progress =>   0, :status => VM_STATE_READY[:done] },
+        VM_STATE_DELETE   => { :progress =>  20, :status => VM_STATE_READY[:done] },
+        VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_DELETE[:done] },
+      }
+
+      VM_STOP_PROCESS = {
+        VM_STATE_READY     => { :progress =>   0 , :status => VM_STATE_READY[:done] },
+        VM_STATE_POWER_OFF => { :progress =>  20 , :status => VM_STATE_READY[:done] },
+        VM_STATE_DONE      => { :progress => 100 , :status => VM_STATE_POWER_OFF[:done] },
+      }
+
+      VM_START_PROCESS = {
+        VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_POWER_OFF[:done] },
+        VM_STATE_READY    => { :progress =>  10, :status => VM_STATE_CLONE[:done] },
+        VM_STATE_POWER_ON => { :progress =>  10, :status => VM_STATE_POWER_OFF[:done] },
+        VM_STATE_WAIT_IP  => { :progress =>  50, :status => VM_STATE_POWER_ON[:done]  },
+        VM_STATE_DONE     => { :progress => 100, :status => VM_STATE_WAIT_IP[:done]   },
+      }
+
+      VM_ACT_PROGRES = {
+        VM_ACTION_CREATE  => VM_CREATE_PROCESS,
+        VM_ACTION_DELETE  => VM_DELETE_PROCESS,
+        VM_ACTION_START   => VM_START_PROCESS,
+        VM_ACTION_STOP    => VM_STOP_PROCESS,
+      }
+
       attr_accessor :id
       attr_accessor :name
       attr_accessor :status
@@ -105,10 +122,11 @@ module Serengeti
       attr_accessor :tools_version
       attr_accessor :ip_address
       attr_accessor :is_a_template
-      attr_accessor :cluster_name
       attr_accessor :rp_cluster_name
+      attr_accessor :rp_cluster_mob
       attr_accessor :group_name
       attr_accessor :created
+      attr_accessor :cluster_name
       attr_accessor :rp_name
       attr_accessor :network_res
       attr_accessor :assign_ip
@@ -146,8 +164,12 @@ module Serengeti
       end
 
       def inspect
-        "#{to_hash.pretty_inspect} volumes:#{volumes.pretty_inspect} disks:#{disks.pretty_inspect}"\
-        "networking:#{network_config_json.pretty_inspect}"
+        "Action:#{action} #{to_describe.pretty_inspect} "\
+        "volumes:#{volumes.pretty_inspect} "\
+        "disks:#{disks.pretty_inspect}"\
+        "networking:#{network_config_json.pretty_inspect} "\
+        "template_id:#{template_id.pretty_inspect}"\
+        "req info:#{req_rp.pretty_inspect}"
       end
 
       def state; @power_state end
@@ -159,12 +181,11 @@ module Serengeti
         (@power_state == "poweredOn" && !deleted) ? @ip_address : ''
       end
 
-      def initialize(vm_name, req_rp = nil)
-        @logger = Serengeti::CloudManager::Cloud.Logger
+      def initialize(vm_name, cloud)
+        @logger = Serengeti::CloudManager.logger
         @lock = Mutex.new
         @disks = {}
         @name = vm_name
-        @req_rp = req_rp
         @vm_group = nil
         @status = VM_STATE_BIRTH
         @ip_address = ""
@@ -175,8 +196,12 @@ module Serengeti
         @ha_enable = true
         @network_config_json = []
         @deleted = false
+        @cloud = cloud
+        @host_name = nil
+        @logger.debug("init vm: #{vm_name}")
       end
 
+      # return value between [0..100]
       def get_progress
         progress = VM_ACT_PROGRES[@action]
         return 0 if progress.nil?
@@ -185,6 +210,7 @@ module Serengeti
         step
       end
 
+      # return service wanted values.
       def to_hash
         progress = VM_ACT_PROGRES[@action]
         attrs = {}
@@ -209,6 +235,227 @@ module Serengeti
         attrs
       end
 
+      # return some useful info for management
+      def to_describe
+        desc = to_hash
+        desc[:host_mob]     = host_mob
+        desc[:rp_mob]       = resource_pool_moid
+        desc[:cluster_mob]  = rp_cluster_mob
+        desc[:disks]        = Hash[disks.each_value.map {[]}]
+        desc
+      end
+
+      # set vm's error message and print out warning message
+      def set_error_msg(msg)
+        @error_msg = "vm:#{name} #{msg}"
+        @logger.warn("#{msg}")
+      end
+
+      def vm_sys_disk_size
+        @cloud.vm_sys_disk_size
+      end
+
+      def assign_resources(vm_group, cur_rp, host, used_datastores)
+        req_mem = vm_group.req_info.mem
+        cur_rp.unaccounted_memory += req_mem
+        host.unaccounted_memory += req_mem
+
+        @host_name  = host.name
+        @host_mob   = host.mob
+        @req_rp     = vm_group.req_info
+
+        sys_datastore = used_datastores[0]
+        @sys_datastore_moid = sys_datastore[:datastore].mob
+        @resource_pool_moid = cur_rp.mob
+        @template_id = vm_group.req_info.template_id
+        @rp_name = cur_rp.name
+        @rp_cluster_name = cur_rp.cluster.name
+        @rp_cluster_mob = cur_rp.cluster.mob
+        @vm_group = vm_group
+        @network_res = vm_group.network_res
+        @ha_enable = vm_group.req_info.ha
+        cur_rp.used_counter += 1
+
+        unit_number = 0
+        used_datastores.each do |datastore|
+          fullpath = "[#{datastore[:datastore].name}] #{name}/#{datastore[:type]}#{unit_number}.vmdk"
+          @logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}MB")
+          datastore[:datastore].unaccounted_space += datastore[:size].to_i
+          disk = disk_add(datastore[:size].to_i, fullpath)
+          disk.datastore_name = datastore[:datastore].name
+          disk.shared = (vm_group.req_info.disk_type == DISK_TYPE_SHARE)
+          disk.unit_number = unit_number
+          disk.type = datastore[:type]
+          unit_number += 1
+        end
+      end
+
+      def op_failed(src, e)
+        @logger.error("#{working} vm:#{name} failed.\n #{e} - #{e.backtrace.join("\n")}")
+        @error_code = -1
+        @error_msg = "#{working} vm:#{name} failed. #{e}"
+        mov_vm(src, :failed)
+      end
+
+      def cloud_op(working, src = :existed)
+        begin
+          yield
+          return 'OK'
+        rescue PlaceException => e
+          op_failed(src, e)
+        rescue DeployException => e
+          op_failed(src, e)
+        rescue FetchException => e
+          op_failed(src, e)
+        rescue RuntimeError => e
+          # debug failed
+        else
+        end
+        return nil
+      end
+
+      def config
+        raise "Not assign cloud instance to vm:#{name}" if @cloud.nil?
+        @cloud.config
+      end
+
+      def client
+        raise "Not assign cloud instance to vm:#{name}" if @cloud.nil?
+        @cloud.client
+      end
+
+      def mov_vm(from, to)
+        @cloud.mov_vm(self, from, to)
+      end
+
+      # Create vm structure from cloud fetching
+      def self.fetch_vm_from_cloud(vm_mob, cloud)
+        vm_existed = cloud.client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
+        return nil if block_given? and !yield(vm_existed["name"])
+        
+        client = cloud.client
+        vm = Serengeti::CloudManager::VmInfo.new(vm_existed["name"], cloud)
+
+        #update vm info with properties
+        client.update_vm_with_properties_string(vm, vm_existed)
+
+        #update disk info
+        disk_attrs = client.get_disks_by_vm_mob(vm_mob)
+        disk_attrs.each do |attr|
+          disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num'])
+          datastore_name = client.get_ds_name_by_path(attr['path'])
+          disk.datastore_name = datastore_name
+        end
+
+        vm.can_ha = client.is_vm_in_ha_cluster(vm)
+        vm.created = true
+        vm
+      end
+
+      # deploy vm and config vm's networking, disk
+      def deploy
+        begin
+          @status = VM_STATE_CLONE
+          mov_vm(:placed, :deploy)
+
+          @logger.debug("vm's info :#{self.pretty_inspect}")
+          return if !cloud_op('Clone', :deploy) { client.vm_clone(self, :poweron => false)}
+          @logger.info("vm:#{name} power:#{power_state} finish clone")
+
+          #is this VM can do HA?
+          @can_ha = client.is_vm_in_ha_cluster(self)
+
+          @status = VM_STATE_RECONFIG
+          return if !cloud_op('Reconfigure disk', :deploy) { reconfigure_disk}
+          @logger.info("vm:#{name} finish reconfigure disk")
+
+          return if !cloud_op('Reconfigure network', :deploy) { reconfigure_network }
+          @logger.info("vm:#{name} finish reconfigure networking")
+
+          #Move deployed vm to existed queue
+          mov_vm(:deploy, :existed)
+          @created = true
+        ensure
+          if error_code.to_i != 0
+            # If occur error, It will delete this failed vm.
+            client.vm_destroy(self)
+            @status = VM_STATE_DELETED
+            @deleted = true
+          end
+        end
+
+      end
+
+      # wait vm is ready
+      def wait_ready
+        @logger.debug("vm:#{name} can ha?:#{can_ha}, enable ? #{ha_enable}")
+        if !ha_enable && can_ha?
+          return if !cloud_op('Disable HA') { client.vm_set_ha(self, ha_enable)}
+          @logger.debug("disable ha of vm #{name}")
+        elsif (!can_ha? && ha_enable)
+          @logger.debug("vm:#{name} can not enable ha on unHA cluster")
+        end
+
+        # Power On vm
+        @status = VM_STATE_POWER_ON
+        @logger.debug("vm:#{name} power:#{power_state}")
+        if power_state == 'poweredOff'
+          return if !cloud_op('Power on') { client.vm_power_on(self) }
+          @logger.debug("#{name} has poweron")
+        end
+
+        # Wait IP return
+        @status = VM_STATE_WAIT_IP
+        start_time = Time.now.to_i
+        return if !cloud_op('Wait IP') do
+          @logger.debug("Checking vm ip address.")
+          client.get_vm_properties_by_vm_mob(self)
+          while (ip_address.nil? || ip_address.empty?)
+            client.get_vm_properties_by_vm_mob(self)
+            #FIXME check vm tools status
+            wait_time = Time.now.to_i - start_time
+            @logger.debug("vm:#{name} wait #{wait_time}/#{config.wait_ip_timeout_sec}s ip: #{ip_address}")
+            sleep(config.wait_ip_sleep_sec)
+
+            if (wait_time) > config.wait_ip_timeout_sec
+              raise "#{name} wait IP time out (#{wait_time}s, please check ip conflict. )"
+            end
+          end
+        end
+
+        # VM is ready
+        @status = VM_STATE_DONE
+        mov_vm(:existed, :finished)
+        @logger.debug("vm :#{name} started")
+      end
+
+      # Stop VM in cloud
+      def stop
+        @action = VM_ACTION_STOP
+        @status = VM_STATE_POWER_OFF
+
+        @logger.debug("stopping :#{name}")
+        if power_state == 'poweredOn'
+          return if !cloud_op('Stop') { client.vm_power_off(self) }
+        end
+        return if !cloud_op('Reread') { client.get_vm_properties_by_vm_mob(self) }
+        @status = VM_STATE_DONE
+        @logger.debug("stop :#{name}")
+        mov_vm(:existed, :finished)
+      end
+
+      # Delete VM in cloud
+      def delete
+        @action = VM_ACTION_DELETE
+        @status = VM_STATE_DELETE
+        #@logger.debug("Can we delete #{name} same as #{cluster_info["name"]}?")
+        @logger.debug("delete vm : #{name}")
+        return if !cloud_op('Delete') { client.vm_destroy(self) }
+        @deleted = true
+        @status = VM_STATE_DONE
+        mov_vm(:existed, :finished)
+      end
+
       def disk_add(size, fullpath, unit_number = 0)
         disk = DiskInfo.new
         disk.type = nil
@@ -216,8 +463,16 @@ module Serengeti
         disk.size = size
         disk.unit_number = unit_number
         disk.datastore_name = nil
-        disks[fullpath] = disk
+        @disks[fullpath] = disk
         disk
+      end
+
+      def reconfigure_disk(options={})
+        disks.each_value { |disk| client.vm_create_disk(self, disk) if disk.unit_number > 0}
+      end
+
+      def reconfigure_network(options = {})
+        client.vm_update_network(self, options) unless network_config_json.nil?
       end
 
       DISK_DEV_LABEL = "abcdefghijklmnopqrstuvwxyz"
@@ -233,7 +488,7 @@ module Serengeti
         @status == VM_STATE_DONE
       end
 
-      def volumes(limitation = Serengeti::CloudManager::Cloud::VM_DATA_DISK_START_INDEX)
+      def volumes(limitation = Serengeti::CloudManager.config.vm_data_disk_start_index)
         @disks.collect { |path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
           if disk.unit_number >= limitation }.compact.sort
       end

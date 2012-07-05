@@ -15,32 +15,43 @@
 
 # @since serengeti 0.5.0
 # @version 0.5.0
+require 'fog'
 
 module Serengeti
   module CloudManager
+    class Config
+      def_const_value :linked_clone, false
+      def_const_value :client_connection_pool_size, 5
+    end
+
     class FogAdapter
       DISK_SIZE_TIMES = 1
-      CONNECTION_NUMBER = 5
       include Serengeti::CloudManager::Parallel
-      def initialize()
-        @logger = Serengeti::CloudManager::Cloud.Logger
+      def initialize(noused)
+        @logger = Serengeti::CloudManager.logger
         @connection = nil
         @con_lock = Mutex.new
       end
 
+      def config
+        Serengeti::CloudManager.config
+      end
+
       def login(vc_addr, vc_user, vc_pass)
         return unless @connection.nil?
-        connect_list = Array.new(CONNECTION_NUMBER)
+        connect_list = Array.new(config.client_connection_pool_size)
         cloud_server = 'vsphere'
         info = {:provider => cloud_server,
           :vsphere_server => vc_addr,
           :vsphere_username => vc_user,
           :vsphere_password => vc_pass,
         }
+
+        # Create Client pool for faster access vSphere
         @connection = {}
         @connection[:con] = []
         @connection[:err] = []
-        group_each_by_threads(connect_list, :callee => 'connect to cloud service') do |con|
+        group_each_by_threads(connect_list, :callee => 'cloud login') do |con|
           begin
             connection = Fog::Compute.new(info)
             @con_lock.synchronize { @connection[:con] << connection }
@@ -49,18 +60,15 @@ module Serengeti
           end
         end
         if @connection[:err].size > 0
-          @logger.error("#{@connection[:err].size} connections fail to login.\n error is:\n#{@connection[:err].join("\n")}")
+          @logger.error("#{@connection[:err].size} connections fail to login.\n "\
+                        "error is:\n#{@connection[:err].join("\n")}")
           raise "#{@connection[:err].size} connections fail to login."
         end
         @logger.debug("Use #{@connection[:con].size} channels to connect cloud service\n}")
       end
 
       def fog_op
-        con = nil
-        while con.nil?
-          @con_lock.synchronize { con = @connection[:con].first;@connection[:con].rotate! }
-        end
-        return yield con
+        yield @con_lock.synchronize { @connection[:con].rotate!.first }
       end
 
       def logout
@@ -74,13 +82,14 @@ module Serengeti
         @logger.info("Disconnect from cloud provider ")
       end
 
-      def clone_vm(vm, options={})
+      def vm_clone(vm, options={})
         check_connection
+        linked_clone = config.linked_clone || false
         info = {
           'vm_moid' => vm.template_id,
           'name' => vm.name,
           'wait' => 1,
-          'linked_clone' => false, # vsphere 5.0 has a bug with linked clone over 8 hosts, be conservative
+          'linked_clone' => linked_clone, # vsphere 5.0 has a bug with linked clone over 8 hosts, be conservative
           'datastore_moid' => vm.sys_datastore_moid,
           'rp_moid' => vm.resource_pool_moid,
           'host_moid' => vm.host_mob,
@@ -97,6 +106,7 @@ module Serengeti
         raise "Do not login cloud server, please login first" if @connection.nil?
       end
 
+      # TODO add vm_xxxx return state checking
       def vm_destroy(vm)
         check_connection
         task_state = fog_op { |con| con.vm_destroy('instance_uuid' => vm.instance_uuid) }
@@ -129,15 +139,79 @@ module Serengeti
         result = fog_op { |con| con.vm_create_disk(info) }
       end
 
+      # Update vm's network configuration
+      def vm_update_network(vm, options = {})
+        check_connection
+        card = 0
+        vm.network_config_json.each do |config_json|
+          fog_op { |con| con.vm_update_network('instance_uuid' => vm.instance_uuid,
+                                              'adapter_name' => "Network adapter #{card + 1}",
+                                              'portgroup_name' => vm.network_res.port_group(card)) }
+
+          @logger.debug("network json:#{config_json}") if config.debug_networking
+          fog_op { |con| con.vm_config_ip('vm_moid' => vm.mob, 
+                                          'config_json' => config_json) }
+          card += 1
+        end
+      end
+
+
+      def vm_set_ha(vm, enable)
+        check_connection
+        # default is enable
+        try_num = 3
+        return if enable
+        try_num.times do |num|
+          result = fog_op { |con| con.vm_disable_ha('vm_moid' => vm.mob) }
+          if result['task_state'] == 'success'
+            @logger.debug("vm:#{vm.name} disable ha success.")
+            return
+          end
+          @logger.debug("vm:#{vm.name} disable ha failed and retry #{num+1} times.")
+        end
+      end
+
+      def is_vm_in_ha_cluster(vm)
+        check_connection
+        fog_op { |con| con.is_vm_in_ha_cluster('vm_moid' => vm.mob) }
+      end
+
+      # get hash value from ref object
+      def ct_mob_ref_to_attr_hash(mob_ref, attr_s)
+        check_connection
+        fog_op { |con| con.ct_mob_ref_to_attr_hash(mob_ref, attr_s) }
+      end
+
+      ###################################################
+      # query interface
+
+      FROM_WHERE = {
+        :vm_moid => :_by_moid  , :dc_mob => :_by_dc_mob, :path     => :_by_path,
+        :dc_mob => :_by_dc_mob, :cs_path => :_by_path  , :cs_mob => :_by_cs_mob, 
+        :host_mob => :_by_host_mob , :vm_mob => :_by_vm_mob, 
+        }
+      GET_OBJ = {
+        :vm_mob => :vm_mob_ref, :portgroups => :portgroups, :clusters => :cluster,
+        :cs_mob_ref => :cs_mob_ref, :hosts => :hosts, :rps => :rps, :ds_name => :ds_name,
+        :datastores => :datastores, :vms => :vms, :disks => :disks, 
+        :vm_properties => :vm_properties,
+      }
+
+      def get_value(thing, from, *arg)
+        raise "Unknown things: #{thing}" if !GET_OBJ.key?(thing)
+        raise "Unknown from: #{from}" if !from && !FROM_WHERE.key?(from)
+        check_connection
+        func = "get_#{GET_OBJ[thing]}_by_#{FROM_WHERE[from]}"
+        fog_op { |con| con.__send__(func, *arg) }
+      end
+
       # needs vm mobid to get the properties of this vm
-      def update_vm_properties_by_vm_mob(vm)
+      def get_vm_properties_by_vm_mob(vm)
         check_connection
         vm_properties = fog_op { |con| con.get_vm_properties(vm.mob) }
         update_vm_with_properties_string(vm, vm_properties)
       end
 
-      ###################################################
-      # query interface
 
       def get_vm_mob_ref_by_moid(vm_ref, dc_mob)
         check_connection
@@ -148,6 +222,7 @@ module Serengeti
         check_connection
         fog_op { |con| con.get_portgroups_by_dc_mob(dc_mob) }
       end
+
       # get datacenter management object by a given path (with name)
       def get_dc_mob_ref_by_path(options={})
         check_connection
@@ -158,11 +233,6 @@ module Serengeti
       def get_clusters_by_dc_mob(dc_mob_ref, options = {})
         check_connection
         fog_op { |con| con.get_clusters_by_dc_mob(dc_mob_ref, options) }
-      end
-
-      def ct_mob_ref_to_attr_hash(mob_ref, attr_s)
-        check_connection
-        fog_op { |con| con.ct_mob_ref_to_attr_hash(mob_ref, attr_s) }
       end
 
       #get cluster by a given path
@@ -213,39 +283,6 @@ module Serengeti
         fog_op { |con| con.get_ds_name_by_path(path) }
       end
 
-      def vm_update_network(vm)
-        check_connection
-        card = 0
-        vm.network_config_json.each do |config_json|
-          fog_op { |con| con.vm_update_network('instance_uuid' => vm.instance_uuid,
-                                              'adapter_name' => "Network adapter #{card + 1}",
-                                              'portgroup_name' => vm.network_res.port_group(card)) }
-
-          @logger.debug("network json:#{config_json}")
-          fog_op { |con| con.vm_config_ip('vm_moid' => vm.mob, 'config_json' => config_json) }
-          card += 1
-        end
-      end
-
-      def vm_set_ha(vm, enable)
-        check_connection
-        # default is enable
-        try_num = 3
-        return if enable
-        try_num.times do |num|
-          result = fog_op { |con| con.vm_disable_ha('vm_moid' => vm.mob) }
-          if result['task_state'] == 'success'
-            @logger.debug("vm:#{vm.name} disable ha success.")
-            return
-          end
-          @logger.debug("vm:#{vm.name} disable ha failed and retry #{num+1} times.")
-        end
-      end
-
-      def is_vm_in_ha_cluster(vm)
-        check_connection
-        fog_op { |con| con.is_vm_in_ha_cluster('vm_moid' => vm.mob) }
-      end
       ###################################################
       # inner use functions
       def update_vm_with_properties_string(vm, vm_properties)

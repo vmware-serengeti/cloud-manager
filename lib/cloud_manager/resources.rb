@@ -18,7 +18,7 @@
 
 module Serengeti
   module CloudManager
-    class Resources
+    class Resources < BaseObject
       class Datacenter
         attr_accessor :mob
         attr_accessor :name
@@ -71,8 +71,8 @@ module Serengeti
         attr_accessor :datacenter
         attr_accessor :resource_pools
         attr_accessor :hosts
-        attr_accessor :share_datastores
-        attr_accessor :local_datastores
+        #attr_accessor :share_datastores
+        #attr_accessor :local_datastores
         attr_accessor :idle_cpu
         attr_accessor :total_memory
         attr_accessor :free_memory
@@ -103,7 +103,7 @@ module Serengeti
         attr_accessor :shares
         attr_accessor :host_used_mem
         attr_accessor :guest_used_mem
-        attr_accessor :limit_mem#MB
+        attr_accessor :limit_mem    #MB
         attr_accessor :free_memory
         attr_accessor :unaccounted_memory
         attr_accessor :config_mem
@@ -160,23 +160,19 @@ module Serengeti
       include Serengeti::CloudManager::Parallel
       #########################################################
       # Begin Resource functions
-      def initialize(client, serengeti, mem_over_commit = 1.0)
-        @logger       = Serengeti::CloudManager::Cloud.Logger
+      def initialize(client, cloud, mem_over_commit = 1.0)
+        @logger       = logger
         @client       = client
-        @serengeti    = serengeti
+        @cloud        = cloud
         @datacenter   = {}
         @lock         = Mutex.new
         @mem_over_commit  = mem_over_commit
       end
 
-      def fetch_vm_info(path)
-        mob = @client.get_vm_mob_ref_by_path(path)
-      end
-
       def fetch_vm_by_moid(vm_ref, dc_mob)
         mob = @client.get_vm_mob_ref_by_moid(vm_ref, dc_mob)
-        vm = fetch_vm_by_mob(mob, false)
-        @logger.debug("template vm:#{vm.pretty_inspect}")
+        vm = VmInfo.fetch_vm_from_cloud(mob, @cloud)
+        @logger.debug("fetch vm:#{vm.pretty_inspect}")
         vm
       end
 
@@ -194,13 +190,13 @@ module Serengeti
 
         @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
-        #raise "Missing share_datastore_pattern in director config" if @serengeti.vc_share_datastore_pattern.nil?
-        @logger.debug("share pattern:#{@serengeti.vc_share_datastore_pattern}")
-        @logger.debug("local pattern:#{@serengeti.vc_local_datastore_pattern}")
-        datacenter.share_datastore_pattern    = @serengeti.vc_share_datastore_pattern
-        datacenter.local_datastore_pattern = @serengeti.vc_local_datastore_pattern
+        #raise "Missing share_datastore_pattern in director config" if @cloud.vc_share_datastore_pattern.nil?
+        @logger.debug("share pattern:#{@cloud.vc_share_datastore_pattern}")
+        @logger.debug("local pattern:#{@cloud.vc_local_datastore_pattern}")
+        datacenter.share_datastore_pattern    = @cloud.vc_share_datastore_pattern
+        datacenter.local_datastore_pattern = @cloud.vc_local_datastore_pattern
 
-        datacenter.racks = @serengeti.racks
+        datacenter.racks = @cloud.racks
 
         datacenter.vm_template = fetch_vm_by_moid(template_ref, datacenter_mob)
         datacenter.port_group = @client.get_portgroups_by_dc_mob(datacenter_mob)
@@ -214,12 +210,12 @@ module Serengeti
 
         clusters = {}
         group_each_by_threads(cluster_mobs, \
-            :callee => "fetch cluster in datacenter #{datacenter.name}") do |cluster_mob|
+            :callee => "fetch clusters") do |cluster_mob|
           attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
           # chose cluster in cluster_names
-          next unless @serengeti.vc_req_rps.key?(attr["name"])
+          next unless @cloud.vc_req_rps.key?(attr["name"])
 
-          resouce_names = @serengeti.vc_req_rps[attr['name']]
+          resouce_names = @cloud.vc_req_rps[attr['name']]
           @logger.debug("Use cluster :#{attr["name"]} and checking resource pools")
           cluster                     = Cluster.new
           resource_pools = fetch_resource_pool(cluster, cluster_mob, resouce_names)
@@ -232,23 +228,15 @@ module Serengeti
           cluster.mob                 = attr["mo_ref"]
           cluster.name                = attr["name"]
           cluster.vms                 = {}
-          cluster.share_datastore_pattern = @serengeti.input_cluster_info["vc_shared_datastore_pattern"] ||
+          cluster.share_datastore_pattern = @cloud.input_cluster_info["vc_shared_datastore_pattern"] ||
                                                                     datacenter.share_datastore_pattern || []
-          cluster.local_datastore_pattern = @serengeti.input_cluster_info["vc_local_datastore_pattern"]  ||
+          cluster.local_datastore_pattern = @cloud.input_cluster_info["vc_local_datastore_pattern"]  ||
                                                                     datacenter.local_datastore_pattern || []
 
           @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
           cluster.resource_pools      = resource_pools
           cluster.datacenter          = datacenter
-          cluster.share_datastores    = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
-                                                         datacenter.share_datastore_pattern)
-          @logger.debug("warning: no matched sharestores in cluster:#{cluster.name}") if cluster.share_datastores.empty?
-
-          cluster.local_datastores    = fetch_datastores(@client.get_datastores_by_cs_mob(cluster_mob),
-                                                         datacenter.local_datastore_pattern)
-          @logger.debug("warning: no matched sharestores in cluster:#{cluster.name}") if cluster.share_datastores.empty?
-
           cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
           clusters[cluster.name] = cluster
@@ -291,7 +279,7 @@ module Serengeti
       def fetch_hosts(cluster, cluster_mob)
         hosts = {}
         host_mobs = @client.get_hosts_by_cs_mob(cluster_mob)
-        group_each_by_threads(host_mobs, :callee => "fetch hosts in cluster #{cluster.name}") do |host_mob|
+        group_each_by_threads(host_mobs, :callee => "fetch hosts in #{cluster.name}") do |host_mob|
           attr = @client.ct_mob_ref_to_attr_hash(host_mob, "HS")
           connection_state   = attr["connection_state"]
           if connection_state != 'connected'
@@ -336,33 +324,13 @@ module Serengeti
         hosts
       end
 
-      def fetch_vm_by_mob(vm_mob, check_this_cluster)
-        vm_existed = @client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
-        return nil if check_this_cluster && !@serengeti.vm_is_this_cluster?(vm_existed["name"])
-        vm = Serengeti::CloudManager::VmInfo.new(vm_existed["name"])
-
-        #update vm info with properties
-        @client.update_vm_with_properties_string(vm, vm_existed)
-
-        #update disk info
-        disk_attrs = @client.get_disks_by_vm_mob(vm_mob)
-        disk_attrs.each do |attr|
-          disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num'])
-          datastore_name = @client.get_ds_name_by_path(attr['path'])
-          disk.datastore_name = datastore_name
-        end
-
-        vm.can_ha = @client.is_vm_in_ha_cluster(vm)
-        vm
-      end
-
       def fetch_vms_by_host(cluster, host, host_mob)
         vms = {}
         vm_mobs = @client.get_vms_by_host_mob(host_mob)
         return vms if vm_mobs.nil?
         vm_mobs.each do |vm_mob|
           #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
-          vm = fetch_vm_by_mob(vm_mob, true)
+          vm = VmInfo.fetch_vm_from_cloud(vm_mob, @cloud) { |name| @cloud.vm_is_this_cluster?(name) }
           next if vm.nil?
 
           vm.host_name = host.name
@@ -398,12 +366,6 @@ module Serengeti
         match_patterns.each { |pattern| return true if name.match(pattern) }
         #@logger.debug("Not Match? ")
         false
-      end
-
-      def find_cs_datastores_by_name(cluster, name)
-        datastore = cluster.share_datastores[name]
-        return datastore if datastore
-        cluster.local_datastores[name]
       end
 
     end

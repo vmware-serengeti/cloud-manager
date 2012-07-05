@@ -19,9 +19,9 @@
 module Serengeti
   module CloudManager
     class Cloud
-      CLOUD_WORK_CREATE = 'create cluster'
-      CLOUD_WORK_DELETE = 'delete cluster'
-      CLOUD_WORK_LIST   = 'list cluster'
+      CLOUD_WORK_CREATE = 'create'
+      CLOUD_WORK_DELETE = 'delete'
+      CLOUD_WORK_LIST   = 'list'
       CLOUD_WORK_START  = 'start'
       CLOUD_WORK_STOP   = 'stop'
       CLOUD_WORK_NONE   = 'none'
@@ -92,38 +92,39 @@ module Serengeti
         CLOUD_WORK_STOP   => CLUSTER_STOP_PROCESS,
       }
 
-      def get_result_by_vms(servers, vms, options={})
-        vms.each_value { |vm|
-          result = get_from_vm_name(vm.name)
-          next if result.nil?
-          vm.cluster_name = @cluster_name #Serengeti cluster_name
-          vm.group_name = result[2]
-          vm.created = options[:created]
-          servers << vm
-        }
+      # Get VMs' info from vm queues
+      def get_result_by_vms(servers, vms_all, options={})
+        vms_all.each_value do |vms|
+          vms.each_value do |vm|
+            result = get_from_vm_name(vm.name)
+            next if result.nil?
+            vm.cluster_name = @cluster_name #Serengeti cluster_name
+            vm.group_name = result[2]
+            servers << vm
+          end
+        end
       end
 
+      # Get cluster operation's status
       def get_result
         result = IaasResult.new
-        @vm_lock.synchronize {
-          result.waiting = @placed_vms.size
-          result.deploy = @deploy_vms.size
-          result.waiting_start = @existed_vms.size
-          result.success = @finished_vms.size
-          result.failure = @failed_vms.size + @placement_failed + @cluster_failed_num
+        @vm_lock.synchronize do
+          result.waiting = state_sub_vms_size(:placed)
+          result.deploy  = state_sub_vms_size(:deploy)
+          result.waiting_start = state_sub_vms_size(:existed)
+          result.success = state_sub_vms_size(:finished)
+          result.failure = state_sub_vms_size(:failed) + @placement_failed + @cluster_failed_num
           result.succeed = @success && result.failure <= 0
           result.error_msg = (cloud_error_msg_que.nil?) ? cloud_error_msg_que.join : ''
           result.running = result.deploy + result.waiting + result.waiting_start
           result.total = result.running + result.success + result.failure
           result.servers = []
-          get_result_by_vms(result.servers, @deploy_vms, :created => false)
-          get_result_by_vms(result.servers, @existed_vms, :created => true)
-          get_result_by_vms(result.servers, @failed_vms, :created => false)
-          get_result_by_vms(result.servers, @finished_vms, :created => true)
-        }
+          get_result_by_vms(result.servers, @state_vms)
+        end
         result
       end
 
+      # Get cluster operation's progress
       def get_progress
         progress = IaasProcess.new
         progress.cluster_name = @cluster_name

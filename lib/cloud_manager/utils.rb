@@ -32,13 +32,17 @@ module Serengeti
         else
           #paralleled method for multi-work
           @logger.debug("#{options[:callee]} run in paralleled model")
+          action_msg = Thread.current[:action]
           group.each do |item|
             work_thread << Thread.new(item) do |item|
               begin
+                Thread.current[:thread_callee] = options[:callee]
+                Thread.current[:action] = action_msg
                 yield item
               rescue => e
                 @logger.debug("#{options[:callee]} threads failed #{e} - #{e.backtrace.join("\n")}")
               end
+              Thread.current[:thread_callee] = ''
             end
           end
           @logger.debug("Created #{work_thread.size} threads to work for #{group.size} jobs")
@@ -72,7 +76,7 @@ module Serengeti
           @max_threads = options[:max_threads] || 1
           @available_threads = @max_threads
 
-          @logger = Serengeti::CloudManager::Cloud.Logger
+          @logger = Serengeti::CloudManager.logger
           @boom = nil
           @original_thread = Thread.current
           @threads = []
@@ -189,23 +193,49 @@ module Serengeti
 
     end
 
+    class Config
+      def_const_value :vm_name_split_sign, '-'
+    end
+
     class Cloud
-      VM_SPLIT_SIGN = '-'
       def gen_cluster_vm_name(group_name, num)
-        return "#{@cluster_name}#{VM_SPLIT_SIGN}#{group_name}#{VM_SPLIT_SIGN}#{num}"
+        return "#{@cluster_name}#{config.vm_name_split_sign}#{group_name}#{config.vm_name_split_sign}#{num}"
       end
 
       def vm_is_this_cluster?(vm_name)
+        @logger.debug("vm:#{vm_name} is in cluster?")
         result = get_from_vm_name(vm_name)
         return false unless result
         return false unless (result[1] == @cluster_name)
+
+        @logger.debug("vm:#{vm_name} is in cluster:#{@cluster_name}")
         true
       end
 
       def get_from_vm_name(vm_name, options={})
-        return /([\w\s\d]+)#{VM_SPLIT_SIGN}([\w\s\d]+)#{VM_SPLIT_SIGN}([\d]+)/.match(vm_name)
+        return /([\w\s\d]+)#{config.vm_name_split_sign}([\w\s\d]+)#{config.vm_name_split_sign}([\d]+)/.match(vm_name)
       end
 
+      def create_plugin_obj(plugin, parameter = nil)
+        begin
+          @logger.debug("#{plugin.pretty_inspect}")
+          require_file, = plugin['require']
+          plugin_name = plugin['obj']
+
+          @logger.debug("require_file:#{require_file}, plugin_name:#{plugin_name}")
+          eval("require \'#{require_file}\'") if require_file.to_s.size > 0
+
+          return eval(plugin_name).new(parameter)
+        rescue => e
+          @logger.error("Create plugin failed.\n #{e} - #{e.backtrace.join("\n")}")
+          raise PluginException,"Do not support #{plugin_name} plugin in file:#{require_file}!"
+        end
+      end
+
+      def create_service_obj(plugin, parameter = nil)
+        create_plugin_obj(plugin, parameter)
+      end
+      
     end
 
   end

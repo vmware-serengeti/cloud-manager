@@ -13,22 +13,15 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
-# @version 0.5.0
+# @since serengeti 0.5.1
+# @version 0.5.1
 
 module Serengeti
   module CloudManager
 
-    class ClientFactory
-      def self.create(name)
-        case name
-        when "ut"
-          return FogDummy.new
-        when "fog"
-          return FogAdapter.new
-        else
-          raise "do not support #{name} client!"
-        end
+    class ResourcePool < CMService
+      def name
+        "resource_pool"
       end
     end
 

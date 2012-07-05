@@ -46,6 +46,12 @@ module Serengeti
 
       def show(parameter, options={})
       end
+
+      def placement()
+      end
+
+      def deploy()
+      end
     end
 
   end

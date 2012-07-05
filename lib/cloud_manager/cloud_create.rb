@@ -19,37 +19,37 @@
 module Serengeti
   module CloudManager
 
+    class Config
+      def_const_value :deploy_retry_num, 1
+    end
+
     class Cloud
+      attr_accessor :vm_groups_existed
+      attr_accessor :vm_groups_input
       def create_and_update(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_CREATE, task) do
           @logger.info("enter create_and_update...")
           create_cloud_provider(cloud_provider)
-          @vm_lock.synchronize do
-            #TODO document each vm queue. change to same timing
-            @deploy_vms = {}
-            @existed_vms = {}
-            @placed_vms = {}
-            @failed_vms = {}
-            @finished_vms = {}
-          end
+          @vm_lock.synchronize { state_vms_init }
           #@logger.debug("#{cluster_info.inspect}")
           cluster_changes = []
 
           begin
-            dc_resources, vm_groups_existed, vm_groups_input = prepare_working(cluster_info, cluster_data)
-            ###########################################################
-            # Create existed vm groups
+            result = prepare_working(cluster_info, cluster_data)
+            dc_resources      = result[:dc_res]
+            vm_groups_existed = result[:group_existed]
+            vm_groups_input   = result[:group_input]
 
+            # Create existed vm groups
             unless vm_groups_existed.empty?
-              ###########################################################
-              #Checking and do difference
+              # Checking and do difference
               @status = CLUSTER_UPDATE
               nodifference, cluster_changes = cluster_diff(dc_resources, vm_groups_input, vm_groups_existed)
               if nodifference
                 @logger.debug("No difference here")
                 @status = CLUSTER_DONE
               else
-                log_obj_to_file(cluster_changes, 'cluster_changes')
+                @logger.obj2file(cluster_changes, 'cluster_changes')
               end
             end
           rescue => e
@@ -65,7 +65,7 @@ module Serengeti
             return
           end
 
-          retry_num = 1
+          retry_num = config.deploy_retry_num
 
           retry_num.times do |cycle_num|
             begin
@@ -73,33 +73,36 @@ module Serengeti
               #Caculate cluster placement
               @logger.info("Begin placement")
               @status = CLUSTER_PLACE
-              placement = cluster_placement(dc_resources, vm_groups_input, vm_groups_existed, cluster_info)
-              log_obj_to_file(placement, 'placement')
-
-              if template_placement?
-                @status = CLUSTER_TEMPLATE_PLACE
-                template_place_result = template_place(dc_resources, cluster_info, vm_groups_input, placement)
-                log_obj_to_file(template_place_result, 'template_place')
-                cluster_deploy([], template_place_result)
-              end
+              place_obj = PlacementService.new(self)
+              placement = place_obj.cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
+              @placement_failed = placement[:failed_num]
+              placement[:error_msg].each { |m| set_cluster_error_msg(m) }
+              @logger.obj2file(placement, 'placement')
 
               @logger.info("Begin deploy")
+=begin
+              if config.template_placement
+                @status = CLUSTER_TEMPLATE_PLACE
+                cluster_deploy([], placement[:template_place])
+              end
+=end
+
               #Begin cluster deploy
               @status = CLUSTER_DEPLOY
-              successful = cluster_deploy(cluster_changes, placement)
+              successful = cluster_deploy(cluster_changes, placement[:place_groups])
 
               @logger.info("Begin waiting cluster ready")
               #Wait cluster ready
               @status = CLUSTER_WAIT_START
-              successful = cluster_wait_ready(@existed_vms.values)
+              successful = cluster_wait_ready(state_sub_vms(:existed).values)
               break if successful
 
               @status = CLUSTER_RE_FETCH_INFO
-              dc_resources = @resources.fetch_datacenter(@vc_req_datacenter, cluster_info['template_id'])
+              dc_resources = @resources.fetch_datacenter(@cloud_provider.vc_datacenter, cluster_info['template_id'])
               #TODO add all kinds of error handlers here
               @logger.info("reload datacenter resources from cloud")
 
-              log_obj_to_file(dc_resources, "dc_resource-#{cycle_num}")
+              @logger.obj2file(dc_resources, "dc_resource-#{cycle_num}")
             rescue => e
               @logger.warn("#{e} - #{e.backtrace.join("\n")}")
               if cycle_num + 1  >= retry_num
@@ -111,7 +114,6 @@ module Serengeti
           end
           ###########################################################
           # Cluster deploy successfully
-          cluster_done(task)
         end
       end
 

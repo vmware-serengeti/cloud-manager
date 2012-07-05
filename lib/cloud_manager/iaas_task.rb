@@ -23,7 +23,7 @@ module Serengeti
         @cluster_definition = cluster_definition
         @cloud_provider = cloud_provider
         @cluster_data = cluster_data
-        @logger = Serengeti::CloudManager::Cloud.Logger
+        @logger = Serengeti::CloudManager.logger
         @serengeti = Serengeti::CloudManager::Cloud.new(@cluster_definition)
 
         @output_lock = Mutex.new
@@ -66,27 +66,27 @@ module Serengeti
 
       def start
         @logger.debug("call cloud.start...")
-        return @serengeti.start(@cloud_provider, @cluster_definition, @cluster_data, self)
+        @serengeti.start(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def stop
         @logger.debug("call cloud.stop...")
-        return @serengeti.stop(@cloud_provider, @cluster_definition, @cluster_data, self)
+        @serengeti.stop(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def list_vms
         @logger.debug("call cloud.list_vms...")
-        return @serengeti.list_vms(@cloud_provider, @cluster_definition, @cluster_data, self)
+        @serengeti.list_vms(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def create_and_update
         @logger.debug("call cloud.create_and_update ...")
-        return @serengeti.create_and_update(@cloud_provider, @cluster_definition, @cluster_data, self)
+        @serengeti.create_and_update(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def delete
         @logger.debug("call cloud.delete...")
-        return @serengeti.delete(@cloud_provider, @cluster_definition, @cluster_data, self)
+        @serengeti.delete(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
     end
   end

@@ -18,7 +18,24 @@
 
 module Serengeti
   module CloudManager
-    class CloudException
+
+    class PlaceException < Exception
     end
+
+    class DeployException < Exception
+    end
+
+    class FetchException < Exception
+    end
+
+    class ParameterException < Exception
+    end
+
+    class PluginException < Exception
+    end
+
+    class PlaceServiceException < PlaceException
+    end
+
   end
 end

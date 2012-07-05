@@ -16,21 +16,20 @@
 # @since serengeti 0.5.0
 # @version 0.5.0
 
+require 'json'
 module Serengeti
   module CloudManager
 
     class Cloud
       class NetworkRes
-        attr_accessor :config
-
         IP = '(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])'
         def initialize(networking)
-          @config = networking
-          @logger = Serengeti::CloudManager::Cloud.Logger
+          @net_config = networking
+          @logger = Serengeti::CloudManager.logger
 
           range_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}-#{IP}\.#{IP}\.#{IP}\.#{IP}$")
           ip_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}$")
-          @config.each do |conf|
+          @net_config.each do |conf|
             conf['ip_pool'] = {}
             next if (conf['type'] != 'static')
             conf['ip'].each do |ip|
@@ -39,7 +38,7 @@ module Serengeti
               conf['ip_pool'][ip] = 1 if (single_result)
             end
           end
-          @logger.debug("IP config:#{@config.pretty_inspect}")
+          @logger.debug("IP net_config:#{@net_config.pretty_inspect}")
           @lock = Mutex.new
         end
 
@@ -54,26 +53,26 @@ module Serengeti
           (range[1]..range[5]).each { |ip| range_extend(range, 2, ip.to_s, pool)}
         end
 
-        def dhcp?(card);  @config[card]['type'] == 'dhcp'; end
-        def static?(card); @config[card]['type'] == 'static'; end
-        def port_group(card); @config[card]['port_group']; end
-        def netmask(card); @config[card]['netmask'];end
-        def gateway(card); @config[card]['gateway'];end
-        def dns(card); @config[card]['dns']; end
-        def card_num; @config.size; end
+        def dhcp?(card);  @net_config[card]['type'] == 'dhcp'; end
+        def static?(card); @net_config[card]['type'] == 'static'; end
+        def port_group(card); @net_config[card]['port_group']; end
+        def netmask(card); @net_config[card]['netmask'];end
+        def gateway(card); @net_config[card]['gateway'];end
+        def dns(card); @net_config[card]['dns']; end
+        def card_num; @net_config.size; end
         def not_existed_port_group(net_pg)
-          @config.each { |config| return config['port_group'] if !net_pg.key?(config['port_group']) }
+          @net_config.each { |net_config| return net_config['port_group'] if !net_pg.key?(net_config['port_group']) }
           nil
         end
 
-        def ip_num(card); @lock.synchronize { return @config[card]['ip_pool'].size}; end
+        def ip_num(card); @lock.synchronize { return @net_config[card]['ip_pool'].size}; end
 
-        def ip_alloc(card) @lock.synchronize { return @config[card]['ip_pool'].shift.first} end
+        def ip_alloc(card) @lock.synchronize { return @net_config[card]['ip_pool'].shift.first} end
 
-        def ip_remove(card, ip) @lock.synchronize { @config[card]['ip_pool'].delete(ip.to_s)} end
+        def ip_remove(card, ip) @lock.synchronize { @net_config[card]['ip_pool'].delete(ip.to_s)} end
 
         def ip_release(card, ip)
-          @lock.synchronize { @config[card]['ip_pool'][ip.to_s] = 2}
+          @lock.synchronize { @net_config[card]['ip_pool'][ip.to_s] = 2}
           nil
         end
 
@@ -101,8 +100,8 @@ module Serengeti
         def free_vm_network_json(card, config_json)
           return 'OK' if !static?(card)
 
-          config = JSON.parse(config_json)
-          ip_remove(config['ipaddr']) if config['ipaddr']
+          net_config = JSON.parse(config_json)
+          ip_remove(net_config['ipaddr']) if net_config['ipaddr']
           'OK'
         end
 

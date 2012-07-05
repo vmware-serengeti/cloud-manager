@@ -20,16 +20,12 @@ Gem::Specification.new do |s|
     "Rakefile",
     "cloud-manager.gemspec",
     "lib/cloud_manager.rb",
-    "lib/cloud_manager/client_fog.rb",
     "lib/cloud_manager/cloud_deploy.rb",
-    "lib/cloud_manager/cloud_placement.rb",
     "lib/cloud_manager/cluster_diff.rb",
     "lib/cloud_manager/exception.rb",
     "lib/cloud_manager/iaas_result.rb",
     "lib/cloud_manager/network_res.rb",
     "lib/cloud_manager/utils.rb",
-    "lib/cloud_manager/client.rb",
-    "lib/cloud_manager/cloud_item.rb",
     "lib/cloud_manager/cloud_progress.rb",
     "lib/cloud_manager/cluster.rb",
     "lib/cloud_manager/group.rb",
@@ -44,19 +40,21 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/iaas_progress.rb",
     "lib/cloud_manager/log.rb",
     "lib/cloud_manager/resources.rb",
+    "lib/plugin/client_fog.rb",
+    "lib/plugin/fog_dummy.rb",
+    "lib/plugin/placement_rr.rb",
+    "lib/plugin/cloud_sim.rb",
     "lib/cloud_manager/vm.rb",
     "spec/cloud_unit_test.rb",
     "spec/cloud_func_test.rb",
     "spec/spec_helper.rb",
     "spec/config.rb",
-    "spec/fog_dummy.rb",
-    "spec/ut.cluster_def1.yaml",
-    "spec/ut.cluster_def2.yaml",
-    "spec/ut.dc.yaml",
-    "spec/ut.config.yaml",
-    "spec/ut.vc.yaml",
-    "spec/func.cluster_def.yaml",
-    "spec/func.vc.yaml"
+    "config/func/func.cluster_def.yaml",
+    "config/func/func.vc.yaml",
+    "config/ut/ut.cluster_def1.yaml",
+    "config/ut/ut.cluster_def2.yaml",
+    "config/ut/ut.dc.yaml",
+    "config/ut/ut.vc.yaml",
   ]
   s.homepage = ""
   s.licenses = [""]
@@ -68,17 +66,16 @@ Gem::Specification.new do |s|
     "spec/cloud_func_test.rb",
     "spec/spec_helper.rb",
     "spec/config.rb",
-    "spec/fog_dummy.rb",
-    "spec/ut.cluster_def1.yaml",
-    "spec/ut.cluster_def2.yaml",
-    "spec/ut.dc.yaml",
-    "spec/ut.config.yaml",
-    "spec/ut.vc.yaml",
-    "spec/func.cluster_def.yaml",
-    "spec/func.vc.yaml"
+    "config/func/func.cluster_def.yaml",
+    "config/func/func.vc.yaml",
+    "config/ut/ut.cluster_def1.yaml",
+    "config/ut/ut.cluster_def2.yaml",
+    "config/ut/ut.dc.yaml",
+    "config/ut/ut.vc.yaml",
   ]
 
   s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])
+  s.add_dependency(%q<json>, ["~> 1.6.6"])
 
 end
 
