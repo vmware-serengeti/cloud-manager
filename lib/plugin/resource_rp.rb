@@ -18,11 +18,74 @@
 
 module Serengeti
   module CloudManager
+    class Config
+      def_const_value :rp_service, {'require' => '', 'obj' => 'InnerRP'}
+      def_const_value :enable_inner_rp_service, true
+    end
+
+    class InnerRP < BaseObject
+      class RPServer
+        attr_reader :host
+        attr_reader :size
+        attr_reader :value
+        def initialize(host, rp, size, value)
+          @host = host
+          @rp = rp 
+          @size = size
+          @value = value
+        end
+      end
+
+      def hosts; @cm_server.hosts; end
+      def rps; @cm_server.rps; end
+      def dc_resource; @cm_server.dc_resource; end
+      def vm_groups; @cm_server.vm_groups; end
+
+      def initialize(vm_specs, cm_server)
+        @cm_server = cm_server
+        @vm_spec = vm_specs
+      end
+
+      def query_capacity(vmServers, info)
+        info["hosts"]
+      end
+
+      def recommendation(vmServers, hostnames)
+        index = 0
+        Hash[hostnames.map { |host| [host, RPServer.new(hosts[host], nil, 100, index += 1)] }]
+      end
+
+      def commission(vmServers)
+        true
+      end
+
+      def decommission(vmServers)
+      end
+
+    end
 
     class ResourcePool < CMService
       def name
         "resource_pool"
       end
+
+      def create_server(vm_spec)
+        if config.enable_inner_rp_service
+          @server = InnerRP.new(vm_spec, self) # Currently, we only use the first engine
+        else
+          @server = cloud.create_service_obj(config.compute_service, vm_spec) # Currently, we only use the first engine
+        end
+        raise Serengeti::CloudManager::PluginException,"Can not create service obj #{config.compute_service['obj']}" if @server.nil?
+        @server
+      end
+
+      def deploy(vmServer)
+      end
+
+      def delete(vmServer)
+        @server.decommission(vmServer)
+      end
+
     end
 
   end

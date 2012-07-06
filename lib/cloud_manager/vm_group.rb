@@ -150,8 +150,14 @@ module Serengeti
         @req_rps = {}
       end
 
+      def to_vm_groups
+        [self]
+      end
+
       def to_spec
         {
+          'vm_group_name' => name,
+
           'req_mem' => req_info.mem,
           'cpu' => req_info.cpu,
 

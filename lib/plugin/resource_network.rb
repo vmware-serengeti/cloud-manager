@@ -18,24 +18,44 @@
 
 module Serengeti
   module CloudManager
+
     class InnerNetwork < BaseObject
-      def initialize(vm_spec)
+      class NetworkServer
+        attr_reader :host
+        attr_reader :spec
+        attr_reader :value
+        def initialize(host, spec, value)
+          @host = host
+          @spec = spec
+          @value = value
+        end
       end
 
-      def get_info(dc_resource)
-        @dc = dc_resource
+      def initialize(vm_spec, cm_server)
+        @cm_server = cm_server
+        @vm_spec = vm_spec
       end
+
+      def hosts; @cm_server.hosts; end
+      def rps; @cm_server.rps; end
+      def dc_resource; @cm_server.dc_resource; end
+      def vm_groups; @cm_server.vm_groups; end
+
 
       def query_capacity(vmServers, info)
+        info['hosts']
       end
 
-      def recommendation(vmServers, hosts)
+      def recommendation(vmServers, hostnames)
+        index = 0
+        Hash[hostnames.map { |host| [host, NetworkServer.new(hosts[host], nil, index += 1)] }]
       end
 
-      def commission(vmServers)
+      def commission(vmServer)
+        true
       end
 
-      def decommission(vmServers)
+      def decommission(vmServer)
       end
  
     end
@@ -56,46 +76,21 @@ module Serengeti
 
       def create_server(vm_spec)
         if config.enable_inner_network_service
-          @network = InnerNetwork.new(vm_spec)
+          @server = InnerNetwork.new(vm_spec, self)
         else
-          @network = cloud.create_service_obj(config.network_service, vm_spec) 
+          @server = cloud.create_service_obj(config.network_service, vm_spec) 
         end
-        raise Serengeti::CloudManager::PluginException, "Can not create service obj #{config.network_service['obj']}" if @network.nil?
-        @network
-      end
-
-      def check_capacity(vmServers, hosts, options = {})
-        if config.enable_inner_network_service
-          info = {'hosts' => hosts }
-        else
-          info = {'hosts' => hosts.keys}
-        end
-        @network.query_capacity(vmServers, info)
-      end
-
-      def calc_values(vmServers, hosts, options = {})
-        @network.recommendation(vmServers, hosts)
-        # TODO change result to wanted
-      end
-
-      def commit(vmServers, host, options = {})
-        @network.commission(vmServers)
-      end
-
-      def discommit(vmServers, options = {})
-        @network.decommission(vmServers)
+        raise Serengeti::CloudManager::PluginException, "Can not create service obj #{config.network_service['obj']}" if @server.nil?
+        @server
       end
 
       def deploy(vmServer)
-        @network.create(vmServer)
+        @server.create(vmServer)
       end
 
       def delete(vmServer)
-        @network.delete(vmServer)
+        @server.delete(vmServer)
       end
-    end
-
-
     end
 
   end

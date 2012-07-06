@@ -37,6 +37,12 @@ module Serengeti
         vm_groups
       end
 
+      def initialize(cloud)
+        super
+        @hosts = {}
+      end
+
+
       def get_virtual_nodes(virtual_group, existed_vms, placed_vms)
         vm_spec_groups = []
         (0...virtual_group.instances).each do |num|
@@ -54,7 +60,8 @@ module Serengeti
         mini_host = nil
         scores.each_key do |host|
           if @hosts.key?(host)
-            mini_host |= @host
+            mini_host = host if mini_host.nil?
+            logger.debug("mini: #{@hosts[mini_host]} #{@hosts[host]}")
             mini_host = host if @hosts[mini_host] > @hosts[host]
           else
             @hosts[host] = 1 

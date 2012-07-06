@@ -22,9 +22,9 @@ module Serengeti
       def_const_value :client_connection, {'require' => '', 'obj' => 'FogAdaptor'}
       def_const_value :template_placement , false
 
-      def_const_value :debug_log_trace    , true
+      def_const_value :debug_log_trace    , false
       def_const_value :debug_log_trace_depth , 3
-      def_const_value :debug_log_obj2file , false
+      def_const_value :debug_log_obj2file , true
       def_const_value :debug_placement    , true
       def_const_value :debug_placement_rp , true
       def_const_value :debug_networking   , true

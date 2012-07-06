@@ -31,7 +31,7 @@ module Serengeti
       def_const_value :vm_sys_disk_colocated_with_data_disk, true
     end
 
-    class Placement
+    class Placement < BaseObject
       def initialize(cloud)
         @cloud = cloud 
       end
@@ -43,10 +43,6 @@ module Serengeti
       def placement_init(place_service, dc_resource)
         @place_service = place_service
         @dc_resource = dc_resource
-      end
-
-      def config
-        Serengeti::CloudManager.config 
       end
 
       def set_placement_error_msg(msg)

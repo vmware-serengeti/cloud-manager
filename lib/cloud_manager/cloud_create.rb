@@ -34,6 +34,9 @@ module Serengeti
           #@logger.debug("#{cluster_info.inspect}")
           cluster_changes = []
 
+          dc_resources      = {}
+          vm_groups_existed = {}
+          vm_groups_input   = {}
           begin
             result = prepare_working(cluster_info, cluster_data)
             dc_resources      = result[:dc_res]
@@ -76,16 +79,10 @@ module Serengeti
               place_obj = PlacementService.new(self)
               placement = place_obj.cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
               @placement_failed = placement[:failed_num]
-              placement[:error_msg].each { |m| set_cluster_error_msg(m) }
+              placement[:error_msg].each { |m| set_cluster_error_msg(m) } if placement[:error_msg].size > 0
               @logger.obj2file(placement, 'placement')
 
               @logger.info("Begin deploy")
-=begin
-              if config.template_placement
-                @status = CLUSTER_TEMPLATE_PLACE
-                cluster_deploy([], placement[:template_place])
-              end
-=end
 
               #Begin cluster deploy
               @status = CLUSTER_DEPLOY

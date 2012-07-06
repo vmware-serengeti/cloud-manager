@@ -24,20 +24,39 @@ module Serengeti
     end
 
     class InnerStorage < BaseObject
-      def initialize(vm_spec)
+      class StorageServer
+        attr_reader :host
+        attr_reader :size
+        attr_reader :value
+        def initialize(host, size, value)
+          @host = host
+          @size = size
+          @value = value
+        end
       end
 
-      def get_info_from(dc_resource)
-        @dc = dc_resource
+      def hosts; @cm_server.hosts; end
+      def rps; @cm_server.rps; end
+      def dc_resource; @cm_server.dc_resource; end
+      def vm_groups; @cm_server.vm_groups; end
+
+
+      def initialize(vm_specs, cm_server)
+        @cm_server = cm_server
+        @vm_specs = vm_specs
       end
 
       def query_capacity(vmServers, info)
+        info["hosts"]
       end
 
-      def recommendation(vmServers, hosts)
+      def recommendation(vmServers, hostnames)
+        index = 0
+        Hash[hostnames.map { |host| [host, StorageServer.new(hosts[host], 1000, index += 1)] }]
       end
 
       def commission(vmServers)
+        true
       end
 
       def decommission(vmServers)
@@ -52,38 +71,20 @@ module Serengeti
 
       def create_server(vm_spec)
         if config.enable_inner_storage_service
-          @storage = InnerStorage.new(vm_spec)
+          @server = InnerStorage.new(vm_spec, self)
         else
-          @storage = cloud.create_service_obj(config.storage_service, vm_spec) # Currently, we only use the first engine
+          @server = cloud.create_service_obj(config.storage_service, vm_spec) # Currently, we only use the first engine
         end
-        raise Serengeti::CloudManager::PluginException "Can not create service obj #{config.storage_service['obj']}" if @storage.nil?
-        @storage
-      end
-
-      def check_capacity(vmServers, hosts, options = {})
-        info = {'hosts' => hosts.map {|h|h.host_name } }
-        @storage.query_capacity(vmServers, info)
-      end
-
-      def calc_values(vmServers, hosts, options = {})
-        @storage.recommendation(vmServers, hosts)
-        # TODO change result to wanted
-      end
-
-      def commit(vmServers, host, options = {})
-        @storage.commission(vmServers)
-      end
-
-      def discommit(vmServers, options = {})
-        @storage.decommission(vmServers)
+        raise Serengeti::CloudManager::PluginException "Can not create service obj #{config.storage_service['obj']}" if @server.nil?
+        @server
       end
 
       def deploy(vmServer)
-        @storage.create_volumes(vmServer)
+        @server.create_volumes(vmServer)
       end
 
       def delete(vmServer)
-        @storage.delete_volumes(vmServer)
+        @server.delete_volumes(vmServer)
       end
     end
 

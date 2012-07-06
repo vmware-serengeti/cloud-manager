@@ -32,8 +32,7 @@ module Serengeti
       def config
         Serengeti::CloudManager.config 
       end
-
-end
+    end
 
     class Config
       def self.def_const_value(name, value)

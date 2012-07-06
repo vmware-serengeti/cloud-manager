@@ -29,6 +29,12 @@ module Serengeti
         attr_accessor :share_datastore_pattern
         attr_accessor :local_datastore_pattern
         attr_accessor :spec
+        attr_accessor :hosts
+        attr_accessor :resource_pools
+        def initialize
+          resource_pools = {}
+          hosts = {}
+        end
         def inspect
           "<Datacenter: #{@mob} / #{@name}>"
         end
@@ -200,6 +206,8 @@ module Serengeti
 
         datacenter.vm_template = fetch_vm_by_moid(template_ref, datacenter_mob)
         datacenter.port_group = @client.get_portgroups_by_dc_mob(datacenter_mob)
+        datacenter.hosts = {}
+        datacenter.resource_pools = {}
         datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
         datacenter
       end
@@ -209,8 +217,7 @@ module Serengeti
         cluster_mobs = @client.get_clusters_by_dc_mob(datacenter_mob)
 
         clusters = {}
-        group_each_by_threads(cluster_mobs, \
-            :callee => "fetch clusters") do |cluster_mob|
+        group_each_by_threads(cluster_mobs, :callee => "fetch clusters") do |cluster_mob|
           attr = @client.ct_mob_ref_to_attr_hash(cluster_mob, "CS")
           # chose cluster in cluster_names
           next unless @cloud.vc_req_rps.key?(attr["name"])
@@ -238,6 +245,15 @@ module Serengeti
           cluster.resource_pools      = resource_pools
           cluster.datacenter          = datacenter
           cluster.hosts = fetch_hosts(cluster, cluster_mob)
+
+          if datacenter.hosts.size <= 0 
+            datacenter.hosts = cluster.hosts
+          else
+            datacenter.hosts.merge(cluster.hosts)
+          end
+          @logger.debug("cluster hosts:#{cluster.hosts.pretty_inspect}")
+          @logger.debug("datacenter hosts:#{datacenter.hosts.pretty_inspect}")
+          datacenter.resource_pools[cluster.name] = cluster.resource_pools
 
           clusters[cluster.name] = cluster
         end
@@ -314,9 +330,6 @@ module Serengeti
           host.local_datastores = fetch_datastores(host.datastores,
                                                    host.datacenter.local_datastore_pattern)
           @logger.debug("warning: no matched localstores in host:#{host.name}") if host.share_datastores.empty?
-
-          #@logger.debug("host:#{host.name} share datastores are #{host.share_datastores}")
-          #@logger.debug("host:#{host.name} local datastores are #{host.local_datastores}")
 
           host.vms = fetch_vms_by_host(cluster, host, host_mob)
           hosts[host.name] = host

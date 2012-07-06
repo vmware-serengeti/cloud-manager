@@ -24,25 +24,51 @@ module Serengeti
     end
 
     class InnerCompute < BaseObject
-      def initialize(vm_spec)
+      def initialize(vm_specs, cm_server)
+        @cm_server = cm_server
+        @total_memory = 0
+        @cm_server = cm_server
+        #logger.debug("specs:#{vm_specs.pretty_inspect}")
+        @memory = vm_specs.map { |spec| spec['req_mem'] }
+        @memory.each { |m| @total_memory += m.to_i }
       end
 
-      def get_info_from_dc_resource(dc_resource)
-        @dc = dc_resource
+      def hosts; @cm_server.hosts; end
+      def rps; @cm_server.rps; end
+      def dc_resource; @cm_server.dc_resource; end
+      def vm_groups; @cm_server.vm_groups; end
+
+      class ComputeServer
+        attr_reader :host
+        attr_reader :total_memory
+        attr_reader :value
+        def initialize(host, total_memory, value)
+          @host = host
+          @total_memory = total_memory
+          @value = value
+        end
       end
 
       def query_capacity(vmServers, info)
-        info['hosts']
+        #logger.debug("hosts: #{hosts.pretty_inspect}")
+        logger.debug("query hosts: #{info['hosts']} total_mem:#{@total_memory}")
+        info['hosts'].select { |h| hosts[h].real_free_memory > @total_memory if hosts.key?(h) }
       end
 
-      def recommendation(vmServers, hosts)
-        sort_result = hosts.sort { |x,y| x.real_free_memory <=> y.real_free_memory }
+      def recommendation(vmServers, hostnames)
+        #logger.debug("recommend hosts: #{hosts.pretty_inspect}")
+        sort_result = hostnames.sort { |x,y| hosts[x].real_free_memory <=> hosts[y].real_free_memory }
+        index = 0
+        Hash[sort_result.map { |host| [host, ComputeServer.new(hosts[host], @total_memory, index+=1)] } ]
       end
 
-      def commission(vmServers)
+      def commission(vm_server)
+        vm_server.host.unaccounted_memory += vm_server.total_memory
+        true
       end
 
-      def decommission(vmServers)
+      def decommission(vm_server)
+        vm_server.host.unaccounted_memory -= vm_server.total_memory
       end
     end
 
@@ -52,34 +78,20 @@ module Serengeti
       end
 
       def create_server(vm_spec)
-        @compute = cloud.create_service_obj(config.compute_service, vm_spec) # Currently, we only use the first engine
-        raise Serengeti::CloudManager::PluginException "Can not create service obj #{config.compute_service['obj']}" if @compute.nil?
-        @compute
-      end
-
-      def check_capacity(vmServers, hosts, options = {})
-        info = { 'hosts' => hosts }
-        result = @compute.query_capacity(vmServers, info)
-      end
-
-      def calc_values(vmServers, hosts, options = {})
-        @compute.recommendation(vmServers, hosts)
-        # TODO change result to wanted
-      end
-
-      def commit(vmServers, host, options = {})
-        @compute.commission(vmServers)
-      end
-
-      def discommit(vmServers, options = {})
-        @compute.decommission(vmServers)
+        if config.enable_inner_compute_service
+          @server = InnerCompute.new(vm_spec, self)
+        else
+          @server = cloud.create_service_obj(config.compute_service, vm_spec) # Currently, we only use the first engine
+        end
+        raise Serengeti::CloudManager::PluginException,"Can not create service obj #{config.compute_service['obj']}" if @server.nil?
+        @server
       end
 
       def deploy(vmServer)
       end
 
       def delete(vmServer)
-        @compute.decommission(vmServer)
+        @server.decommission(vmServer)
       end
 
     end 

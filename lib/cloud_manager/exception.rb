@@ -34,8 +34,5 @@ module Serengeti
     class PluginException < Exception
     end
 
-    class PlaceServiceException < PlaceException
-    end
-
   end
 end

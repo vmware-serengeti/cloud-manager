@@ -23,9 +23,9 @@ module Serengeti
         @logger = Serengeti::CloudManager.logger
       end
 
-      def init_with_vm_service(service, vmSpec)
-        @logger.debug("vmSpec:#{vmSpec.pretty_inspect}")
-        vm = service.create_server(vmSpec)
+      def init_with_vm_service(service, vm_spec)
+        #@logger.debug("vmSpec:#{vm_spec.pretty_inspect}")
+        vm = service.create_server(vm_spec)
         @plugin_vm[service.name] = vm
       end
 
@@ -36,6 +36,11 @@ module Serengeti
     end
 
     class CMService < BaseObject
+      attr_reader :hosts
+      attr_reader :rps
+      attr_reader :vm_groups
+      attr_reader :placement_service
+
       def initialize(cloud)
         @cloud = cloud
       end
@@ -44,32 +49,43 @@ module Serengeti
         @cloud
       end
 
-      def check_resource_valid(test)
-        nil
+      def init_self(info = {})
+        dc_resource = info[:dc_resource]
+        vm_groups = info[:vm_groups]
+        placement_service = info[:place_service]
+
+        raise "do not input vm_groups for CMService class" if vm_groups.nil?
+        raise "do not input dc_resouce for CMService class" if dc_resource.nil?
+        raise "do not input dc_resouce for CMService class" if placement_service.nil?
+
+        @hosts = dc_resource.hosts
+        @rps = dc_resource.resource_pools
+        @vm_groups = vm_groups
+        @placement_service = placement_service
+        #logger.debug("cmserver:#{@hosts.pretty_inspect}")
+        #logger.debug("dc:#{dc_resource.pretty_inspect}")
       end
 
       def create_server(vm_spec)
-        nil
-      end
-
-      def init_self(placement_service)
-        @placement_service = placement_service
-      end
-
-      def get_info_from_dc_resource(dc_resource)
-        nil
+        raise "Should implement it in sub class"
       end
 
       def check_capacity(vmServers, hosts, options = {})
+        info = { 'hosts' => hosts }
+        result = @server.query_capacity(vmServers, info)
       end
 
-      def calc_values(vmServers, hosts, options = {})
+      def evaluate_hosts(vmServers, hosts, options = {})
+        @server.recommendation(vmServers, hosts)
+        # TODO change result to wanted
       end
 
-      def commit(vmServers, host, options = {})
+      def commit(vmServers, options = {})
+        @server.commission(vmServers)
       end
 
       def discommit(vmServers, options = {})
+        @server.decommission(vmServers)
       end
 
       def deploy(vmServers)

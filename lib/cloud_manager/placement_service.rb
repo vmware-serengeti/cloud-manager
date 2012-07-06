@@ -27,6 +27,9 @@ module Serengeti
     end
 
     class PlacementService < BaseObject
+      class PlaceServiceException < PlaceException
+      end
+
       def initialize(cloud)
         @logger = logger
         @rc_services = {}
@@ -64,7 +67,6 @@ module Serengeti
 
       def init_service(service)
         check_service(service)
-        service.init_self(self)
         service
       end
 
@@ -73,38 +75,34 @@ module Serengeti
       end
 
       # Check resource pools
-      def group_placement_rps(dc_res, vm_group)
-        place_rps = vm_group.req_rps.map do |cluster_name, rps|
-          rps.map { |rp_name| dc_res.clusters[cluster_name].resource_pools[rp_name] if dc_res.clusters[cluster_name]}
+      def group_placement_rps(dc_res, vm_groups)
+        place_rps = []
+        vm_groups.each do |vm_group|
+          place_rps = vm_group.req_rps.map do |cluster_name, rps|
+            rps.map do |rp_name|
+              dc_res.clusters[cluster_name].resource_pools[rp_name] if dc_res.clusters.key?(cluster_name)
+            end
+          end
         end
-
+        place_rps = place_rps.flatten.compact
         if place_rps.nil? || place_rps.size == 0
-          failed_vm_num = vm_group.instances - vm_group.vm_ids.size
-          @vm_placement[:failed_num] += failed_vm_num
-          err_msg = "Can not get any resource pools for vm group #{vm_group.name}. failed to place #{failed_vm_num} VM"
+          @vm_placement[:failed_num] += 1
+          err_msg = "Can not get any resource pools for vm"
           @logger.error(err_msg)
           set_placement_error_msg(err_msg)
           return nil
         end
-        place_rps.flatten
+        place_rps
       end
 
       def create_vm_with_each_resource(vm_spec_groups)
         vmServersGroup = []
         vm_spec_groups.each do |vm_spec_group|
-          vmServers = []
-          vm_spec_group.each do |vm_spec|
-            vm = VmServer.new
-            service_loop { |service| vm.init_with_vm_service(service, vm_spec) }
-            vmServers << {:vm => vm, :spec => vm_spec}
-          end
-          vmServersGroup << vmServers
+          vm = VmServer.new
+          service_loop { |service| vm.init_with_vm_service(service, vm_spec_group) }
+          vmServersGroup << {:vm => vm, :specs => vm_spec_group}
         end
         vmServersGroup
-      end
-
-      def vms_spec(vms)
-        vms.map { |vm| vm[:spec] }
       end
 
       def scores2_host(scores)
@@ -120,60 +118,64 @@ module Serengeti
 
       def place_group_vms_with_rp(place_rps, vm_group, group_place, existed_vms, placed_vms)
         # Get all hosts with paired info
-        hosts = {}
-        place_rps.each |rp| hosts.merge(rp.cluster.hosts) }
+        hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten
         # hosts' info is [hostname1, hostname2, ... ]
 
         # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]] 
         virtual_nodes = @place_engine.get_virtual_nodes(vm_group, existed_vms, placed_vms)
 
         # Return such like this [[vmServer1, vmServer2],[vmServer3]]
-        @logger.debug("vns:#{virtual_nodes.pretty_inspect}")
+        #@logger.debug("vns:#{virtual_nodes.pretty_inspect}")
         specs = virtual_nodes.map { |node| node.map { |spec| spec.to_spec} }
-        @logger.debug("#{specs.pretty_inspect}")
+        #@logger.debug("vns->specs#{specs.pretty_inspect}")
         vmServersGroups = create_vm_with_each_resource(specs)
 
         vmServersGroups.each do |group|
           # Check capacity
           service_loop do |service|
-            hosts = service.check_capacity(group, hosts)
-            raise PlaceServiceException 'Do not find hosts can match resources requirement' if hosts.nil?
+            hosts = service.check_capacity(group[:vm], hosts)
+            raise PlaceServiceException,'Do not find hosts can match resources requirement' if hosts.nil?
           end
 
           # Each service calc their values
           scores = {}
           service_loop do |service|
             # Return value is {host1=>value1, host2=>value2}
-            scores[service.name] = service.evaluate_hosts(group, hosts)
+            scores[service.name] = service.evaluate_hosts(group[:vm], hosts)
           end
 
+          #logger.debug("scores: #{scores.pretty_inspect}")
           scores_host = scores2_host(scores)
+          logger.debug("scores_host: #{scores_host.keys.pretty_inspect}")
           # place engine to decide how to place
+          success = true
+          selected_host = nil
           loop do
-            selected_host = @place_engine.select_host(vms_spec(group), scores_host)
-            raise PlaceServiceException 'Do not select suitable host' if selectd_host.nil?
+            selected_host = @place_engine.select_host(group[:specs], scores_host)
+            raise PlaceServiceException,'Do not select suitable host' if selected_host.nil?
 
             committed_service = []
-            success = true
             service_loop do |service|
-              success = service.commit(group, selected_host)
+              success = service.commit(scores[service.name][selected_host])
               if success
-                committed_service.unshift(group, service)
+                committed_service.unshift(group[:vm], service)
               else
                 # Dis Commit
                 success = false
-                committed_service.each { |plug| service.discommit(group, selected_host) }
+                committed_service.each { |plug| service.discommit(scores[service.name][selected_host]) }
                 @logger.debug("VM commit is failed.")
                 break
               end
             end
-            # Let engine know those vms is commit successfully
             break if success
             scores_host.delete(selected_host)
+            break if scores_host.empty?
           end
+
           if success
-            @place_engine.assign_host(vms_spec(group), selected_host)
-            group_place < group
+            logger.debug("assign to #{selected_host}")
+            @place_engine.assign_host(group[:specs], selected_host)
+            group_place << group
           end
         end
         group_place.flatten
@@ -184,20 +186,18 @@ module Serengeti
         @vm_placement[:error_msg] = []
         @vm_placement[:place_groups] = []
  
-        # Give dc resource to service
-        service_loop { |service| service.get_info_from_dc_resource(dc_resource) }
+        info = { :dc_resource => dc_resource, :vm_groups => vm_groups_input, :place_service => self }
+        service_loop { |service| service.init_self(info) }
 
         @place_engine.placement_init(self, dc_resource)
         virtual_groups = @place_engine.get_virtual_groups(vm_groups_input)
 
         virtual_groups.each_value do |virtual_group|
           # check information and check error
-          service_loop { |service| service.check_resource_valid(virtual_group) }
-
           group_place   = []
           place_err_msg = nil
           # Group's Resource pool check.
-          place_rps = group_placement_rps(dc_resource, virtual_group)
+          place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
           next if place_rps.nil?
           @logger.debug("place_rps: #{place_rps.pretty_inspect}")
 
@@ -208,14 +208,14 @@ module Serengeti
           rescue PlaceServiceException => e
             ## can not alloc virual_group anymore
             set_placement_error_msg("Can not alloc resource for vm group #{virtual_group.name}: #{place_err_msg}")
-            failed_vm_num = virual_group.instances - virual_group.size
-            @vm_placement[:failed_num] += failed_vm_num
-            @logger.error("VM group #{virual_group.name} failed to place #{failed_vm_num} vm, "\
+            @vm_placement[:failed_num] += 1
+            @logger.error("VM group #{virtual_group.name} failed to place vm, "\
                           "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
             next
           end
           @vm_placement[:place_groups] << group_place
         end
+        @vm_placement
       end
     end
 
