@@ -23,7 +23,7 @@ module Serengeti
       def_const_value :enable_inner_storage_service, true
     end
 
-    class InnerStorage < BaseObject
+    class InnerStorage < InnerServer
       class StorageServer
         attr_reader :host
         attr_reader :size
@@ -33,17 +33,6 @@ module Serengeti
           @size = size
           @value = value
         end
-      end
-
-      def hosts; @cm_server.hosts; end
-      def rps; @cm_server.rps; end
-      def dc_resource; @cm_server.dc_resource; end
-      def vm_groups; @cm_server.vm_groups; end
-
-
-      def initialize(vm_specs, cm_server)
-        @cm_server = cm_server
-        @vm_specs = vm_specs
       end
 
       def query_capacity(vmServers, info)

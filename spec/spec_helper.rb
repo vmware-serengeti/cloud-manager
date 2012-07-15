@@ -1,36 +1,28 @@
-require 'spec'
-require 'fog'
 require 'json'
 require 'yaml'
 require 'pp'
 require 'cloud_manager'
 
-FUNC_DEF_CONFIG_FILE_1 = "./spec/func.cluster_def.yaml"
-DC_DEF_CONFIG_FILE_1 = "./spec/ut.cluster_def1.yaml"
-DC_DEF_CONFIG_FILE_2 = "./spec/ut.cluster_def2.yaml"
+def ut_configure_file
+  ENV["UT_CLOUD_PROVIDER_FILE"] || "./ut.yaml"
+end
+def func_configure_file
+  ENV["FUNC_CLOUD_PROVIDER_FILE"] || "./func.yaml"
+end
 
-def ut_test_env(config_file)
+def load_test_env(provider_file, type)
   info = {}
-  vcenter = YAML.load(File.open(config_file))
-  cluster_req_1 = YAML.load(File.open(DC_DEF_CONFIG_FILE_1))
-  cluster_req_2 = YAML.load(File.open(DC_DEF_CONFIG_FILE_2))
-  info["cluster_definitions"] = [cluster_req_1, cluster_req_2]
-  info["cluster_definition"] = info["cluster_definitions"].first
+  all_config = YAML.load(File.open(provider_file))
+  vcenter = all_config['cloud_provider']
+  cluster_def = YAML.load(File.open(all_config['config']['cluster_def_file']))
+  info["cluster_definition"] = cluster_def
   info["cloud_provider"] = vcenter
-  info['type'] = 'UT'
-  puts("cluster_def : #{cluster_req_1}")
-  puts("provider: #{vcenter}")
+  info['type'] = type
+  info['config'] = all_config['config']
+  Serengeti::CloudManager.config.update(info['config'])
+  puts("cluster_def : #{cluster_def.pretty_inspect}")
+  puts("provider: #{vcenter.pretty_inspect}")
+  puts("config: #{info['config'].pretty_inspect}")
   info
 end
 
-def func_test_env(config_file)
-  info = {}
-  vcenter = YAML.load(File.open(config_file))
-  cluster_req_1 = YAML.load(File.open(FUNC_DEF_CONFIG_FILE_1))
-  info["cluster_definition"] = cluster_req_1
-  info["cloud_provider"] = vcenter
-  info['type'] = 'FUNC'
-  puts("cluster_def : #{cluster_req_1}")
-  puts("provider: #{vcenter}")
-  info
-end

@@ -1,27 +1,24 @@
 module Serengeti
   module CloudManager
 
-    class FogDummy
+    class FogDummy < BaseObject
       def initialize(noused)
-        @config = Serengeti::CloudManager.config
-        @logger = Serengeti::CloudManager.logger
         @ip_start = 2
-        @logger.debug("Enter CloudSim...")
+        logger.debug("Enter Cloud fog_dummy...")
         @debug_dc = YAML.load(File.open(config.ut_dc_config_file))
-        @pm = YAML.load(File.open(config.ut_config_file))
-        @logger.debug("Debug DC : #{@debug_dc}")
+        logger.debug("Debug DC : #{@debug_dc}")
         @lock = Mutex.new
         @vm_prop = {}
         @debug_dc_tree = nil
       end
 
       def login(vc_addr, vc_user, vc_pass)
-        @logger.debug("Connect to #{vc_addr} and login, user:#{vc_user}, pass:#{vc_pass}")
+        logger.debug("Connect to #{vc_addr} and login, user:#{vc_user}, pass:#{vc_pass}")
         @vc_addr = vc_addr
       end
 
       def logout
-        @logger.debug("##Logout #{@vc_addr}")
+        logger.debug("##Logout #{@vc_addr}")
       end
 
       def dummy_sleep(n)
@@ -32,20 +29,20 @@ module Serengeti
       end
 
       def vm_destroy(vm)
-        @logger.debug("destroy #{vm.name}")
+        logger.debug("destroy #{vm.name}")
         dummy_sleep(4)
         return nil unless (@vm_prop.has_key?(vm.name))
         @vm_prop.delete(vm.name)
       end
 
       def vm_power_on(vm)
-        @logger.debug("power on #{vm.name}")
+        logger.debug("power on #{vm.name}")
         dummy_sleep(4)
         vm.power_state = "poweredOn"
       end
 
       def vm_clone(vm, options={})
-        @logger.debug("clone vm #{vm.name}")
+        logger.debug("clone vm #{vm.name}")
         dummy_sleep(8)
         desc = vm.to_describe
 
@@ -83,7 +80,7 @@ module Serengeti
 
       def vm_update_network(vm, options = {})
         config_json = vm.network_config_json
-        @logger.debug("network json:#{config_json}")
+        logger.debug("network json:#{config_json}")
       end
 
       def get_dc_mob_ref_by_path(dc_name, options={})
@@ -116,7 +113,9 @@ module Serengeti
       def is_vm_in_ha_cluster(vm) true end
 
       def get_vms_by_host_mob(host_mob, options={})
-        @debug_dc['vms'].select { |vm| vm['host_mob'] == host_mob['mob'] }
+        if @debug_dc[0]['vms']
+          @debug_dc[0]['vms'].select { |vm| vm['host_mob'] == host_mob['mob'] }
+        end
       end
 
       def get_disks_by_vm_mob(vm_mob, options={}) vm_mob["disks"] end

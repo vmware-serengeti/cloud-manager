@@ -1,6 +1,5 @@
 ---
 name: vhelper
-channel_id: provsion
 networking:
   - port_group: CFNetwork
     type: static
@@ -43,10 +42,6 @@ groups:
     type: shared
     size: 30    #SIZE in GB
   instance_num: 5
-#  vc_clusters:
-#  - name: Cluster2
-#    vc_rps:
-#    - resource_pool2
 - name: group2
   cpu: 2
   memory: 2048
@@ -54,7 +49,7 @@ groups:
     type: shared
     size: 40
   vc_clusters:
-  - name: Cluster1
+  - name: Cluster-1
     vc_rps:
-    - resource_pool9
+    - rp-0
   instance_num: 4

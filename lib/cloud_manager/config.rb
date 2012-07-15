@@ -52,7 +52,10 @@ module Serengeti
 
       def method_missing(m, *args, &block)
         v = @config[m.to_s]
-        super if v.nil?
+        if v.nil?
+          puts "method missing: #{m}"
+          super
+        end
         v
       end
 

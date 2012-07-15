@@ -23,7 +23,6 @@ module Serengeti
         def initialize(vm_group, name)
           @vm_group = vm_group
           @name = name
-          @hosts = {}
         end
         def to_spec
           spec = @vm_group.to_spec
@@ -31,6 +30,7 @@ module Serengeti
           spec
         end
       end
+
       ############################################################
       # Only RR for rps/hosts/datastores selected
       def get_virtual_groups(vm_groups)
@@ -41,7 +41,6 @@ module Serengeti
         super
         @hosts = {}
       end
-
 
       def get_virtual_nodes(virtual_group, existed_vms, placed_vms)
         vm_spec_groups = []

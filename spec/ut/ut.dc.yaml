@@ -9,9 +9,34 @@
       path: "[test-ds] template_vm/system.vmdk"
       scsi_num: 0
   portgroup:
-    CFNetwork: test1
-    CFNetwork1: test2
-    CFNetwork2: test3
+    CFNetwork: CFNetwork
+    CFNetwork1: CFNetwork1
+    CFNetwork2: CFNetwork2
+
+  vms:
+  - name: test_vm0
+    host_mob: hs10
+    rp_mob: rs1
+    cluster_mob: cs1
+    disks:
+    - size: 3000
+      path: "[test-ds] test_vm0/system.vmdk"
+      scsi_num: 0
+    - size: 30000
+      path: "[test-ds] test_vm0/data.vmdk"
+      scsi_num: 1
+  - name: test_vm1
+    host_mob: hs11
+    rp_mob: rs2
+    cluster_mob: cs1
+    disks:
+    - size: 2000
+      path: "[test-ds] test_vm1/system.vmdk"
+      scsi_num: 0
+    - size: 400000
+      path: "[test-ds] test_vm1/data.vmdk"
+      scsi_num: 1
+
   clusters:
   - name: Cluster1
     mob: cs1
@@ -77,7 +102,7 @@
       used_mem: 1200
       cpu_limit: 9000
       total_memory: 10000
-      connection_state: disconnected
+      connection_state: connected
       datastores: *id1
     - name: host2
       mob: hs2

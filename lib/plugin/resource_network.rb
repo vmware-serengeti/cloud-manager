@@ -19,7 +19,7 @@
 module Serengeti
   module CloudManager
 
-    class InnerNetwork < BaseObject
+    class InnerNetwork < InnerServer
       class NetworkServer
         attr_reader :host
         attr_reader :spec
@@ -30,17 +30,6 @@ module Serengeti
           @value = value
         end
       end
-
-      def initialize(vm_spec, cm_server)
-        @cm_server = cm_server
-        @vm_spec = vm_spec
-      end
-
-      def hosts; @cm_server.hosts; end
-      def rps; @cm_server.rps; end
-      def dc_resource; @cm_server.dc_resource; end
-      def vm_groups; @cm_server.vm_groups; end
-
 
       def query_capacity(vmServers, info)
         info['hosts']

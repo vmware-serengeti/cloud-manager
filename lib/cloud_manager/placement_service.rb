@@ -31,7 +31,6 @@ module Serengeti
       end
 
       def initialize(cloud)
-        @logger = logger
         @rc_services = {}
         @place_engine = cloud.create_service_obj(config.placement_engine.first, cloud) # Currently, we only use the first engine
         raise ParameterException "place engine can not create" if @place_engine.nil?
@@ -88,7 +87,7 @@ module Serengeti
         if place_rps.nil? || place_rps.size == 0
           @vm_placement[:failed_num] += 1
           err_msg = "Can not get any resource pools for vm"
-          @logger.error(err_msg)
+          logger.error(err_msg)
           set_placement_error_msg(err_msg)
           return nil
         end
@@ -125,9 +124,9 @@ module Serengeti
         virtual_nodes = @place_engine.get_virtual_nodes(vm_group, existed_vms, placed_vms)
 
         # Return such like this [[vmServer1, vmServer2],[vmServer3]]
-        #@logger.debug("vns:#{virtual_nodes.pretty_inspect}")
+        #logger.debug("vns:#{virtual_nodes.pretty_inspect}")
         specs = virtual_nodes.map { |node| node.map { |spec| spec.to_spec} }
-        #@logger.debug("vns->specs#{specs.pretty_inspect}")
+        #logger.debug("vns->specs#{specs.pretty_inspect}")
         vmServersGroups = create_vm_with_each_resource(specs)
 
         vmServersGroups.each do |group|
@@ -148,6 +147,7 @@ module Serengeti
           scores_host = scores2_host(scores)
           logger.debug("scores_host: #{scores_host.keys.pretty_inspect}")
           # place engine to decide how to place
+
           success = true
           selected_host = nil
           loop do
@@ -163,7 +163,7 @@ module Serengeti
                 # Dis Commit
                 success = false
                 committed_service.each { |plug| service.discommit(scores[service.name][selected_host]) }
-                @logger.debug("VM commit is failed.")
+                logger.debug("VM commit is failed.")
                 break
               end
             end
@@ -199,7 +199,7 @@ module Serengeti
           # Group's Resource pool check.
           place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
           next if place_rps.nil?
-          @logger.debug("place_rps: #{place_rps.pretty_inspect}")
+          logger.debug("place_rps: #{place_rps.pretty_inspect}")
 
           begin
             place_group_vms_with_rp(place_rps, virtual_group, group_place,
@@ -209,7 +209,7 @@ module Serengeti
             ## can not alloc virual_group anymore
             set_placement_error_msg("Can not alloc resource for vm group #{virtual_group.name}: #{place_err_msg}")
             @vm_placement[:failed_num] += 1
-            @logger.error("VM group #{virtual_group.name} failed to place vm, "\
+            logger.error("VM group #{virtual_group.name} failed to place vm, "\
                           "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
             next
           end

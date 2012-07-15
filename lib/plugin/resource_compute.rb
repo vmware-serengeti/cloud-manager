@@ -23,20 +23,14 @@ module Serengeti
       def_const_value :compute_service, {'require' => nil, 'obj' => 'InnerCompute'}
     end
 
-    class InnerCompute < BaseObject
+    class InnerCompute < InnerServer 
       def initialize(vm_specs, cm_server)
-        @cm_server = cm_server
         @total_memory = 0
-        @cm_server = cm_server
         #logger.debug("specs:#{vm_specs.pretty_inspect}")
         @memory = vm_specs.map { |spec| spec['req_mem'] }
         @memory.each { |m| @total_memory += m.to_i }
+        super
       end
-
-      def hosts; @cm_server.hosts; end
-      def rps; @cm_server.rps; end
-      def dc_resource; @cm_server.dc_resource; end
-      def vm_groups; @cm_server.vm_groups; end
 
       class ComputeServer
         attr_reader :host

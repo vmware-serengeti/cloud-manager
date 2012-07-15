@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'fog_dummy'
 
 def check_cloud_op_finish(cloud)
   progress = cloud.get_progress
@@ -20,10 +19,11 @@ end
 describe "Cluster unit tests" do
 
   before(:all) do
-    provider_file = ENV["UT_CLOUD_PROVIDER_FILE"] || "./ut.vc.yaml"
+    provider_file = ut_configure_file
     puts "config file:#{provider_file}"
+    @info = load_test_env(provider_file, 'UT')
+    Serengeti::CloudManager.config.update(@info['config'])
     @wait = true
-    @info = ut_test_env(provider_file)
   end
 
   it "Create cluster" do

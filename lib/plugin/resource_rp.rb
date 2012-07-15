@@ -23,7 +23,7 @@ module Serengeti
       def_const_value :enable_inner_rp_service, true
     end
 
-    class InnerRP < BaseObject
+    class InnerRP < InnerServer
       class RPServer
         attr_reader :host
         attr_reader :size
@@ -34,16 +34,6 @@ module Serengeti
           @size = size
           @value = value
         end
-      end
-
-      def hosts; @cm_server.hosts; end
-      def rps; @cm_server.rps; end
-      def dc_resource; @cm_server.dc_resource; end
-      def vm_groups; @cm_server.vm_groups; end
-
-      def initialize(vm_specs, cm_server)
-        @cm_server = cm_server
-        @vm_spec = vm_specs
       end
 
       def query_capacity(vmServers, info)

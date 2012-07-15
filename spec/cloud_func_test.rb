@@ -3,10 +3,10 @@ require 'spec_helper'
 describe "Cloud Manager unit tests" do
 
   before(:all) do
-    provider_file = ENV["FUNC_CLOUD_PROVIDER_FILE"] || "./func.vc.yaml"
+    provider_file = func_configure_file
     puts "config file:#{provider_file}"
     @wait = true
-    @info = func_test_env(provider_file)
+    @info = load_test_env(provider_file, 'FUNC')
   end
 
   after(:all) do

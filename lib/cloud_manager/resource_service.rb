@@ -35,6 +35,18 @@ module Serengeti
       end
     end
 
+    class InnerServer < BaseObject
+      def hosts; @cm_server.hosts; end
+      def rps; @cm_server.rps; end
+      def dc_resource; @cm_server.dc_resource; end
+      def vm_groups; @cm_server.vm_groups; end
+
+      def initialize(vm_specs, cm_server)
+        @cm_server = cm_server
+        @vm_specs = vm_specs
+      end
+    end
+
     class CMService < BaseObject
       attr_reader :hosts
       attr_reader :rps
@@ -62,8 +74,6 @@ module Serengeti
         @rps = dc_resource.resource_pools
         @vm_groups = vm_groups
         @placement_service = placement_service
-        #logger.debug("cmserver:#{@hosts.pretty_inspect}")
-        #logger.debug("dc:#{dc_resource.pretty_inspect}")
       end
 
       def create_server(vm_spec)

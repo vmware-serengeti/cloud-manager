@@ -209,6 +209,8 @@ module Serengeti
         datacenter.hosts = {}
         datacenter.resource_pools = {}
         datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
+
+        @logger.debug("datacenter hosts:#{datacenter.hosts.pretty_inspect}")
         datacenter
       end
 
@@ -246,13 +248,8 @@ module Serengeti
           cluster.datacenter          = datacenter
           cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
-          if datacenter.hosts.size <= 0 
-            datacenter.hosts = cluster.hosts
-          else
-            datacenter.hosts.merge(cluster.hosts)
-          end
+          datacenter.hosts.merge!(cluster.hosts)
           @logger.debug("cluster hosts:#{cluster.hosts.pretty_inspect}")
-          @logger.debug("datacenter hosts:#{datacenter.hosts.pretty_inspect}")
           datacenter.resource_pools[cluster.name] = cluster.resource_pools
 
           clusters[cluster.name] = cluster
