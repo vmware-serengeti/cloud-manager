@@ -24,7 +24,7 @@ module Serengeti
       def_const_value :client_connection_pool_size, 5
     end
 
-    class FogAdapter
+    class FogAdaptor
       DISK_SIZE_TIMES = 1
       include Serengeti::CloudManager::Parallel
       def initialize(noused)
