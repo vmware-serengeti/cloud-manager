@@ -19,7 +19,7 @@
 module Serengeti
   module CloudManager
     class Config
-      def_const_value :client_connection, {'require' => '', 'obj' => 'FogAdaptor'}
+      def_const_value :client_connection, {'require' => './lib/plugin/client_fog', 'obj' => 'FogAdaptor'}
       def_const_value :template_placement , false
 
       def_const_value :debug_log_trace    , false
