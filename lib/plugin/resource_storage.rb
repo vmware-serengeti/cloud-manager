@@ -20,7 +20,7 @@ module Serengeti
   module CloudManager
     class Config
       def_const_value :storage_service, {'require' => 'fog', 'obj' => 'Fog::Storage'}
-      def_const_value :enable_inner_storage_service, true
+      def_const_value :enable_inner_storage_service, false
     end
 
     class InnerStorage < InnerServer
