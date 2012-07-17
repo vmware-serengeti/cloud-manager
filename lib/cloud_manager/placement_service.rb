@@ -99,13 +99,15 @@ module Serengeti
         [place_rps[0]]
       end
 
-      def create_vm_with_each_resource(vm_spec_groups)
+      def create_vm_with_each_resource(virtual_nodes)
         vmServersGroup = []
-        vm_spec_groups.each do |vm_spec_group|
+        specs = virtual_nodes.each do |node| 
           vm = VmServer.new
-          service_loop { |service| vm.init_with_vm_service(service, vm_spec_group) }
-          vmServersGroup << {:vm => vm, :specs => vm_spec_group}
+          specs = node.map { |spec| spec.to_spec }
+          service_loop { |service| vm.init_with_vm_service(service, specs) }
+          vmServersGroup << { :vm => vm, :specs => specs, :vnode => node }
         end
+
         vmServersGroup
       end
 
@@ -119,10 +121,9 @@ module Serengeti
 
         # Return such like this [[vmServer1, vmServer2],[vmServer3]]
         #logger.debug("vns:#{virtual_nodes.pretty_inspect}")
-        specs = virtual_nodes.map { |node| node.map { |spec| spec.to_spec} }
         #specs like this [[vpec1, spec2],[spec3]]
         #logger.debug("vns->specs#{specs.pretty_inspect}")
-        vmServersGroups = create_vm_with_each_resource(specs)
+        vmServersGroups = create_vm_with_each_resource(virtual_nodes)
 
         vmServersGroups.each do |group|
           # Check capacity
@@ -145,7 +146,7 @@ module Serengeti
           success = true
           selected_host = nil
           loop do
-            selected_host = @place_engine.select_host(group[:specs], scores)
+            selected_host = @place_engine.select_host(group[:vnode], scores)
             raise PlaceServiceException,'Do not select suitable host' if selected_host.nil?
             logger.debug("host select :#{selected_host}")
 
@@ -169,7 +170,7 @@ module Serengeti
 
           if success
             logger.debug("assign to #{selected_host}")
-            @place_engine.assign_host(group[:specs], selected_host)
+            @place_engine.assign_host(group[:vnode], selected_host)
             #service_loop { |service| service.assigned(service.name, selected_host, scores[service.name][selected_host]) }
 
             # PLACE VM, just for fast devlop. It will remove, if finish vm's deploy service
@@ -196,6 +197,7 @@ module Serengeti
               vm.network_config_json = vm.res_vms['network'].spec
               vm.network_res = vm.res_vms['network'].network_res
               logger.debug("vm network json: #{vm.network_config_json}")
+              logger.debug("vm network port group: #{vm.network_res.port_group(0)}")
 
               cloud.state_sub_vms(:placed)[vm.name] = vm
               group_place << vm
