@@ -22,7 +22,7 @@ module Serengeti
     class InnerNetwork < InnerServer
       class NetworkServer
         attr_reader :host
-        attr_reader :spec
+        attr_accessor:spec
         attr_reader :value
         def initialize(host, spec, value)
           @host = host
@@ -40,7 +40,9 @@ module Serengeti
         Hash[hostnames.map { |host| [host, vmServers.map { |vm| NetworkServer.new(hosts[host], nil, index += 1) } ] }]
       end
 
-      def commission(vmServer)
+      def commission(vmServers)
+        net_res = vm_groups.first[1].network_res
+        vmServers.each { |vm| vm.spec = [net_res.get_vm_network_json(0)] }
         true
       end
 

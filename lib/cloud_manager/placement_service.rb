@@ -183,8 +183,6 @@ module Serengeti
               vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
               vm.error_msg = nil
 
-              logger.debug("vm:res #{vm.res_vms['storage'].pretty_inspect}")
-              logger.debug("vm: res #{vm.res_vms['storage'].system_disks.volumes.values[0].datastore_name}")
               #vm.sys_datastore_moid = 'datastore-6348'
               vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
               logger.debug("vm: system moid #{vm.sys_datastore_moid}")
@@ -194,6 +192,9 @@ module Serengeti
               vm.host_name  = host.name
               vm.host_mob   = host.mob
               vm.storage_service = service('storage')
+
+              vm.network_config_json = vm.res_vms['network'].spec
+              logger.debug("vm network json: #{vm.network_config_json}")
 
               cloud.state_sub_vms(:placed)[vm.name] = vm
               group_place << vm
