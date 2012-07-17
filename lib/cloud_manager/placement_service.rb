@@ -185,8 +185,8 @@ module Serengeti
 
               logger.debug("vm:res #{vm.res_vms['storage'].pretty_inspect}")
               logger.debug("vm: res #{vm.res_vms['storage'].system_disks.volumes.values[0].datastore_name}")
-              vm.sys_datastore_moid = 'datastore-6348'
-              #vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
+              #vm.sys_datastore_moid = 'datastore-6348'
+              vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
               logger.debug("vm: system moid #{vm.sys_datastore_moid}")
               vm.resource_pool_moid = place_rps[0].mob
               #vm.resource_pool_moid = vm.res_vms['resource_pool'].mobid
