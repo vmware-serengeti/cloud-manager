@@ -23,13 +23,15 @@ module Serengeti
         @cluster_definition = cluster_definition
         @cloud_provider = cloud_provider
         @cluster_data = cluster_data
-        @logger = Serengeti::CloudManager.logger
         @serengeti = Serengeti::CloudManager::Cloud.new(@cluster_definition)
 
         @output_lock = Mutex.new
         @finished = nil
       end
 
+      def logger
+        Serengeti::CloudManager.logger
+      end
       #############################################
       # Get info from caller
       def wait_for_completion()
@@ -50,7 +52,7 @@ module Serengeti
 
       def abort
         @serengeti.need_abort = true
-        @logger.warn("Do not implement abort function")
+        logger.warn("Do not implement abort function")
       end
 
       def release_connection; @serengeti.release_connection end
@@ -59,33 +61,33 @@ module Serengeti
       # Set info from worker thread
       def set_finish(finish)
         @output_lock.synchronize do
-          @logger.debug("set finish:#{finish}")
+          logger.debug("set finish:#{finish}")
           @finished = finish
         end
       end
 
       def start
-        @logger.debug("call cloud.start...")
+        logger.debug("call cloud.start...")
         @serengeti.start(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def stop
-        @logger.debug("call cloud.stop...")
+        logger.debug("call cloud.stop...")
         @serengeti.stop(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def list_vms
-        @logger.debug("call cloud.list_vms...")
+        logger.debug("call cloud.list_vms...")
         @serengeti.list_vms(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def create_and_update
-        @logger.debug("call cloud.create_and_update ...")
+        logger.debug("call cloud.create_and_update ...")
         @serengeti.create_and_update(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
 
       def delete
-        @logger.debug("call cloud.delete...")
+        logger.debug("call cloud.delete...")
         @serengeti.delete(@cloud_provider, @cluster_definition, @cluster_data, self)
       end
     end

@@ -27,11 +27,11 @@ module Serengeti
         work_thread = []
         if options[:order] || group.size <= 1
           #serial method
-          @logger.debug("#{options[:callee]} run in serial model")
+          logger.debug("#{options[:callee]} run in serial model")
           group.each { |item| yield item }
         else
           #paralleled method for multi-work
-          @logger.debug("#{options[:callee]} run in paralleled model")
+          logger.debug("#{options[:callee]} run in paralleled model")
           action_msg = Thread.current[:action]
           group.each do |item|
             work_thread << Thread.new(item) do |item|
@@ -40,21 +40,21 @@ module Serengeti
                 Thread.current[:action] = action_msg
                 yield item
               rescue => e
-                @logger.debug("#{options[:callee]} threads failed #{e} - #{e.backtrace.join("\n")}")
+                logger.debug("#{options[:callee]} threads failed #{e} - #{e.backtrace.join("\n")}")
               end
               Thread.current[:thread_callee] = ''
             end
           end
-          @logger.debug("Created #{work_thread.size} threads to work for #{group.size} jobs")
+          logger.debug("Created #{work_thread.size} threads to work for #{group.size} jobs")
           work_thread.each { |t| t.join }
         end
-        @logger.debug("Finish group operation for #{options[:callee]}")
+        logger.debug("Finish group operation for #{options[:callee]}")
       end
 
       def vm_deploy_group_pool(thread_pool, group, options={})
         thread_pool.wrap do |pool|
           group.each do |vm|
-            @logger.debug("enter : #{vm.pretty_inspect}")
+            logger.debug("enter : #{vm.pretty_inspect}")
             pool.process do
               begin
                 yield(vm)
@@ -63,7 +63,7 @@ module Serengeti
                 raise
               end
             end
-            @logger.info("##Finish change one vm_group")
+            logger.info("##Finish change one vm_group")
           end
         end
       end
@@ -76,7 +76,7 @@ module Serengeti
           @max_threads = options[:max_threads] || 1
           @available_threads = @max_threads
 
-          @logger = Serengeti::CloudManager.logger
+          logger = Serengeti::CloudManager.logger
           @boom = nil
           @original_thread = Thread.current
           @threads = []
@@ -113,14 +113,14 @@ module Serengeti
             @actions << block
             if @state == :open
               if @available_threads > 0
-                @logger.debug("Creating new thread")
+                logger.debug("Creating new thread")
                 @available_threads -= 1
                 create_thread
               else
-                @logger.debug("All threads are currently busy, queuing action")
+                logger.debug("All threads are currently busy, queuing action")
               end
             elsif @state == :paused
-              @logger.debug("Pool is paused, queueing action.")
+              logger.debug("Pool is paused, queueing action.")
             end
           end
         end
@@ -133,9 +133,9 @@ module Serengeti
                 @lock.synchronize do
                   action = @actions.shift unless @boom
                   if action
-                    @logger.debug("Found an action that needs to be processed")
+                    logger.debug("Found an action that needs to be processed")
                   else
-                    @logger.debug("Thread is no longer needed, cleaning up")
+                    logger.debug("Thread is no longer needed, cleaning up")
                     @available_threads += 1
                     @threads.delete(thread) if @state == :open
                   end
@@ -157,9 +157,9 @@ module Serengeti
 
         def raise_worker_exception(exception)
           if exception.respond_to?(:backtrace)
-            @logger.debug("Worker thread raised exception: #{exception} - #{exception.backtrace.join("\n")}")
+            logger.debug("Worker thread raised exception: #{exception} - #{exception.backtrace.join("\n")}")
           else
-            @logger.debug("Worker thread raised exception: #{exception}")
+            logger.debug("Worker thread raised exception: #{exception}")
           end
           @lock.synchronize do
             @boom = exception if @boom.nil?
@@ -171,7 +171,7 @@ module Serengeti
         end
 
         def wait
-          @logger.debug("Waiting for tasks to complete")
+          logger.debug("Waiting for tasks to complete")
           @lock.synchronize do
             @cv.wait(@lock) while working?
             raise @boom if @boom
@@ -180,7 +180,7 @@ module Serengeti
 
         def shutdown
           return if @state == :closed
-          @logger.debug("Shutting down pool")
+          logger.debug("Shutting down pool")
           @lock.synchronize do
             return if @state == :closed
             @state = :closed
@@ -203,12 +203,12 @@ module Serengeti
       end
 
       def vm_is_this_cluster?(vm_name)
-        @logger.debug("vm:#{vm_name} is in cluster?")
+        logger.debug("vm:#{vm_name} is in cluster?")
         result = get_from_vm_name(vm_name)
         return false unless result
         return false unless (result[1] == @cluster_name)
 
-        @logger.debug("vm:#{vm_name} is in cluster:#{@cluster_name}")
+        logger.debug("vm:#{vm_name} is in cluster:#{@cluster_name}")
         true
       end
 
@@ -218,16 +218,16 @@ module Serengeti
 
       def create_plugin_obj(plugin, parameter = nil)
         begin
-          @logger.debug("#{plugin.pretty_inspect}")
+          logger.debug("#{plugin.pretty_inspect}")
           require_file, = plugin['require']
           plugin_name = plugin['obj']
 
-          @logger.debug("require_file:#{require_file}, plugin_name:#{plugin_name}")
+          logger.debug("require_file:#{require_file}, plugin_name:#{plugin_name}")
           eval("require \'#{require_file}\'") if require_file.to_s.size > 0
 
           return eval(plugin_name).new(parameter)
         rescue => e
-          @logger.error("Create plugin failed.\n #{e} - #{e.backtrace.join("\n")}")
+          logger.error("Create plugin failed.\n #{e} - #{e.backtrace.join("\n")}")
           raise PluginException,"Do not support #{plugin_name} plugin in file:#{require_file}!"
         end
       end

@@ -43,18 +43,15 @@ Gem::Specification.new do |s|
     "lib/plugin/client_fog.rb",
     "lib/plugin/fog_dummy.rb",
     "lib/plugin/placement_rr.rb",
-    "lib/plugin/cloud_sim.rb",
     "lib/cloud_manager/vm.rb",
     "spec/cloud_unit_test.rb",
     "spec/cloud_func_test.rb",
     "spec/spec_helper.rb",
     "spec/config.rb",
-    "config/func/func.cluster_def.yaml",
-    "config/func/func.vc.yaml",
-    "config/ut/ut.cluster_def1.yaml",
-    "config/ut/ut.cluster_def2.yaml",
-    "config/ut/ut.dc.yaml",
-    "config/ut/ut.vc.yaml",
+    "spec/ut/ut.cluster_def1.yaml",
+    "spec/ut/ut.cluster_def2.yaml",
+    "spec/ut/ut.dc.yaml",
+    "spec/ut/ut.vc.yaml",
   ]
   s.homepage = ""
   s.licenses = [""]
@@ -66,12 +63,10 @@ Gem::Specification.new do |s|
     "spec/cloud_func_test.rb",
     "spec/spec_helper.rb",
     "spec/config.rb",
-    "config/func/func.cluster_def.yaml",
-    "config/func/func.vc.yaml",
-    "config/ut/ut.cluster_def1.yaml",
-    "config/ut/ut.cluster_def2.yaml",
-    "config/ut/ut.dc.yaml",
-    "config/ut/ut.vc.yaml",
+    "spec/ut/ut.cluster_def1.yaml",
+    "spec/ut/ut.cluster_def2.yaml",
+    "spec/ut/ut.dc.yaml",
+    "spec/ut/ut.vc.yaml",
   ]
 
   s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])

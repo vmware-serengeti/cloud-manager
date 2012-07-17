@@ -182,7 +182,6 @@ module Serengeti
       end
 
       def initialize(vm_name, cloud)
-        @logger = Serengeti::CloudManager.logger
         @lock = Mutex.new
         @disks = {}
         @name = vm_name
@@ -198,7 +197,11 @@ module Serengeti
         @deleted = false
         @cloud = cloud
         @host_name = nil
-        @logger.debug("init vm: #{vm_name}")
+        logger.debug("init vm: #{vm_name}")
+      end
+
+      def logger
+        Serengeti::CloudManager.logger
       end
 
       # return value between [0..100]
@@ -248,7 +251,7 @@ module Serengeti
       # set vm's error message and print out warning message
       def set_error_msg(msg)
         @error_msg = "vm:#{name} #{msg}"
-        @logger.warn("#{msg}")
+        logger.warn("#{msg}")
       end
 
       def vm_sys_disk_size
@@ -279,7 +282,7 @@ module Serengeti
         unit_number = 0
         used_datastores.each do |datastore|
           fullpath = "[#{datastore[:datastore].name}] #{name}/#{datastore[:type]}#{unit_number}.vmdk"
-          @logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}MB")
+          logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}MB")
           datastore[:datastore].unaccounted_space += datastore[:size].to_i
           disk = disk_add(datastore[:size].to_i, fullpath)
           disk.datastore_name = datastore[:datastore].name
@@ -291,7 +294,7 @@ module Serengeti
       end
 
       def op_failed(src, e)
-        @logger.error("#{working} vm:#{name} failed.\n #{e} - #{e.backtrace.join("\n")}")
+        logger.error("#{working} vm:#{name} failed.\n #{e} - #{e.backtrace.join("\n")}")
         @error_code = -1
         @error_msg = "#{working} vm:#{name} failed. #{e}"
         mov_vm(src, :failed)
@@ -358,19 +361,19 @@ module Serengeti
           @status = VM_STATE_CLONE
           mov_vm(:placed, :deploy)
 
-          @logger.debug("vm's info :#{self.pretty_inspect}")
+          logger.debug("vm's info :#{self.pretty_inspect}")
           return if !cloud_op('Clone', :deploy) { client.vm_clone(self, :poweron => false)}
-          @logger.info("vm:#{name} power:#{power_state} finish clone")
+          logger.info("vm:#{name} power:#{power_state} finish clone")
 
           #is this VM can do HA?
           @can_ha = client.is_vm_in_ha_cluster(self)
 
           @status = VM_STATE_RECONFIG
           return if !cloud_op('Reconfigure disk', :deploy) { reconfigure_disk}
-          @logger.info("vm:#{name} finish reconfigure disk")
+          logger.info("vm:#{name} finish reconfigure disk")
 
           return if !cloud_op('Reconfigure network', :deploy) { reconfigure_network }
-          @logger.info("vm:#{name} finish reconfigure networking")
+          logger.info("vm:#{name} finish reconfigure networking")
 
           #Move deployed vm to existed queue
           mov_vm(:deploy, :existed)
@@ -388,33 +391,33 @@ module Serengeti
 
       # wait vm is ready
       def wait_ready
-        @logger.debug("vm:#{name} can ha?:#{can_ha}, enable ? #{ha_enable}")
+        logger.debug("vm:#{name} can ha?:#{can_ha}, enable ? #{ha_enable}")
         if !ha_enable && can_ha?
           return if !cloud_op('Disable HA') { client.vm_set_ha(self, ha_enable)}
-          @logger.debug("disable ha of vm #{name}")
+          logger.debug("disable ha of vm #{name}")
         elsif (!can_ha? && ha_enable)
-          @logger.debug("vm:#{name} can not enable ha on unHA cluster")
+          logger.debug("vm:#{name} can not enable ha on unHA cluster")
         end
 
         # Power On vm
         @status = VM_STATE_POWER_ON
-        @logger.debug("vm:#{name} power:#{power_state}")
+        logger.debug("vm:#{name} power:#{power_state}")
         if power_state == 'poweredOff'
           return if !cloud_op('Power on') { client.vm_power_on(self) }
-          @logger.debug("#{name} has poweron")
+          logger.debug("#{name} has poweron")
         end
 
         # Wait IP return
         @status = VM_STATE_WAIT_IP
         start_time = Time.now.to_i
         return if !cloud_op('Wait IP') do
-          @logger.debug("Checking vm ip address.")
+          logger.debug("Checking vm ip address.")
           client.get_vm_properties_by_vm_mob(self)
           while (ip_address.nil? || ip_address.empty?)
             client.get_vm_properties_by_vm_mob(self)
             #FIXME check vm tools status
             wait_time = Time.now.to_i - start_time
-            @logger.debug("vm:#{name} wait #{wait_time}/#{config.wait_ip_timeout_sec}s ip: #{ip_address}")
+            logger.debug("vm:#{name} wait #{wait_time}/#{config.wait_ip_timeout_sec}s ip: #{ip_address}")
             sleep(config.wait_ip_sleep_sec)
 
             if (wait_time) > config.wait_ip_timeout_sec
@@ -426,7 +429,7 @@ module Serengeti
         # VM is ready
         @status = VM_STATE_DONE
         mov_vm(:existed, :finished)
-        @logger.debug("vm :#{name} started")
+        logger.debug("vm :#{name} started")
       end
 
       # Stop VM in cloud
@@ -434,13 +437,13 @@ module Serengeti
         @action = VM_ACTION_STOP
         @status = VM_STATE_POWER_OFF
 
-        @logger.debug("stopping :#{name}")
+        logger.debug("stopping :#{name}")
         if power_state == 'poweredOn'
           return if !cloud_op('Stop') { client.vm_power_off(self) }
         end
         return if !cloud_op('Reread') { client.get_vm_properties_by_vm_mob(self) }
         @status = VM_STATE_DONE
-        @logger.debug("stop :#{name}")
+        logger.debug("stop :#{name}")
         mov_vm(:existed, :finished)
       end
 
@@ -448,8 +451,8 @@ module Serengeti
       def delete
         @action = VM_ACTION_DELETE
         @status = VM_STATE_DELETE
-        #@logger.debug("Can we delete #{name} same as #{cluster_info["name"]}?")
-        @logger.debug("delete vm : #{name}")
+        #logger.debug("Can we delete #{name} same as #{cluster_info["name"]}?")
+        logger.debug("delete vm : #{name}")
         return if !cloud_op('Delete') { client.vm_destroy(self) }
         @deleted = true
         @status = VM_STATE_DONE

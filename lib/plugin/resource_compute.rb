@@ -24,11 +24,15 @@ module Serengeti
     end
 
     class InnerCompute < InnerServer 
-      def initialize(vm_specs, cm_server)
+      def total_memory(vmServers)
         @total_memory = 0
         #logger.debug("specs:#{vm_specs.pretty_inspect}")
-        @memory = vm_specs.map { |spec| spec['req_mem'] }
-        @memory.each { |m| @total_memory += m.to_i }
+        memory = vmServers.map { |spec| spec['req_mem'] }
+        memory.each { |m| @total_memory += m.to_i }
+        @total_memory
+      end
+
+      def initialize(cm_server)
         super
       end
 
@@ -45,6 +49,7 @@ module Serengeti
 
       def query_capacity(vmServers, info)
         #logger.debug("hosts: #{hosts.pretty_inspect}")
+        total_memory(vmServers)
         logger.debug("query hosts: #{info['hosts']} total_mem:#{@total_memory}")
         info['hosts'].select { |h| hosts[h].real_free_memory > @total_memory if hosts.key?(h) }
       end
@@ -57,6 +62,7 @@ module Serengeti
       end
 
       def commission(vm_server)
+        logger.debug("compute vm_server: #{vm_server.pretty_inspect}")
         vm_server.host.unaccounted_memory += vm_server.total_memory
         true
       end
@@ -67,18 +73,24 @@ module Serengeti
     end
 
     class ResourceCompute < CMService
+      def initialize(cloud)
+        super
+        if config.enable_inner_compute_service
+          @server = InnerCompute.new(self)
+        else
+          # Init fog storage_server
+          info = cloud.get_provider_info()
+          @server = cloud.create_service_obj(config.storage_service, info) # Currently, we only use the first engine
+        end
+      end
+
+
       def name
         "compute"
       end
 
-      def create_server(vm_spec)
-        if config.enable_inner_compute_service
-          @server = InnerCompute.new(vm_spec, self)
-        else
-          @server = cloud.create_service_obj(config.compute_service, vm_spec) # Currently, we only use the first engine
-        end
-        raise Serengeti::CloudManager::PluginException,"Can not create service obj #{config.compute_service['obj']}" if @server.nil?
-        @server
+      def create_servers(vm_specs)
+        inner_create_servers(vm_specs) {config.enable_inner_compute_service }
       end
 
       def deploy(vmServer)

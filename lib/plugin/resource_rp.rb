@@ -55,18 +55,24 @@ module Serengeti
     end
 
     class ResourcePool < CMService
+      def initialize(cloud)
+        super
+        if config.enable_inner_rp_service
+          @server = InnerRP.new(self)
+        else
+          # Init fog storage_server
+          info = cloud.get_provider_info()
+          @server = cloud.create_service_obj(config.storage_service, info) # Currently, we only use the first engine
+        end
+      end
+
+
       def name
         "resource_pool"
       end
 
-      def create_server(vm_spec)
-        if config.enable_inner_rp_service
-          @server = InnerRP.new(vm_spec, self) # Currently, we only use the first engine
-        else
-          @server = cloud.create_service_obj(config.compute_service, vm_spec) # Currently, we only use the first engine
-        end
-        raise Serengeti::CloudManager::PluginException,"Can not create service obj #{config.compute_service['obj']}" if @server.nil?
-        @server
+      def create_servers(vm_specs)
+        inner_create_servers(vm_specs) { config.enable_inner_rp_service }
       end
 
       def deploy(vmServer)

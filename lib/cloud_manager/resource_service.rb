@@ -18,20 +18,23 @@
 module Serengeti
   module CloudManager
     class VmServer
-      def initialize
-        @plugin_vm = {}
-        @logger = Serengeti::CloudManager.logger
+      def logger
+        Serengeti::CloudManager.logger
       end
 
-      def init_with_vm_service(service, vm_spec)
-        #@logger.debug("vmSpec:#{vm_spec.pretty_inspect}")
-        vm = service.create_server(vm_spec)
+      def initialize
+        @plugin_vm = {}
+      end
+
+      def init_with_vm_service(service, vm_specs)
+        #logger.debug("vmSpec:#{vm_spec.pretty_inspect}")
+        vm = service.create_servers(vm_specs)
         @plugin_vm[service.name] = vm
       end
 
       def vm(plugin_name)
         raise "Do not input correctly plugin name. #{plugin_name}" if !@plugin_vm.key?(plugin_name)
-        @plugin_vm[plugin.name]
+        @plugin_vm[plugin_name]
       end
     end
 
@@ -41,9 +44,8 @@ module Serengeti
       def dc_resource; @cm_server.dc_resource; end
       def vm_groups; @cm_server.vm_groups; end
 
-      def initialize(vm_specs, cm_server)
+      def initialize(cm_server)
         @cm_server = cm_server
-        @vm_specs = vm_specs
       end
     end
 
@@ -76,8 +78,12 @@ module Serengeti
         @placement_service = placement_service
       end
 
-      def create_server(vm_spec)
-        raise "Should implement it in sub class"
+      def inner_create_servers(vm_specs)
+        if yield
+          return vm_specs #InnerServers
+        else
+          return vm_specs.map { |vm_spec| Fog::Storage::Vsphere::Shared::VM.new(vm_spec) }
+        end
       end
 
       def check_capacity(vmServers, hosts, options = {})

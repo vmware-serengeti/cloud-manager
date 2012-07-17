@@ -34,32 +34,32 @@ module Serengeti
         policy.downcase!
         policy = DEPLOY_GROUP_POLICY.first if !DEPLOY_GROUP_POLICY.include?(policy)
 
-        @logger.debug("Enter cluster_deploy policy: #{policy}")
+        logger.debug("Enter cluster_deploy policy: #{policy}")
 
         #Begin to parallel deploy vms
         unless cluster_changes.empty?
           cluster_changes.each do |group|
             group_each_by_threads(group, :callee=>'deploy changes', :order=>(policy==DEPLOY_GROUP_ORDER)) do |vm|
               #TODO add change code here
-              @logger.info("Changed vm #{vm.pretty_inspect}")
+              logger.info("Changed vm #{vm.pretty_inspect}")
               vm.status = VM_STATE_DONE
             end
           end
-          @logger.info("Finish all changes")
+          logger.info("Finish all changes")
         end
 
         order = ( policy == DEPLOY_GROUP_ORDER )
         group_each_by_threads(vm_placement, :order => order, :callee => 'deploy group') do |group|
           group_each_by_threads(group, :callee=>'deploy vms') do |vm|
             if (vm.error_code.to_i != 0)
-              @logger.debug("VM #{vm.name} can not deploy because:#{vm.error_msg}.")
+              logger.debug("VM #{vm.name} can not deploy because:#{vm.error_msg}.")
               next
             end
             vm.deploy()
           end
         end
 
-        @logger.info("Finish all deployments")
+        logger.info("Finish all deployments")
         "finished"
       end
 

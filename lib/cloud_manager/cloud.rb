@@ -58,7 +58,6 @@ module Serengeti
 
       attr_reader :client
       def initialize(cluster_info)
-        @logger = Serengeti::CloudManager.logger
         @dc_resource = nil
         @clusters = nil
         @vm_lock = Mutex.new
@@ -74,6 +73,10 @@ module Serengeti
         @placement_failed = 0
         @cluster_failed_num = 0
         @cloud_error_msg_que = []
+      end
+
+      def logger
+        Serengeti::CloudManager.logger
       end
 
       def config
@@ -122,7 +125,7 @@ module Serengeti
         raise "datacenter's name is nil!" if @cloud_provider.vc_datacenter.nil?
         raise "vc_clusters is nil" if @cloud_provider.vc_clusters.nil?
         @vc_req_rps = req_clusters_rp_to_hash(@cloud_provider.vc_clusters)
-        @logger.debug("req_rps:#{@vc_req_rps.pretty_inspect}")
+        logger.debug("req_rps:#{@vc_req_rps.pretty_inspect}")
 
         raise "cloud_provider's IP address is nil." if @cloud_provider.vc_addr.nil?
 
@@ -137,12 +140,12 @@ module Serengeti
 
       # Setting existed vm parameter from input
       def setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
-        #@logger.debug("#{vm_groups_existed.class}")
+        #logger.debug("#{vm_groups_existed.class}")
         vm_groups_existed.each_value do |exist_group|
-          #@logger.debug("exist group: #{exist_group.pretty_inspect}")
+          #logger.debug("exist group: #{exist_group.pretty_inspect}")
           input_group = vm_groups_input[exist_group.name]
           next if input_group.nil?
-          @logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
+          logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
           exist_group.vm_ids.each_value { |vm| vm.ha_enable = input_group.req_info.ha }
         end
       end
@@ -157,7 +160,7 @@ module Serengeti
               { |group| group[instances] if group['name'] == exist_group.name}.first
             cluster_data_instances.each { |vm| input_group.network_res.ip_remove(0, vm['ip_address']) }
           end
-          @logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
+          logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
           exist_group.vm_ids.each_value { |vm| input_group.network_res.ip_remove(0, vm.ip_address) }
         end
       end
@@ -166,64 +169,78 @@ module Serengeti
         begin
           return yield
         rescue => e
-          @logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
+          logger.error("#{working} failed.\n #{e} - #{e.backtrace.join("\n")}")
           set_cluster_error_msg("#{working} failed. Reason: #{e}")
           @cluster_failed_num += 1
           raise e
         end
       end
 
+      def get_provider_info()
+        info = {:provider => 'vsphere',
+          :vsphere_server => @cloud_provider.vc_addr,
+          :vsphere_username => @cloud_provider.vc_user,
+          :vsphere_password => @cloud_provider.vc_pwd,
+        }
+#        logger.debug("login info:#{info.pretty_inspect}")
+        info
+      end
+
+      def get_clusters_name_within_input()
+        info = @dc_resources.clusters.keys
+#        logger.debug("clusters' name #{info.pretty_inspect}")
+        info
+      end
+
       def prepare_working(cluster_info, cluster_data)
         # Connect to Cloud server
         #@cluster_name = cluster_info["name"]
-        @logger.info("Connect to Cloud Server...")
+        logger.info("Connect to Cloud Server...")
         @input_cluster_info = cluster_info
         @status = CLUSTER_CONNECT
 
-        @client = create_plugin_obj(config.client_connection)
+        @client = create_plugin_obj(config.client_connection, self)
         #client connect need more connect sessions
-        client_op(self, 'vSphere login') { @client.login(@cloud_provider.vc_addr,
-                                                         @cloud_provider.vc_user,
-                                                         @cloud_provider.vc_pwd) }
+        client_op(self, 'vSphere login') { @client.login() }
 
-        @logger.debug("Create Resources ...")
+        logger.debug("Create Resources ...")
         @resources = Resources.new(@client, self)
 
         # Create inputed vm_group from serengeti input
-        @logger.debug("Create vm group from input...")
+        logger.debug("Create vm group from input...")
         vm_groups_input = create_vm_group_from_serengeti_input(cluster_info, @cloud_provider.vc_datacenter)
-        @logger.obj2file(vm_groups_input, 'vm_groups_input')
+        logger.obj2file(vm_groups_input, 'vm_groups_input')
 
         # Fetch Cluster information
         @status = CLUSTER_FETCH_INFO
         dc_resources = client_op(self, 'Fetch vSphere info') do
           @resources.fetch_datacenter(@cloud_provider.vc_datacenter, cluster_info['template_id'])
         end
-        @logger.obj2file(dc_resources, 'dc_resource-first')
+        logger.obj2file(dc_resources, 'dc_resource-first')
 
         # Set template vm system disk size
         vm_sys_disk_size = nil
         dc_resources.vm_template.disks.each_value { |disk| break vm_sys_disk_size = disk.size if disk.unit_number == 0 }
-        @logger.debug("template vm disk size: #{@vm_sys_disk_size}")
+        logger.debug("template vm disk size: #{@vm_sys_disk_size}")
         config.vm_sys_disk_size = vm_sys_disk_size
         
         # Create VM Group Info from resources
-        @logger.debug("Create vm group from resources...")
+        logger.debug("Create vm group from resources...")
         vm_groups_existed = create_vm_group_from_resources(dc_resources, cluster_info["name"])
-        @logger.obj2file(vm_groups_existed, 'vm_groups_existed')
+        logger.obj2file(vm_groups_existed, 'vm_groups_existed')
 
         setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
 
         update_input_group_by_existed(vm_groups_input, vm_groups_existed, cluster_data)
 
-        @logger.info("Finish collect vm_group info from resources")
+        logger.info("Finish collect vm_group info from resources")
         {:dc_res => dc_resources, :group_existed => vm_groups_existed, :group_input => vm_groups_input}
       end
 
       def release_connection
         if !cloud_error_msg_que.empty?
-          @logger.debug("cloud manager have error/warning message. please chcek it, it is helpful for debugging")
-          @logger.debug("#{cloud_error_msg_que.pretty_inspect}")
+          logger.debug("cloud manager have error/warning message. please chcek it, it is helpful for debugging")
+          logger.debug("#{cloud_error_msg_que.pretty_inspect}")
         end
         return if @client.nil?
         @client.logout
@@ -234,15 +251,15 @@ module Serengeti
       def action_process(act, task)
         result = nil
         begin
-          @logger.info("begin action:#{act}")
+          logger.info("begin action:#{act}")
           Thread.current[:action] = act
           @action = act
           result = yield
-          @logger.info("finished action:#{act}")
+          logger.info("finished action:#{act}")
           cluster_done(task)
           Thread.current[:action] = ''
         rescue => e
-          @logger.error("#{act} failed with #{e} #{e.backtrace.join("\n")}")
+          logger.error("#{act} failed with #{e} #{e.backtrace.join("\n")}")
           set_cluster_error_msg("#{act} failed with #{e}")
           cluster_failed(task)
           Thread.current[:action] = ''

@@ -24,28 +24,23 @@ module Serengeti
       def_const_value :client_connection_pool_size, 5
     end
 
-    class FogAdaptor
+    class FogAdaptor < BaseObject
       DISK_SIZE_TIMES = 1
       include Serengeti::CloudManager::Parallel
-      def initialize(noused)
-        @logger = Serengeti::CloudManager.logger
+      def initialize(cloud)
+        @cloud = cloud
         @connection = nil
         @con_lock = Mutex.new
       end
 
-      def config
-        Serengeti::CloudManager.config
+      def cloud
+        @cloud
       end
 
-      def login(vc_addr, vc_user, vc_pass)
+
+      def login()
         return unless @connection.nil?
         connect_list = Array.new(config.client_connection_pool_size)
-        cloud_server = 'vsphere'
-        info = {:provider => cloud_server,
-          :vsphere_server => vc_addr,
-          :vsphere_username => vc_user,
-          :vsphere_password => vc_pass,
-        }
 
         # Create Client pool for faster access vSphere
         @connection = {}
@@ -53,18 +48,18 @@ module Serengeti
         @connection[:err] = []
         group_each_by_threads(connect_list, :callee => 'cloud login') do |con|
           begin
-            connection = Fog::Compute.new(info)
+            connection = Fog::Compute.new(cloud.get_provider_info)
             @con_lock.synchronize { @connection[:con] << connection }
           rescue => e
             @con_lock.synchronize { @connection[:err] << e }
           end
         end
         if @connection[:err].size > 0
-          @logger.error("#{@connection[:err].size} connections fail to login.\n "\
+          logger.error("#{@connection[:err].size} connections fail to login.\n "\
                         "error is:\n#{@connection[:err].join("\n")}")
           raise "#{@connection[:err].size} connections fail to login."
         end
-        @logger.debug("Use #{@connection[:con].size} channels to connect cloud service\n}")
+        logger.debug("Use #{@connection[:con].size} channels to connect cloud service\n}")
       end
 
       def fog_op
@@ -79,7 +74,7 @@ module Serengeti
           end
         end
         @connection = nil
-        @logger.info("Disconnect from cloud provider ")
+        logger.info("Disconnect from cloud provider ")
       end
 
       def vm_clone(vm, options={})
@@ -98,7 +93,7 @@ module Serengeti
           'memory' => vm.req_rp.mem,
         }
         result = fog_op { |con| con.vm_clone(info) }
-        @logger.debug("after clone: result :#{result} ")
+        logger.debug("after clone: result :#{result} ")
         update_vm_with_properties_string(vm, result["vm_attributes"])
       end
 
@@ -135,7 +130,7 @@ module Serengeti
           'vmdk_path' => disk.fullpath,
           'disk_size' => disk.size / DISK_SIZE_TIMES }
         info['provison_type'] = (disk.shared && disk.type == 'data') ? 'thin' : nil
-        @logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB, type:#{info['provison_type']}")
+        logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB, type:#{info['provison_type']}")
         result = fog_op { |con| con.vm_create_disk(info) }
       end
 
@@ -148,7 +143,7 @@ module Serengeti
                                               'adapter_name' => "Network adapter #{card + 1}",
                                               'portgroup_name' => vm.network_res.port_group(card)) }
 
-          @logger.debug("network json:#{config_json}") if config.debug_networking
+          logger.debug("network json:#{config_json}") if config.debug_networking
           fog_op { |con| con.vm_config_ip('vm_moid' => vm.mob, 
                                           'config_json' => config_json) }
           card += 1
@@ -164,10 +159,10 @@ module Serengeti
         try_num.times do |num|
           result = fog_op { |con| con.vm_disable_ha('vm_moid' => vm.mob) }
           if result['task_state'] == 'success'
-            @logger.debug("vm:#{vm.name} disable ha success.")
+            logger.debug("vm:#{vm.name} disable ha success.")
             return
           end
-          @logger.debug("vm:#{vm.name} disable ha failed and retry #{num+1} times.")
+          logger.debug("vm:#{vm.name} disable ha failed and retry #{num+1} times.")
         end
       end
 

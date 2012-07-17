@@ -56,21 +56,23 @@ module Serengeti
 
     class ResourceNetwork < CMService
       def initialize(cloud)
-        @cloud = cloud
+        super
+        if config.enable_inner_network_service
+          @server = InnerNetwork.new(self)
+        else
+          # Init fog storage_server
+          info = cloud.get_provider_info()
+          @server = cloud.create_service_obj(config.storage_service, info) # Currently, we only use the first engine
+        end
+
       end
 
       def name
         "network"
       end
 
-      def create_server(vm_spec)
-        if config.enable_inner_network_service
-          @server = InnerNetwork.new(vm_spec, self)
-        else
-          @server = cloud.create_service_obj(config.network_service, vm_spec) 
-        end
-        raise Serengeti::CloudManager::PluginException, "Can not create service obj #{config.network_service['obj']}" if @server.nil?
-        @server
+      def create_servers(vm_specs)
+        inner_create_servers(vm_specs) {config.enable_inner_network_service }
       end
 
       def deploy(vmServer)

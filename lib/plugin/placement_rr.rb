@@ -55,7 +55,19 @@ module Serengeti
         vm_spec_groups
       end
 
+      def scores2_host(scores)
+        scores_host = {}
+        scores.each do |name, score|
+          score.each do |host, value|
+            scores_host[host] = {} if scores_host[host].nil?
+            scores_host[host][name] = value
+          end
+        end
+        scores_host
+      end
+
       def select_host(vms, scores)
+        scores = scores2_host(scores)
         mini_host = nil
         scores.each_key do |host|
           if @hosts.key?(host)

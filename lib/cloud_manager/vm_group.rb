@@ -34,34 +34,34 @@ module Serengeti
       # Return: the vm_group structure
       def create_vm_group_from_serengeti_input(cluster_info, datacenter_name)
         vm_groups = {}
-        #@logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
+        #logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
         input_groups = cluster_info["groups"]
         template_id = cluster_info["template_id"] #currently, it is mob_ref
         raise "template_id should a vm mob id (like vm-1234)" if /^vm-[\d]+$/.match(template_id).nil?
         cluster_req_rps = @vc_req_rps
         cluster_req_rps = req_clusters_rp_to_hash(cluster_info["vc_clusters"]) if cluster_info["vc_clusters"]
         cluster_networking = cluster_info["networking"]
-        @logger.debug("networking : #{cluster_networking.pretty_inspect}") if config.debug_networking
+        logger.debug("networking : #{cluster_networking.pretty_inspect}") if config.debug_networking
 
         network_res = NetworkRes.new(cluster_networking)
-        #@logger.debug("dump network:#{network_res}")
-        @logger.debug("template_id:#{template_id}")
+        #logger.debug("dump network:#{network_res}")
+        logger.debug("template_id:#{template_id}")
         input_groups.each do |vm_group_req|
           vm_group = VmGroupInfo.new(vm_group_req)
           vm_group.req_info.template_id ||= template_id
           disk_pattern = vm_group.req_info.disk_pattern || cluster_datastore_pattern(cluster_info, vm_group.req_info.disk_type)
-          @logger.debug("vm_group disk patterns:#{disk_pattern.pretty_inspect}") if config.debug_placement_datastore
+          logger.debug("vm_group disk patterns:#{disk_pattern.pretty_inspect}") if config.debug_placement_datastore
 
           vm_group.req_info.disk_pattern = []
           disk_pattern = ['*'] if disk_pattern.nil?
           vm_group.req_info.disk_pattern = change_wildcard2regex(disk_pattern).map { |x| Regexp.new(x) }
-          @logger.debug("vm_group disk ex patterns:#{vm_group.req_info.disk_pattern.pretty_inspect}")  if config.debug_placement_datastore
+          logger.debug("vm_group disk ex patterns:#{vm_group.req_info.disk_pattern.pretty_inspect}")  if config.debug_placement_datastore
 
           vm_group.req_rps = (vm_group_req["vc_clusters"].nil?) ? cluster_req_rps : req_clusters_rp_to_hash(vm_group_req["vc_clusters"])
           vm_group.network_res = network_res
           vm_groups[vm_group.name] = vm_group
         end
-        #@logger.debug("input_group:#{vm_groups}")
+        #logger.debug("input_group:#{vm_groups}")
         vm_groups
       end
 
@@ -72,13 +72,13 @@ module Serengeti
         vm_groups = {}
         dc_res.clusters.each_value do |cluster|
           cluster.vms.each_value do |vm|
-            @logger.debug("vm :#{vm.name}")
+            logger.debug("vm :#{vm.name}")
             result = get_from_vm_name(vm.name)
             next unless result
             cluster_name = result[1]
             group_name = result[2]
             num = result[3]
-            @logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
+            logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
             next if (cluster_name != serengeti_cluster_name)
             vm_group = vm_groups[group_name]
             if vm_group.nil?
@@ -90,11 +90,11 @@ module Serengeti
             # Update existed vm info
             vm.status = VmInfo::VM_STATE_READY
             vm.action = VmInfo::VM_ACTION_START # existed VM action is VM_ACTION_START
-            @logger.debug("Add existed vm")
+            logger.debug("Add existed vm")
             @vm_lock.synchronize { state_sub_vms(:existed)[vm.name] = vm }
           end
         end
-        #@logger.debug("res_group:#{vm_groups}")
+        #logger.debug("res_group:#{vm_groups}")
         vm_groups
       end
     end
@@ -139,8 +139,11 @@ module Serengeti
       attr_accessor :req_rps
       attr_accessor :network_res
       attr_accessor :vm_ids    #classes VmInfo
+      def logger
+        Serengeti::CloudManager.logger
+      end
+
       def initialize(rp=nil)
-        @logger = Serengeti::CloudManager.logger
         @vm_ids = {}
         @req_info = ResourceInfo.new(rp)
         @name = ""
@@ -193,7 +196,7 @@ module Serengeti
         if @vm_ids[vm_info.name].nil?
           @vm_ids[vm_info.name] = vm_info
         else
-          @logger.debug("#{vm_info.name} is existed.")
+          logger.debug("#{vm_info.name} is existed.")
         end
       end
       def find_vm(vm_name)

@@ -104,20 +104,9 @@ module Serengeti
         vmServersGroup
       end
 
-      def scores2_host(scores)
-        scores_host = {}
-        scores.each do |name, score|
-          score.each do |host, value|
-            scores_host[host] = {} if scores_host[host].nil?
-            scores_host[host][name] = value
-          end
-        end
-        scores_host
-      end
-
       def place_group_vms_with_rp(place_rps, vm_group, group_place, existed_vms, placed_vms)
         # Get all hosts with paired info
-        hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten
+        hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
         # hosts' info is [hostname1, hostname2, ... ]
 
         # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]] 
@@ -126,13 +115,14 @@ module Serengeti
         # Return such like this [[vmServer1, vmServer2],[vmServer3]]
         #logger.debug("vns:#{virtual_nodes.pretty_inspect}")
         specs = virtual_nodes.map { |node| node.map { |spec| spec.to_spec} }
+        #specs like this [[vpec1, spec2],[spec3]]
         #logger.debug("vns->specs#{specs.pretty_inspect}")
         vmServersGroups = create_vm_with_each_resource(specs)
 
         vmServersGroups.each do |group|
           # Check capacity
           service_loop do |service|
-            hosts = service.check_capacity(group[:vm], hosts)
+            hosts = service.check_capacity(group[:vm].vm(service.name), hosts)
             raise PlaceServiceException,'Do not find hosts can match resources requirement' if hosts.nil?
           end
 
@@ -140,25 +130,25 @@ module Serengeti
           scores = {}
           service_loop do |service|
             # Return value is {host1=>value1, host2=>value2}
-            scores[service.name] = service.evaluate_hosts(group[:vm], hosts)
+            scores[service.name] = service.evaluate_hosts(group[:vm].vm(service.name), hosts)
           end
 
           #logger.debug("scores: #{scores.pretty_inspect}")
-          scores_host = scores2_host(scores)
-          logger.debug("scores_host: #{scores_host.keys.pretty_inspect}")
+          logger.debug("scores: #{scores.pretty_inspect}")
           # place engine to decide how to place
 
           success = true
           selected_host = nil
           loop do
-            selected_host = @place_engine.select_host(group[:specs], scores_host)
+            selected_host = @place_engine.select_host(group[:specs], scores)
             raise PlaceServiceException,'Do not select suitable host' if selected_host.nil?
+            logger.debug("host select :#{selected_host}")
 
             committed_service = []
             service_loop do |service|
               success = service.commit(scores[service.name][selected_host])
               if success
-                committed_service.unshift(group[:vm], service)
+                committed_service.unshift(service)
               else
                 # Dis Commit
                 success = false
@@ -168,8 +158,8 @@ module Serengeti
               end
             end
             break if success
-            scores_host.delete(selected_host)
-            break if scores_host.empty?
+            scores.each_value { |score| score.delete(selected_host) }
+            break if scores.empty?
           end
 
           if success

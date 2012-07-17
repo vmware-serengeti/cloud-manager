@@ -19,8 +19,8 @@
 module Serengeti
   module CloudManager
     class Config
-      def_const_value :storage_service, {'require' => 'fog', 'obj' => 'InnerStorage'}
-      def_const_value :enable_inner_storage_service, true
+      def_const_value :storage_service, {'require' => 'fog', 'obj' => 'Fog::Storage'}
+      def_const_value :enable_inner_storage_service, false
     end
 
     class InnerStorage < InnerServer
@@ -54,18 +54,25 @@ module Serengeti
     end
 
     class ResourceStorage < CMService
+      def initialize(cloud)
+        super
+        if config.enable_inner_storage_service
+          @server = InnerStorage.new(self)
+        else
+          # Init fog storage_server
+          info = cloud.get_provider_info()
+          clusters_name = cloud.get_clusters_name_within_input()
+          info['clusters'] = clusters_name
+          @server = cloud.create_service_obj(config.storage_service, info) # Currently, we only use the first engine
+        end
+      end
+
       def name
         "storage"
       end
 
-      def create_server(vm_spec)
-        if config.enable_inner_storage_service
-          @server = InnerStorage.new(vm_spec, self)
-        else
-          @server = cloud.create_service_obj(config.storage_service, vm_spec) # Currently, we only use the first engine
-        end
-        raise Serengeti::CloudManager::PluginException "Can not create service obj #{config.storage_service['obj']}" if @server.nil?
-        @server
+      def create_servers(vm_specs)
+        inner_create_servers(vm_specs) { config.enable_inner_storage_service }
       end
 
       def deploy(vmServer)

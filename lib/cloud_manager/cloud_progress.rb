@@ -149,14 +149,14 @@ module Serengeti
       end
 
       def cluster_failed(task)
-        @logger.debug("Enter Cluster_failed")
+        logger.debug("Enter Cluster_failed")
         task.set_finish("failed")
         @success = false
         @finished = true
       end
 
       def cluster_done(task)
-        @logger.debug("Enter cluster_done")
+        logger.debug("Enter cluster_done")
         # TODO finish cluster information
         @status = CLUSTER_DONE
         task.set_finish("success")

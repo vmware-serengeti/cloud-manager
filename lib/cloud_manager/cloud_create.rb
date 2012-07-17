@@ -28,10 +28,10 @@ module Serengeti
       attr_accessor :vm_groups_input
       def create_and_update(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_CREATE, task) do
-          @logger.info("enter create_and_update...")
+          logger.info("enter create_and_update...")
           create_cloud_provider(cloud_provider)
           @vm_lock.synchronize { state_vms_init }
-          #@logger.debug("#{cluster_info.inspect}")
+          #logger.debug("#{cluster_info.inspect}")
           cluster_changes = []
 
           dc_resources      = {}
@@ -39,7 +39,7 @@ module Serengeti
           vm_groups_input   = {}
           begin
             result = prepare_working(cluster_info, cluster_data)
-            dc_resources      = result[:dc_res]
+            @dc_resources = dc_resources = result[:dc_res]
             vm_groups_existed = result[:group_existed]
             vm_groups_input   = result[:group_input]
 
@@ -49,22 +49,22 @@ module Serengeti
               @status = CLUSTER_UPDATE
               nodifference, cluster_changes = cluster_diff(dc_resources, vm_groups_input, vm_groups_existed)
               if nodifference
-                @logger.debug("No difference here")
+                logger.debug("No difference here")
                 @status = CLUSTER_DONE
               else
-                @logger.obj2file(cluster_changes, 'cluster_changes')
+                logger.obj2file(cluster_changes, 'cluster_changes')
               end
             end
           rescue => e
-            @logger.error("Prepare working failed.")
-            @logger.debug("#{e} - #{e.backtrace.join("\n")}")
+            logger.error("Prepare working failed.")
+            logger.debug("#{e} - #{e.backtrace.join("\n")}")
             cluster_failed(task)
             #TODO add all kinds of error handlers here
             raise e
           end
           if @status == CLUSTER_DONE
             cluster_done(task)
-            @logger.info("No difference found, finish work.")
+            logger.info("No difference found, finish work.")
             return
           end
 
@@ -74,21 +74,21 @@ module Serengeti
             begin
               ###########################################################
               #Caculate cluster placement
-              @logger.info("Begin placement")
+              logger.info("Begin placement")
               @status = CLUSTER_PLACE
               place_obj = PlacementService.new(self)
               placement = place_obj.cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
               @placement_failed = placement[:failed_num]
               placement[:error_msg].each { |m| set_cluster_error_msg(m) } if placement[:error_msg].size > 0
-              @logger.obj2file(placement, 'placement')
+              logger.obj2file(placement, 'placement')
 
-              @logger.info("Begin deploy")
+              logger.info("Begin deploy")
 
               #Begin cluster deploy
               @status = CLUSTER_DEPLOY
               successful = cluster_deploy(cluster_changes, placement[:place_groups])
 
-              @logger.info("Begin waiting cluster ready")
+              logger.info("Begin waiting cluster ready")
               #Wait cluster ready
               @status = CLUSTER_WAIT_START
               successful = cluster_wait_ready(state_sub_vms(:existed).values)
@@ -97,16 +97,16 @@ module Serengeti
               @status = CLUSTER_RE_FETCH_INFO
               dc_resources = @resources.fetch_datacenter(@cloud_provider.vc_datacenter, cluster_info['template_id'])
               #TODO add all kinds of error handlers here
-              @logger.info("reload datacenter resources from cloud")
+              logger.info("reload datacenter resources from cloud")
 
-              @logger.obj2file(dc_resources, "dc_resource-#{cycle_num}")
+              logger.obj2file(dc_resources, "dc_resource-#{cycle_num}")
             rescue => e
-              @logger.warn("#{e} - #{e.backtrace.join("\n")}")
+              logger.warn("#{e} - #{e.backtrace.join("\n")}")
               if cycle_num + 1  >= retry_num
                 cluster_failed(task)
                 raise
               end
-              @logger.warn("Loop placement faild and retry #{cycle_num} loop")
+              logger.warn("Loop placement faild and retry #{cycle_num} loop")
             end
           end
           ###########################################################

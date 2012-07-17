@@ -167,7 +167,6 @@ module Serengeti
       #########################################################
       # Begin Resource functions
       def initialize(client, cloud, mem_over_commit = 1.0)
-        @logger       = logger
         @client       = client
         @cloud        = cloud
         @datacenter   = {}
@@ -175,17 +174,21 @@ module Serengeti
         @mem_over_commit  = mem_over_commit
       end
 
+      def logger
+        Serengeti::CloudManager.logger
+      end
+
       def fetch_vm_by_moid(vm_ref, dc_mob)
         mob = @client.get_vm_mob_ref_by_moid(vm_ref, dc_mob)
         vm = VmInfo.fetch_vm_from_cloud(mob, @cloud)
-        @logger.debug("fetch vm:#{vm.pretty_inspect}")
+        logger.debug("fetch vm:#{vm.pretty_inspect}")
         vm
       end
 
       def fetch_datacenter(datacenter_name, template_ref)
         datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
         if datacenter_mob.nil?
-          @logger.debug("Do not find the datacenter: #{datacenter_name}")
+          logger.debug("Do not find the datacenter: #{datacenter_name}")
           raise "Do not find the datacenter: #{datacenter_name}"
         end
         attr = @client.ct_mob_ref_to_attr_hash(datacenter_mob, "DC")
@@ -194,11 +197,11 @@ module Serengeti
         datacenter.mob                  = attr[:mo_ref]
         datacenter.name                 = datacenter_name
 
-        @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
+        logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
         #raise "Missing share_datastore_pattern in director config" if @cloud.vc_share_datastore_pattern.nil?
-        @logger.debug("share pattern:#{@cloud.vc_share_datastore_pattern}")
-        @logger.debug("local pattern:#{@cloud.vc_local_datastore_pattern}")
+        logger.debug("share pattern:#{@cloud.vc_share_datastore_pattern}")
+        logger.debug("local pattern:#{@cloud.vc_local_datastore_pattern}")
         datacenter.share_datastore_pattern    = @cloud.vc_share_datastore_pattern
         datacenter.local_datastore_pattern = @cloud.vc_local_datastore_pattern
 
@@ -210,7 +213,7 @@ module Serengeti
         datacenter.resource_pools = {}
         datacenter.clusters = fetch_clusters(datacenter, datacenter_mob)
 
-        @logger.debug("datacenter hosts:#{datacenter.hosts.pretty_inspect}")
+        logger.debug("datacenter hosts:#{datacenter.hosts.pretty_inspect}")
         datacenter
       end
 
@@ -225,11 +228,11 @@ module Serengeti
           next unless @cloud.vc_req_rps.key?(attr["name"])
 
           resouce_names = @cloud.vc_req_rps[attr['name']]
-          @logger.debug("Use cluster :#{attr["name"]} and checking resource pools")
+          logger.debug("Use cluster :#{attr["name"]} and checking resource pools")
           cluster                     = Cluster.new
           resource_pools = fetch_resource_pool(cluster, cluster_mob, resouce_names)
           if resource_pools.empty?
-            @logger.debug("Do not find any reqired resource #{resouce_names.pretty_inspect} in cluster :#{attr["name"]}")
+            logger.debug("Do not find any reqired resource #{resouce_names.pretty_inspect} in cluster :#{attr["name"]}")
             next
           end
 
@@ -242,14 +245,14 @@ module Serengeti
           cluster.local_datastore_pattern = @cloud.input_cluster_info["vc_local_datastore_pattern"]  ||
                                                                     datacenter.local_datastore_pattern || []
 
-          @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
+          logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
           cluster.resource_pools      = resource_pools
           cluster.datacenter          = datacenter
           cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
           datacenter.hosts.merge!(cluster.hosts)
-          @logger.debug("cluster hosts:#{cluster.hosts.pretty_inspect}")
+          logger.debug("cluster hosts:#{cluster.hosts.pretty_inspect}")
           datacenter.resource_pools[cluster.name] = cluster.resource_pools
 
           clusters[cluster.name] = cluster
@@ -263,7 +266,7 @@ module Serengeti
 
         resource_pool_mobs.each do |resource_pool_mob|
           attr = @client.ct_mob_ref_to_attr_hash(resource_pool_mob, "RP")
-          @logger.debug("resource pool in vc :#{attr["name"]} is in #{resource_pool_names}?")
+          logger.debug("resource pool in vc :#{attr["name"]} is in #{resource_pool_names}?")
           next unless resource_pool_names.include?(attr["name"])
           rp = ResourcePool.new
           rp.mob            = attr["mo_ref"]
@@ -280,12 +283,12 @@ module Serengeti
             rp.free_memory  = rp.limit_mem - rp.host_used_mem - rp.guest_used_mem
           end
           rp.unaccounted_memory = 0
-          @logger.debug("Can use rp: #{rp.name} free mem:#{rp.free_memory} \n => #{attr.pretty_inspect}")
+          logger.debug("Can use rp: #{rp.name} free mem:#{rp.free_memory} \n => #{attr.pretty_inspect}")
           resource_pools[rp.name] = rp
         end
 
         # Get list of resource pools under this cluster
-        @logger.warn("Could not find requested resource pool #{resource_pool_names} under cluster #{cluster_mob}") if resource_pools.empty?
+        logger.warn("Could not find requested resource pool #{resource_pool_names} under cluster #{cluster_mob}") if resource_pools.empty?
         resource_pools
       end
 
@@ -296,11 +299,11 @@ module Serengeti
           attr = @client.ct_mob_ref_to_attr_hash(host_mob, "HS")
           connection_state   = attr["connection_state"]
           if connection_state != 'connected'
-            @logger.debug("host #{attr["name"]} is not connected ")
+            logger.debug("host #{attr["name"]} is not connected ")
             cluster.disconnected_hosts << attr["name"]
             next
           end
-          @logger.debug("host #{attr["name"]} is connected.")
+          logger.debug("host #{attr["name"]} is connected.")
 
           host                    = Host.new
           host.cluster            = cluster
@@ -308,7 +311,7 @@ module Serengeti
           host.mob                = attr["mo_ref"]
           host.name               = attr["name"]
 
-          @logger.debug("Found host: #{host.name} @ #{host.mob}")
+          logger.debug("Found host: #{host.name} @ #{host.mob}")
 
           host.datastores         = @client.get_datastores_by_host_mob(host_mob)
           host.total_memory       = attr["total_memory"]
@@ -322,11 +325,11 @@ module Serengeti
 
           host.share_datastores = fetch_datastores(host.datastores,
                                                    host.datacenter.share_datastore_pattern)
-          @logger.debug("warning: no matched sharestores in host:#{host.name}") if host.share_datastores.empty?
+          logger.debug("warning: no matched sharestores in host:#{host.name}") if host.share_datastores.empty?
 
           host.local_datastores = fetch_datastores(host.datastores,
                                                    host.datacenter.local_datastore_pattern)
-          @logger.debug("warning: no matched localstores in host:#{host.name}") if host.share_datastores.empty?
+          logger.debug("warning: no matched localstores in host:#{host.name}") if host.share_datastores.empty?
 
           host.vms = fetch_vms_by_host(cluster, host, host_mob)
           hosts[host.name] = host
@@ -339,7 +342,7 @@ module Serengeti
         vm_mobs = @client.get_vms_by_host_mob(host_mob)
         return vms if vm_mobs.nil?
         vm_mobs.each do |vm_mob|
-          #@logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
+          #logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
           vm = VmInfo.fetch_vm_from_cloud(vm_mob, @cloud) { |name| @cloud.vm_is_this_cluster?(name) }
           next if vm.nil?
 
@@ -361,7 +364,7 @@ module Serengeti
           datastore.mob               = attr["mo_ref"]
           datastore.name              = attr["name"]
 
-          #@logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
+          #logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
 
           datastore.free_space        = attr["freeSpace"].to_i / (1024 *1024)
           datastore.total_space       = attr["capacity"].to_i / (1024*1024)
@@ -372,9 +375,9 @@ module Serengeti
       end
 
       def isMatched?(name, match_patterns)
-        #@logger.debug("isMatched? #{name}, #{match_patterns.pretty_inspect}")
+        #logger.debug("isMatched? #{name}, #{match_patterns.pretty_inspect}")
         match_patterns.each { |pattern| return true if name.match(pattern) }
-        #@logger.debug("Not Match? ")
+        #logger.debug("Not Match? ")
         false
       end
 

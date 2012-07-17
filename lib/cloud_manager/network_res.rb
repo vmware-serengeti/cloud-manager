@@ -22,10 +22,13 @@ module Serengeti
 
     class Cloud
       class NetworkRes
+        def logger
+          Serengeti::CloudManager.logger
+        end
+
         IP = '(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])'
         def initialize(networking)
           @net_config = networking
-          @logger = Serengeti::CloudManager.logger
 
           range_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}-#{IP}\.#{IP}\.#{IP}\.#{IP}$")
           ip_check = Regexp.new("^#{IP}\.#{IP}\.#{IP}\.#{IP}$")
@@ -38,7 +41,7 @@ module Serengeti
               conf['ip_pool'][ip] = 1 if (single_result)
             end
           end
-          @logger.debug("IP net_config:#{@net_config.pretty_inspect}")
+          logger.debug("IP net_config:#{@net_config.pretty_inspect}")
           @lock = Mutex.new
         end
 

@@ -28,7 +28,7 @@ module Serengeti
       def serengeti_vms_op(cloud_provider, cluster_info, cluster_data, action)
         act = CLUSTER_ACTION_MESSAGE[action]
         act = 'unknown' if act.nil?
-        @logger.info("enter #{act} cluster ... ")
+        logger.info("enter #{act} cluster ... ")
         create_cloud_provider(cloud_provider)
         result = prepare_working(cluster_info, cluster_data)
         dc_resources = result[:dc_res]
@@ -37,16 +37,16 @@ module Serengeti
         matched_vms = dc_resources.clusters.values.map { |cs| cs.vms.values }.flatten
         matched_vms = matched_vms.select { |vm| vm_is_this_cluster?(vm.name) }
 
-        #@logger.debug("operate vm list:#{matched_vms.pretty_inspect}")
-        @logger.debug("vms name: #{matched_vms.collect{ |vm| vm.name }.pretty_inspect}")
+        #logger.debug("operate vm list:#{matched_vms.pretty_inspect}")
+        logger.debug("vms name: #{matched_vms.collect{ |vm| vm.name }.pretty_inspect}")
         yield matched_vms
 
-        @logger.debug("#{act} all vm's")
+        logger.debug("#{act} all vm's")
       end
 
       def list_vms(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_LIST, task) do
-          @logger.debug("enter list_vms...")
+          logger.debug("enter list_vms...")
           create_cloud_provider(cloud_provider)
           prepare_working(cluster_info, cluster_data)
         end
