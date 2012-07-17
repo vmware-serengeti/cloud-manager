@@ -100,7 +100,7 @@ module Serengeti
       end
 
       def self.set_log_level(level)
-        Serengeti::CloudManager::Cloud.set_log_level(level)
+        Serengeti::CloudManager.set_log_level(level)
       end
     end
   end
