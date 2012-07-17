@@ -160,6 +160,7 @@ module Serengeti
       def to_spec
         {
           'vm_group_name' => name,
+          'template_id' => req_info.template_id,
 
           'req_mem' => req_info.mem,
           'cpu' => req_info.cpu,

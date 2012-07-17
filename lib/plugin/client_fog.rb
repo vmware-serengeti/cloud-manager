@@ -81,7 +81,7 @@ module Serengeti
         check_connection
         linked_clone = config.linked_clone || false
         info = {
-          'vm_moid' => vm.template_id,
+          'vm_moid' => vm.spec['template_id'],
           'name' => vm.name,
           'wait' => 1,
           'linked_clone' => linked_clone, # vsphere 5.0 has a bug with linked clone over 8 hosts, be conservative
@@ -89,9 +89,10 @@ module Serengeti
           'rp_moid' => vm.resource_pool_moid,
           'host_moid' => vm.host_mob,
           'power_on' => false,
-          'cpu' => vm.req_rp.cpu,
-          'memory' => vm.req_rp.mem,
+          'cpu' => vm.spec['cpu'],
+          'memory' => vm.spec['req_mem'],
         }
+        logger.debug("clone info: #{info.pretty_inspect}")
         result = fog_op { |con| con.vm_clone(info) }
         logger.debug("after clone: result :#{result} ")
         update_vm_with_properties_string(vm, result["vm_attributes"])

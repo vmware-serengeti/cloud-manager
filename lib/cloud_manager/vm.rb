@@ -137,6 +137,9 @@ module Serengeti
       def finished?; succeed? || (@error_code.to_i != 0)  end
       attr_accessor :network_config_json
 
+      attr_accessor :res_vms
+      attr_accessor :storage_service
+      attr_accessor :spec
       # for provisioning
       attr_accessor :created_at
       attr_accessor :availability_zone
@@ -471,7 +474,9 @@ module Serengeti
       end
 
       def reconfigure_disk(options={})
-        disks.each_value { |disk| client.vm_create_disk(self, disk) if disk.unit_number > 0}
+        res_vms['storage'].id = mob
+        storage_service.deploy(res_vms['storage'])
+        #disks.each_value { |disk| client.vm_create_disk(self, disk) if disk.unit_number > 0}
       end
 
       def reconfigure_network(options = {})

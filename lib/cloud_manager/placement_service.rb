@@ -42,6 +42,10 @@ module Serengeti
         @cloud = cloud
       end
 
+      def service(name)
+        @rc_services[name]
+      end
+
       def cloud
         @cloud
       end
@@ -91,7 +95,8 @@ module Serengeti
           set_placement_error_msg(err_msg)
           return nil
         end
-        place_rps
+        # FIXME, Currently, we just use the first rp
+        [place_rps[0]]
       end
 
       def create_vm_with_each_resource(vm_spec_groups)
@@ -150,7 +155,7 @@ module Serengeti
               if success
                 committed_service.unshift(service)
               else
-                # Dis Commit
+                # Fail to commit service
                 success = false
                 committed_service.each { |plug| service.discommit(scores[service.name][selected_host]) }
                 logger.debug("VM commit is failed.")
@@ -165,7 +170,34 @@ module Serengeti
           if success
             logger.debug("assign to #{selected_host}")
             @place_engine.assign_host(group[:specs], selected_host)
-            group_place << group
+            #service_loop { |service| service.assigned(service.name, selected_host, scores[service.name][selected_host]) }
+
+            # PLACE VM, just for fast devlop. It will remove, if finish vm's deploy service
+            logger.debug("specs:#{group[:specs]}")
+            group[:specs].each_index do |idx|
+              spec = group[:specs][idx] 
+              vm = Serengeti::CloudManager::VmInfo.new(spec['name'], cloud)
+              cluster_hosts = cloud.hosts
+              host = cluster_hosts[selected_host]
+
+              vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
+              vm.error_msg = nil
+
+              logger.debug("vm:res #{vm.res_vms['storage'].pretty_inspect}")
+              logger.debug("vm: res #{vm.res_vms['storage'].system_disks.volumes.values[0].datastore_name}")
+              vm.sys_datastore_moid = 'datastore-6348'
+              #vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
+              logger.debug("vm: system moid #{vm.sys_datastore_moid}")
+              vm.resource_pool_moid = place_rps[0].mob
+              vm.spec = spec
+              vm.host_name  = host.name
+              vm.host_mob   = host.mob
+              vm.storage_service = service('storage')
+
+              cloud.state_sub_vms(:placed)[vm.name] = vm
+              group_place << vm
+            end
+
           end
         end
         group_place.flatten
@@ -205,6 +237,8 @@ module Serengeti
           end
           @vm_placement[:place_groups] << group_place
         end
+
+        logger.obj2file(@vm_placement, 'vm_placement_2')
         @vm_placement
       end
     end

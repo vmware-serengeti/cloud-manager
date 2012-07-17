@@ -186,6 +186,10 @@ module Serengeti
         info
       end
 
+      def hosts
+        @dc_resources.hosts
+      end
+
       def get_clusters_name_within_input()
         info = @dc_resources.clusters.keys
 #        logger.debug("clusters' name #{info.pretty_inspect}")

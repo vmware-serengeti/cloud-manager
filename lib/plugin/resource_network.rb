@@ -37,7 +37,7 @@ module Serengeti
 
       def recommendation(vmServers, hostnames)
         index = 0
-        Hash[hostnames.map { |host| [host, NetworkServer.new(hosts[host], nil, index += 1)] }]
+        Hash[hostnames.map { |host| [host, vmServers.map { |vm| NetworkServer.new(hosts[host], nil, index += 1) } ] }]
       end
 
       def commission(vmServer)

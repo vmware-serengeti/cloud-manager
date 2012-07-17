@@ -20,7 +20,7 @@ module Serengeti
   module CloudManager
     class Config
       def_const_value :storage_service, {'require' => 'fog', 'obj' => 'Fog::Storage'}
-      def_const_value :enable_inner_storage_service, false
+      def_const_value :enable_inner_storage_service, true
     end
 
     class InnerStorage < InnerServer
@@ -35,14 +35,22 @@ module Serengeti
         end
       end
 
+      def get_system_ds_moid(vm)
+      end
+
       def query_capacity(vmServers, info)
         info["hosts"]
       end
 
       def recommendation(vmServers, hostnames)
         index = 0
-        Hash[hostnames.map { |host| [host, StorageServer.new(hosts[host], 1000, index += 1)] }]
+        Hash[hostnames.map { |host| [host, vmServers.map { |vm| StorageServer.new(hosts[host], 1000, index += 1) } ] }]
       end
+
+      def get_system_ds_moid(vm)
+        'test'
+      end
+
 
       def commission(vmServers)
         true

@@ -56,19 +56,19 @@ module Serengeti
 
       def recommendation(vmServers, hostnames)
         #logger.debug("recommend hosts: #{hosts.pretty_inspect}")
-        sort_result = hostnames.sort { |x,y| hosts[x].real_free_memory <=> hosts[y].real_free_memory }
+        sort_result = hostnames.sort { |x,y| hosts[y].real_free_memory <=> hosts[x].real_free_memory }
         index = 0
-        Hash[sort_result.map { |host| [host, ComputeServer.new(hosts[host], @total_memory, index+=1)] } ]
+        Hash[sort_result.map { |host| [host, vmServers.map { |vm| ComputeServer.new(hosts[host], @total_memory, index+=1) } ] } ]
       end
 
       def commission(vm_server)
-        logger.debug("compute vm_server: #{vm_server.pretty_inspect}")
-        vm_server.host.unaccounted_memory += vm_server.total_memory
+        logger.debug("compute vm_server: #{vm_server.first.pretty_inspect}")
+        vm_server.first.host.unaccounted_memory += vm_server.first.total_memory
         true
       end
 
       def decommission(vm_server)
-        vm_server.host.unaccounted_memory -= vm_server.total_memory
+        vm_server.first.host.unaccounted_memory -= vm_server.first.total_memory
       end
     end
 

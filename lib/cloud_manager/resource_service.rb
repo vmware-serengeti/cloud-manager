@@ -18,6 +18,9 @@
 module Serengeti
   module CloudManager
     class VmServer
+      attr_accessor :error_code
+      attr_accessor :error_msg
+
       def logger
         Serengeti::CloudManager.logger
       end
@@ -29,12 +32,19 @@ module Serengeti
       def init_with_vm_service(service, vm_specs)
         #logger.debug("vmSpec:#{vm_spec.pretty_inspect}")
         vm = service.create_servers(vm_specs)
-        @plugin_vm[service.name] = vm
+        @plugin_vm[service.name] = {}
+        @plugin_vm[service.name][:vm] = vm
       end
 
       def vm(plugin_name)
         raise "Do not input correctly plugin name. #{plugin_name}" if !@plugin_vm.key?(plugin_name)
-        @plugin_vm[plugin_name]
+        @plugin_vm[plugin_name][:vm]
+      end
+
+      def assigned(plugin_name, selected_host, output_vm)
+        raise "Do not input correctly plugin name. #{plugin_name}" if !@plugin_vm.key?(plugin_name)
+        @plugin_vm[plugin_name][:output_vm] = output_vm
+        @plugin_vm[plugin_name][:select_host] = selected_host
       end
     end
 
@@ -108,6 +118,10 @@ module Serengeti
       end
 
       def delete(vmServers)
+      end
+
+      def method_missing(m, *args, &block)
+        @server.send(m, *args)
       end
     end
 
