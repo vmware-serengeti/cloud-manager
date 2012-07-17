@@ -28,6 +28,7 @@ module Serengeti
         attr_reader :host
         attr_reader :size
         attr_reader :value
+        attr_accessor :id
         def initialize(host, size, value)
           @host = host
           @size = size
@@ -59,6 +60,8 @@ module Serengeti
       def decommission(vmServers)
       end
  
+      def create_volumes(vmServer)
+      end
     end
 
     class ResourceStorage < CMService

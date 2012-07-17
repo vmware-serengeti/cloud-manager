@@ -21,9 +21,10 @@ module Serengeti
 
     class InnerNetwork < InnerServer
       class NetworkServer
-        attr_reader :host
-        attr_accessor:spec
-        attr_reader :value
+        attr_reader   :host
+        attr_accessor :spec
+        attr_accessor :network_res
+        attr_reader   :value
         def initialize(host, spec, value)
           @host = host
           @spec = spec
@@ -42,7 +43,10 @@ module Serengeti
 
       def commission(vmServers)
         net_res = vm_groups.first[1].network_res
-        vmServers.each { |vm| vm.spec = [net_res.get_vm_network_json(0)] }
+        vmServers.each do |vm|
+          vm.spec = [net_res.get_vm_network_json(0)]
+          vm.network_res = net_res
+        end
         true
       end
 

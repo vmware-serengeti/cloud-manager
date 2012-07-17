@@ -194,6 +194,7 @@ module Serengeti
               vm.storage_service = service('storage')
 
               vm.network_config_json = vm.res_vms['network'].spec
+              vm.network_res = vm.res_vms['network'].network_res
               logger.debug("vm network json: #{vm.network_config_json}")
 
               cloud.state_sub_vms(:placed)[vm.name] = vm
