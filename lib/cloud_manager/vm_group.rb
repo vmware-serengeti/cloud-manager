@@ -178,7 +178,9 @@ module Serengeti
         @name = rp["name"]
         @instances = rp["instance_num"]
         @req_rps = {}
-        @placement_policies = VmGroupPlacementPolicy.new(rp["placement_policies"])
+        if rp["placement_policies"]
+          @placement_policies = VmGroupPlacementPolicy.new(rp["placement_policies"])
+        end
       end
 
       def to_vm_groups

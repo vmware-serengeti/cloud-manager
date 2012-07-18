@@ -18,7 +18,7 @@
 module Serengeti
   module CloudManager
     class Config
-      def_const_value :placement_engine, [{'require' => 'plugin/placement_rr', 'obj' => 'RRPlacement'}]
+      def_const_value :placement_engine, [{'require' => 'cloud_manager/placement_impl', 'obj' => 'FullPlacement'}]
       def_const_value :res_services,
         [ {'require' => 'plugin/resource_compute', 'obj' => 'ResourceCompute'},
           {'require' => 'plugin/resource_rp'  , 'obj' => 'ResourcePool'},
