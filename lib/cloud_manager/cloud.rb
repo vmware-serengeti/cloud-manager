@@ -57,6 +57,8 @@ module Serengeti
       attr_reader :config
 
       attr_reader :client
+
+      include Serengeti::CloudManager::Utils
       def initialize(cluster_info)
         @dc_resource = nil
         @clusters = nil

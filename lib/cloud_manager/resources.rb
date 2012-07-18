@@ -157,9 +157,9 @@ module Serengeti
 
         def inspect
           msg = "<Host: #{@mob} / #{@name}, #{real_free_memory}MB/#{@free_memory}MB/#{@total_memory}MB>, vm #{@vms.size}\n datastores:\n"
-          share_datastores.each_value { |datastore|msg<<"share "<<datastore.inspect }
-          local_datastores.each_value { |datastore|msg<<"local "<<datastore.inspect }
-          msg
+          #share_datastores.each_value { |datastore|msg<<"share "<<datastore.inspect }
+          #local_datastores.each_value { |datastore|msg<<"local "<<datastore.inspect }
+          #msg
         end
       end
 

@@ -28,29 +28,115 @@ module Serengeti
         attr_reader :host
         attr_reader :size
         attr_reader :value
+        attr_reader :rp
         def initialize(host, rp, size, value)
           @host = host
-          @rp = rp 
+          @rp = rp
           @size = size
           @value = value
         end
       end
 
+      def initialize(cm_server)
+        super
+        @rp_group = {}
+        @inited = false
+      end
+
+      def is_suitable_resource_pool?(rp, mem)
+        logger.debug("limit:#{rp.limit_mem}, real_free:#{rp.real_free_memory}, req:#{mem}")
+        if rp.limit_mem != -1 && (rp.real_free_memory < mem)
+          logger.debug("rp:#{rp.name} has not enough memory to vm_group")
+          return false
+        end 
+        true
+      end 
+
+      def suitable_host_with_rp(vm_group, mem)
+        place_rps = vm_group.req_rps.map do |cluster_name, rps|
+          rps.map { |rp_name| clusters[cluster_name].resource_pools[rp_name] if clusters.key?(cluster_name) }
+        end
+        place_rps = place_rps.flatten.compact.select { |rp| is_suitable_resource_pool?(rp, mem) }
+        vm_match_host_names = place_rps.map { |rp| rp.cluster.hosts.keys }.flatten.compact.uniq
+      end
+
+      def init_self()
+        return if @inited
+        vm_groups.each_value do |vm_group|
+          rpses = vm_group.req_rps.map do |cluster_name, rps|
+            rps.map { |rp_name| clusters[cluster_name].resource_pools[rp_name] if clusters.key?(cluster_name) }
+          end
+          @rp_group[vm_group.name] = rpses.flatten.compact
+        end
+        logger.debug("rp_groups:#{@rp_group.pretty_inspect}")
+        @inited = true
+      end
+
       def query_capacity(vmServers, info)
-        info["hosts"]
+        init_self()
+        hostnames = info["hosts"]
+        match_host_names = nil
+        total_memory = {}
+        vmServers.each do |spec|
+          group_name = spec['vm_group_name']
+          vm_group = vm_groups[group_name]
+
+          vm_match_host_names = suitable_host_with_rp(vm_group, spec['req_mem'])
+          if match_host_names.nil?
+            match_host_names = vm_match_host_names
+          else
+            match_host_names &= vm_match_host_names
+          end
+        end
+        hostnames & match_host_names
       end
 
       def recommendation(vmServers, hostnames)
-        index = 0
-        Hash[hostnames.map { |host| [host, vmServers.map { |vm| RPServer.new(hosts[host], nil, 100, index += 1) }] }]
+        rp_servers = {}
+        hostnames.each do |hostname|
+          mem_used = {}
+          host_rp = []
+          vmServers.each do |spec|
+            group_name = spec['vm_group_name']
+            while !@rp_group[group_name].empty?
+              rp = @rp_group[group_name].first
+              mem_used[rp.name] = 0 if !mem_used.key?(rp.name)
+              if rp.cluster.hosts.key?(hostname)
+                if is_suitable_resource_pool?(rp, mem_used[rp.name].to_i + spec['req_mem'].to_i)
+                  mem_used[rp.name] += spec['req_mem'].to_i
+                  host_rp << RPServer.new(hosts[hostname], rp, spec['req_mem'], 1)
+                  break
+                end
+                logger.debug("#{group_name} check next rp current: #{rp.name}")
+                @rp_group[group_name].sort { |x, y| x.used_counter <=> y.used_counter }
+                next
+              end
+              logger.debug("#{group_name} rotate: #{rp.name}")
+              @rp_group[group_name].rotate!
+            end
+          end
+
+          rp_servers[hostname] = host_rp
+        end
+        #index = 0
+        #Hash[hostnames.map { |host| [host, vmServers.map { |vm| RPServer.new(hosts[host], nil, 100, index += 1) }] }]
+        rp_servers
       end
 
       def commission(vmServers)
+        vmServers.each do |vm|
+          vm.rp.unaccounted_memory += vm.size
+          vm.rp.used_counter += 1
+        end
         true
       end
 
       def decommission(vmServers)
-      end
+        vmServers.each do |vm|
+          vm.rp.unaccounted_memory -= vm.size
+          vm.rp.used_counter -= 1
+        end
+       end
 
     end
 
@@ -65,7 +151,6 @@ module Serengeti
           @server = cloud.create_service_obj(config.storage_service, info) # Currently, we only use the first engine
         end
       end
-
 
       def name
         "resource_pool"

@@ -36,9 +36,7 @@ module Serengeti
         @cloud = cloud 
       end
 
-      def gen_cluster_vm_name(group_name, num)
-        @cloud.gen_cluster_vm_name(group_name, num)
-      end
+      include Serengeti::CloudManager::Utils
 
       def placement_init(place_service, dc_resource)
         @place_service = place_service

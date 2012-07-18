@@ -197,7 +197,11 @@ module Serengeti
       def_const_value :vm_name_split_sign, '-'
     end
 
-    class Cloud
+    module Utils
+      def get_from_vm_name(vm_name, options={})
+        return /([\w\s\d]+)#{config.vm_name_split_sign}([\w\s\d]+)#{config.vm_name_split_sign}([\d]+)/.match(vm_name)
+      end
+
       def gen_cluster_vm_name(group_name, num)
         return "#{@cluster_name}#{config.vm_name_split_sign}#{group_name}#{config.vm_name_split_sign}#{num}"
       end
@@ -211,11 +215,9 @@ module Serengeti
         logger.debug("vm:#{vm_name} is in cluster:#{@cluster_name}")
         true
       end
+   end
 
-      def get_from_vm_name(vm_name, options={})
-        return /([\w\s\d]+)#{config.vm_name_split_sign}([\w\s\d]+)#{config.vm_name_split_sign}([\d]+)/.match(vm_name)
-      end
-
+    class Cloud
       def create_plugin_obj(plugin, parameter = nil)
         begin
           logger.debug("#{plugin.pretty_inspect}")
