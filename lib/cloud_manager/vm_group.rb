@@ -195,8 +195,8 @@ module Serengeti
           'req_mem' => req_info.mem,
           'cpu' => req_info.cpu,
 
+          'datastore_pattern' => req_info.disk_pattern,
           'data_size' => req_info.disk_size,
-          'data_pattern' => req_info.disk_pattern,
           'data_shared' => (req_info.disk_type == "shared"),
           'data_mode' => 'thick_egger_zeroed',
           'data_affinity' => 'split',
