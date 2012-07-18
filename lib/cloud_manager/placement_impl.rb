@@ -34,11 +34,11 @@ module Serengeti
         target_vg_names = target_vg.map { |vm_group| vm_group.name }
         
         vm_distribution = {}
-        existed_vms.each do |name, vmInfo|
-          if target_vg_names.include? vmInfo.group_name
-            vm_distribution[vmInfo.group_name] ||= {}
-            vm_distribution[vmInfo.group_name][vmInfo.host_name] ||= []
-            vm_distribution[vmInfo.group_name][vmInfo.host_name] << vmInfo
+        existed_vms.each do |name, vm_info|
+          if target_vg_names.include? vm_info.group_name
+            vm_distribution[vm_info.group_name] ||= {}
+            vm_distribution[vm_info.group_name][vm_info.host_name] ||= []
+            vm_distribution[vm_info.group_name][vm_info.host_name] << vm_info
           end
         end
 
@@ -63,21 +63,36 @@ module Serengeti
       def get_virtual_groups(vm_groups)
         # Don't combine any associated groups for now
         # TODO: use the concept of virtual_groups
-        @vm_groups = vm_groups
+        @vm_groups = {}
+
+        # sort the groups to put referred groups in front
+        vm_groups.each do |name, group_info|
+          if group_info.referred_group
+            if @vm_groups.key?(group_info.referred_group)
+              @vm_groups[name] = group_info
+            else
+              # Assert the referred group exists
+              @vm_groups[group_info.referred_group] = vm_groups[group_info.referred_group]
+              @vm_groups[name] = group_info
+            end
+          else
+            @vm_groups[name] = group_info
+          end
+        end
 
         # host map by cluster {:host1 => 5, :host2 => 1}
         @host_map_by_cluster = {}
 
         # host map by group, {:group1 => {:host1 => 2, :host2 => 4}, ...}
         @host_map_by_group = {}
-        vm_groups.each {|name, _| @host_map_by_group[name] = {}}
+        @vm_groups.each {|name, _| @host_map_by_group[name] = {}}
         
         @vm_groups
       end
 
-      def gen_cluster_vm_name(group_name, num)
-        "vm" + num.to_s
-      end
+#      def gen_cluster_vm_name(group_name, num)
+#        "vm" + num.to_s
+#      end
 
       def increase_host_usage(group_name, host_name, vm_cnt)
         if @host_map_by_cluster.key?(host_name)

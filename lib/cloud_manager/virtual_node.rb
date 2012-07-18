@@ -40,7 +40,7 @@ module Serengeti
       end
 
       def to_spec
-        spec[:name] = @name
+        spec["name"] = @name
         spec
       end
 
