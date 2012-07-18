@@ -237,17 +237,18 @@ module Serengeti
       end
 
       def instance_per_host
+        return nil if @placement_policies.nil?
         return @placement_policies.instance_per_host
       end
 
       # does not support reference to multi-groups right now
       def referred_group
-        return nil if @placement_policies.group_associations.size == 0
+        return nil if @placement_policies.nil? or @placement_policies.group_associations.size == 0
         return @placement_policies.group_associations[0].referred_group
       end
 
       def associate_type
-        return nil if @placement_policies.group_associations.size == 0
+        return nil if @placement_policies.nil? or @placement_policies.group_associations.size == 0
         return @placement_policies.group_associations[0].associate_type
       end
     end

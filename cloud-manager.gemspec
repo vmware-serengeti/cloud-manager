@@ -29,7 +29,6 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/cluster_diff.rb",
     "lib/cloud_manager/config.rb",
     "lib/cloud_manager/deploy.rb",
-
     "lib/cloud_manager/exception.rb",
     "lib/cloud_manager/group.rb",
     "lib/cloud_manager/iaas_progress.rb",

@@ -27,6 +27,7 @@ module Serengeti
       # TODO: should check group association constraints
       def clean_cluster(vm_groups, existed_vms)
         @logger.debug("checking cluster status, filter out VMs that violate instancePerHost constraint")
+        vm_groups = vm_groups.values
         target_vg = vm_groups.select { |vm_group| vm_group.instance_per_host }
         return null if target_vg.size == 0
         
@@ -69,7 +70,7 @@ module Serengeti
 
         # host map by group, {:group1 => {:host1 => 2, :host2 => 4}, ...}
         @host_map_by_group = {}
-        vm_groups.each {|group| @host_map_by_group[group.name] = {}}
+        vm_groups.each {|name, _| @host_map_by_group[name] = {}}
         
         @vm_groups
       end
@@ -180,7 +181,7 @@ module Serengeti
         end
 
         # right now all nodes in virtual_node belongs to a single vm_group
-        vm_group = @vm_groups.find {|group| group.name == virtual_node.vm_specs[0].group_name}
+        vm_group = @vm_groups[virtual_node.vm_specs[0].group_name]
         host_map = @host_map_by_group[vm_group.name]
 
         # remove hosts that have VM placed so that to satisfy instance_per_host requirement
@@ -234,7 +235,7 @@ module Serengeti
         @logger.debug("assign host " + host_name + " to virtual_node " + virtual_node.to_s)
 
         # right now all nodes in virtual_node belongs to a single vm_group
-        vm_group = @vm_groups.find {|group| group.name == virtual_node.vm_specs[0].group_name}
+        vm_group = @vm_groups[virtual_node.vm_specs[0].group_name]
         validate_host_map(vm_group.name, vm_group.instance_per_host) if vm_group.instance_per_host
 
         if vm_group.instance_per_host.nil?

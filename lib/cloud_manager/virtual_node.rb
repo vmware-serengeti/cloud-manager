@@ -58,6 +58,10 @@ module Serengeti
         @vm_specs.each &blk
       end
 
+      def map &blk
+        @vm_specs.map &blk
+      end
+
       def add (vm_spec)
         @vm_specs << vm_spec
       end

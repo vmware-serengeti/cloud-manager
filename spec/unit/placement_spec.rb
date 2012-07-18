@@ -36,9 +36,9 @@ CLIENT_GROUP_NAME = "client"
 describe Serengeti::CloudManager::FullPlacement do
   before(:each) do
     groups = YAML.load(File.open(GROUP_DEF_FILE))
-    @vm_groups = []
+    @vm_groups = {}
     groups["groups"].each do |group|
-      @vm_groups << Serengeti::CloudManager::VmGroupInfo.new(group)
+      @vm_groups[group["name"]] = Serengeti::CloudManager::VmGroupInfo.new(group)
     end
 
     @placement = Serengeti::CloudManager::FullPlacement.new(nil)
@@ -46,15 +46,15 @@ describe Serengeti::CloudManager::FullPlacement do
   end
 
   def hdfs_group
-    @vm_groups.find {|group| group.name == HDFS_GROUP_NAME}
+    @vm_groups[HDFS_GROUP_NAME]
   end
 
   def mapr_group
-    @vm_groups.find {|group| group.name == MAPR_GROUP_NAME}
+    @vm_groups[MAPR_GROUP_NAME]
   end
 
   def client_group
-    @vm_groups.find {|group| group.name == CLIENT_GROUP_NAME}
+    @vm_groups[CLIENT_GROUP_NAME]
   end
 
   def place_hdfs_group
