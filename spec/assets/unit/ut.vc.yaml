@@ -20,9 +20,9 @@ config:
     require: './lib/plugin/fog_dummy'
     obj: 'FogDummy'
 #UT config
-  ut_dc_config_file: "./spec/ut/ut.dc.yaml"
-  cluster_def_file: "./spec/ut/ut.cluster_def1.yaml"
-  config_file: "./spec/ut/ut.config.yaml"
+  ut_dc_config_file: "./spec/assets/unit/ut.dc.yaml"
+  cluster_def_file: "./spec/assets/unit/ut.cluster_def1.yaml"
+  config_file: "./spec/assets/unit/ut.config.yaml"
   debug_sleep: true
 #CM config
   ut_debug_sleep: false

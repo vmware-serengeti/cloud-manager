@@ -19,7 +19,7 @@
 module Serengeti
   module CloudManager
 
-    class PlaceException < Exception
+    class PlacementException < Exception
     end
 
     class DeployException < Exception

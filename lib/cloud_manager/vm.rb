@@ -307,7 +307,7 @@ module Serengeti
         begin
           yield
           return 'OK'
-        rescue PlaceException => e
+        rescue PlacementException => e
           op_failed(src, e)
         rescue DeployException => e
           op_failed(src, e)

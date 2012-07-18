@@ -31,6 +31,8 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/group.rb",
     "lib/cloud_manager/iaas_task.rb",
     "lib/cloud_manager/placement.rb",
+    "lib/cloud_manager/placement_impl.rb",
+    "lib/cloud_manager/virtual_node.rb",
     "lib/cloud_manager/vm_group.rb",
     "lib/cloud_manager/wait_ready.rb",
     "lib/cloud_manager/cloud_create.rb",
@@ -48,10 +50,12 @@ Gem::Specification.new do |s|
     "spec/cloud_func_test.rb",
     "spec/spec_helper.rb",
     "spec/config.rb",
-    "spec/ut/ut.cluster_def1.yaml",
-    "spec/ut/ut.cluster_def2.yaml",
-    "spec/ut/ut.dc.yaml",
-    "spec/ut/ut.vc.yaml",
+    "spec/unit/placement_spec.rb",
+    "spec/assets/unit/ut.cluster_def1.yaml",
+    "spec/assets/unit/ut.cluster_def2.yaml",
+    "spec/assets/unit/ut.dc.yaml",
+    "spec/assets/unit/ut.vc.yaml",
+    "spec/assets/unit/placement_constraint_groups.yaml"
   ]
   s.homepage = ""
   s.licenses = [""]
@@ -61,12 +65,14 @@ Gem::Specification.new do |s|
   s.test_files = [
     "spec/cloud_unit_test.rb",
     "spec/cloud_func_test.rb",
+    "spec/unit/placement_spec.rb",
     "spec/spec_helper.rb",
     "spec/config.rb",
-    "spec/ut/ut.cluster_def1.yaml",
-    "spec/ut/ut.cluster_def2.yaml",
-    "spec/ut/ut.dc.yaml",
-    "spec/ut/ut.vc.yaml",
+    "spec/assets/unit/ut.cluster_def1.yaml",
+    "spec/assets/unit/ut.cluster_def2.yaml",
+    "spec/assets/unit/ut.dc.yaml",
+    "spec/assets/unit/ut.vc.yaml",
+    "spec/assets/unit/placement_constraint_groups.yaml"
   ]
 
   s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])

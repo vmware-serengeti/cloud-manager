@@ -130,6 +130,31 @@ module Serengeti
       end
     end
 
+    class VmGroupAssociation
+      attr_accessor :referred_group
+      attr_accessor :associate_type
+
+      def initialize(options = {})
+        @referred_group = options["reference"] if options["reference"]
+        @associate_type = options["type"] if options["type"]
+      end
+    end
+
+    class VmGroupPlacementPolicy
+      attr_accessor :instance_per_host
+      attr_accessor :group_associations
+
+      def initialize(options = {})
+        @instance_per_host = options["instance_per_host"] if options["instance_per_host"]
+        @group_associations = []
+        if options["group_associations"]
+          options["group_associations"].each do |asn_hash|
+            @group_associations << VmGroupAssociation.new(asn_hash)
+          end
+        end
+      end
+    end
+
     # This structure contains the group information
     class VmGroupInfo
       attr_accessor :name       #Group name
@@ -139,6 +164,8 @@ module Serengeti
       attr_accessor :req_rps
       attr_accessor :network_res
       attr_accessor :vm_ids    #classes VmInfo
+      attr_accessor :placement_policies
+
       def logger
         Serengeti::CloudManager.logger
       end
@@ -151,6 +178,7 @@ module Serengeti
         @name = rp["name"]
         @instances = rp["instance_num"]
         @req_rps = {}
+        @placement_policies = VmGroupPlacementPolicy.new(rp["placement_policies"])
       end
 
       def to_vm_groups
@@ -193,6 +221,7 @@ module Serengeti
 
         @vm_ids.delete(vm_mob)
       end
+
       def add_vm(vm_info)
         if @vm_ids[vm_info.name].nil?
           @vm_ids[vm_info.name] = vm_info
@@ -200,8 +229,24 @@ module Serengeti
           logger.debug("#{vm_info.name} is existed.")
         end
       end
+
       def find_vm(vm_name)
         @vm_ids[vm_name]
+      end
+
+      def instance_per_host
+        return @placement_policies.instance_per_host
+      end
+
+      # does not support reference to multi-groups right now
+      def referred_group
+        return nil if @placement_policies.group_associations.size == 0
+        return @placement_policies.group_associations[0].referred_group
+      end
+
+      def associate_type
+        return nil if @placement_policies.group_associations.size == 0
+        return @placement_policies.group_associations[0].associate_type
       end
     end
 

@@ -27,7 +27,7 @@ module Serengeti
     end
 
     class PlacementService < BaseObject
-      class PlaceServiceException < PlaceException
+      class PlaceServiceException < PlacementException
       end
 
       def initialize(cloud)
@@ -100,15 +100,15 @@ module Serengeti
       end
 
       def create_vm_with_each_resource(virtual_nodes)
-        vmServersGroup = []
+        vm_servers_group = []
         specs = virtual_nodes.each do |node| 
           vm = VmServer.new
           specs = node.map { |spec| spec.to_spec }
           service_loop { |service| vm.init_with_vm_service(service, specs) }
-          vmServersGroup << { :vm => vm, :specs => specs, :vnode => node }
+          vm_servers_group << { :vm => vm, :specs => specs, :vnode => node }
         end
 
-        vmServersGroup
+        vm_servers_group
       end
 
       def place_group_vms_with_rp(place_rps, vm_group, group_place, existed_vms, placed_vms)
@@ -123,9 +123,10 @@ module Serengeti
         #logger.debug("vns:#{virtual_nodes.pretty_inspect}")
         #specs like this [[vpec1, spec2],[spec3]]
         #logger.debug("vns->specs#{specs.pretty_inspect}")
-        vmServersGroups = create_vm_with_each_resource(virtual_nodes)
+        
+        vm_servers_groups = create_vm_with_each_resource(virtual_nodes)
 
-        vmServersGroups.each do |group|
+        vm_servers_groups.each do |group|
           # Check capacity
           service_loop do |service|
             hosts = service.check_capacity(group[:vm].vm(service.name), hosts)
