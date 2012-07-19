@@ -68,7 +68,14 @@ module Serengeti
           end
           @rp_group[vm_group.name] = rpses.flatten.compact
         end
-        #@rp_group.each do |dd|
+        existed_rp = {}
+        @rp_group.each do |rplist|
+          (0...rplist.size).each do |n|
+            break if !existed_rp.key?(rplist.first)
+            rplist.rotate!
+          end
+          existed_rp[rplist.first] = 1
+        end
         logger.debug("rp_groups:#{@rp_group.pretty_inspect}")
         @inited = true
       end
