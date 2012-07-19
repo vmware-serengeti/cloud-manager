@@ -30,7 +30,7 @@ module Serengeti
 
       #TODO cluster_changes
       def cluster_deploy(cluster_changes, vm_placement, options={})
-        policy = config.deploy_policy #@input_cluster_info['deploy_policy'] || DEPLOY_GROUP_POLICY.first
+        policy = config.deploy_policy
         policy.downcase!
         policy = DEPLOY_GROUP_POLICY.first if !DEPLOY_GROUP_POLICY.include?(policy)
 

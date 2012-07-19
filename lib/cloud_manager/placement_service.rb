@@ -221,12 +221,18 @@ module Serengeti
         @vm_placement[:error_msg] = []
         @vm_placement[:place_groups] = []
  
+=begin
+        delete_vms = @place_engine.clean_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
+        if (!delete_vms.nil?) && (delete_vms.size > 0)
+        end
+=end
         info = { :dc_resource => dc_resource, :vm_groups => vm_groups_input, :place_service => self }
         service_loop { |service| service.init_self(info) }
 
         @place_engine.placement_init(self, dc_resource)
         virtual_groups = @place_engine.get_virtual_groups(vm_groups_input)
 
+        group_place = [] 
         virtual_groups.each_value do |virtual_group|
           # check information and check error
           place_err_msg = nil
