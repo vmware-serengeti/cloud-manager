@@ -99,6 +99,12 @@ module Serengeti
         @state_vms[sub].size
       end
 
+      def state_sub_vms_set_vm(sub, vm)
+        @vm_lock.synchronize do
+          state_sub_vms(sub)[vm.name] = vm
+        end
+      end
+
       def state_sub_vms(sub)
         @state_vms[sub]
       end

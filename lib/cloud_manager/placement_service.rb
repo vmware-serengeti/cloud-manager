@@ -205,10 +205,9 @@ module Serengeti
             #service_loop { |service| service.assigned(service.name, selected_host, scores[service.name][selected_host]) }
 
             # PLACE VM, just for fast devlop. It will remove, if finish vm's deploy service
-            logger.debug("specs:#{group[:specs]}")
             vms = create_vm_instances(group, scores, selected_host)
 
-            vms.each { |vm| cloud.state_sub_vms(:placed)[vm.name] = vm }
+            vms.each { |vm| cloud.state_sub_vms_set_vm(:placed, vm) }
             group_place << vms
           end
         end
@@ -243,7 +242,7 @@ module Serengeti
             group_place = place_group_vms_with_hosts(hosts, virtual_group,
                                     cloud.state_sub_vms(:existed),
                                     cloud.state_sub_vms(:placed))
-          rescue PlaceServiceException => e
+          rescue PlacementException => e
             ## can not alloc virual_group anymore
             set_placement_error_msg("Can not alloc resource for vm group #{virtual_group.name}: #{place_err_msg}")
             @vm_placement[:failed_num] += 1
