@@ -68,6 +68,7 @@ module Serengeti
           end
           @rp_group[vm_group.name] = rpses.flatten.compact
         end
+        #@rp_group.each do |dd|
         logger.debug("rp_groups:#{@rp_group.pretty_inspect}")
         @inited = true
       end
@@ -92,14 +93,16 @@ module Serengeti
       end
 
       def recommendation(vmServers, hostnames)
+        init_self()
         rp_servers = {}
         hostnames.each do |hostname|
           mem_used = {}
           host_rp = []
           vmServers.each do |spec|
             group_name = spec['vm_group_name']
-            while !@rp_group[group_name].empty?
-              rp = @rp_group[group_name].first
+            rp_list = @rp_group[group_name].dup
+            while !rp_list.empty?
+              rp = rp_list.first
               mem_used[rp.name] = 0 if !mem_used.key?(rp.name)
               if rp.cluster.hosts.key?(hostname)
                 if is_suitable_resource_pool?(rp, mem_used[rp.name].to_i + spec['req_mem'].to_i)
@@ -108,11 +111,11 @@ module Serengeti
                   break
                 end
                 logger.debug("#{group_name} check next rp current: #{rp.name}")
-                @rp_group[group_name].sort { |x, y| x.used_counter <=> y.used_counter }
+                rp_list.sort { |x, y| x.used_counter <=> y.used_counter }
                 next
               end
               logger.debug("#{group_name} rotate: #{rp.name}")
-              @rp_group[group_name].rotate!
+              rp_list.rotate!
             end
           end
 
