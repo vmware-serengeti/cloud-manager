@@ -51,6 +51,7 @@ module Serengeti
         order = ( policy == DEPLOY_GROUP_ORDER )
         group_each_by_threads(vm_placement, :order => order, :callee => 'deploy group') do |group|
           group_each_by_threads(group, :callee=>'deploy vms') do |vm|
+            logger.debug("deploy vm: #{vm.pretty_inspect}")
             if (vm.error_code.to_i != 0)
               logger.debug("VM #{vm.name} can not deploy because:#{vm.error_msg}.")
               next

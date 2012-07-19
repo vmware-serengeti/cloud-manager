@@ -112,7 +112,41 @@ module Serengeti
         vm_servers_group
       end
 
-      def place_group_vms_with_hosts(hosts, virtual_group, group_place, existed_vms, placed_vms)
+      def create_vm_instances(group, scores, selected_host)
+        logger.debug("specs:#{group[:specs]}")
+        vms = []
+        group[:specs].each_index do |idx|
+          spec = group[:specs][idx] 
+          vm = Serengeti::CloudManager::VmInfo.new(spec['name'], cloud)
+          cluster_hosts = cloud.hosts
+          host = cluster_hosts[selected_host]
+
+          vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
+          vm.error_msg = nil
+
+          #vm.sys_datastore_moid = 'datastore-6348'
+          vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
+          logger.debug("vm: system moid #{vm.sys_datastore_moid}")
+          vm.resource_pool_moid = vm.res_vms['resource_pool'].rp.mob
+          logger.debug("vm: resource pool moid #{vm.resource_pool_moid}")
+          #vm.resource_pool_moid = vm.res_vms['resource_pool'].mobid
+          vm.spec = spec
+          vm.host_name  = host.name
+          vm.host_mob   = host.mob
+          vm.storage_service = service('storage')
+
+          vm.network_config_json = vm.res_vms['network'].spec
+          vm.network_res = vm.res_vms['network'].network_res
+          logger.debug("vm network json: #{vm.network_config_json}")
+          logger.debug("vm network port group: #{vm.network_res.port_group(0)}")
+
+          vms << vm
+        end
+        vms
+      end
+
+      def place_group_vms_with_hosts(hosts, virtual_group, existed_vms, placed_vms)
+        group_place = []
         # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]] 
         virtual_nodes = @place_engine.get_virtual_nodes(virtual_group, existed_vms, placed_vms)
 
@@ -172,38 +206,15 @@ module Serengeti
 
             # PLACE VM, just for fast devlop. It will remove, if finish vm's deploy service
             logger.debug("specs:#{group[:specs]}")
-            group[:specs].each_index do |idx|
-              spec = group[:specs][idx] 
-              vm = Serengeti::CloudManager::VmInfo.new(spec['name'], cloud)
-              cluster_hosts = cloud.hosts
-              host = cluster_hosts[selected_host]
+            vms = create_vm_instances(group, scores, selected_host)
 
-              vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
-              vm.error_msg = nil
-
-              #vm.sys_datastore_moid = 'datastore-6348'
-              vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
-              logger.debug("vm: system moid #{vm.sys_datastore_moid}")
-              vm.resource_pool_moid = vm.res_vms['resource_pool'].rp.mob
-              logger.debug("vm: resource pool moid #{vm.resource_pool_moid}")
-              #vm.resource_pool_moid = vm.res_vms['resource_pool'].mobid
-              vm.spec = spec
-              vm.host_name  = host.name
-              vm.host_mob   = host.mob
-              vm.storage_service = service('storage')
-
-              vm.network_config_json = vm.res_vms['network'].spec
-              vm.network_res = vm.res_vms['network'].network_res
-              logger.debug("vm network json: #{vm.network_config_json}")
-              logger.debug("vm network port group: #{vm.network_res.port_group(0)}")
-
-              cloud.state_sub_vms(:placed)[vm.name] = vm
-              group_place << vm
-            end
-
+            vms.each { |vm| cloud.state_sub_vms(:placed)[vm.name] = vm }
+            group_place << vms
           end
         end
-        group_place.flatten
+        group_place = group_place.flatten.compact
+        logger.debug("group_place:#{group_place.pretty_inspect}")
+        group_place
       end
 
       def cluster_placement(dc_resource, vm_groups_input, vm_groups_existed)
@@ -219,7 +230,6 @@ module Serengeti
 
         virtual_groups.each_value do |virtual_group|
           # check information and check error
-          group_place   = []
           place_err_msg = nil
           # Group's Resource pool check.
           place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
@@ -230,7 +240,7 @@ module Serengeti
           # hosts' info is [hostname1, hostname2, ... ]
           hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
           begin
-            place_group_vms_with_hosts(hosts, virtual_group, group_place,
+            group_place = place_group_vms_with_hosts(hosts, virtual_group,
                                     cloud.state_sub_vms(:existed),
                                     cloud.state_sub_vms(:placed))
           rescue PlaceServiceException => e
@@ -239,11 +249,13 @@ module Serengeti
             @vm_placement[:failed_num] += 1
             logger.error("VM group #{virtual_group.name} failed to place vm, "\
                           "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
-            raise 
+            raise
           end
+          logger.debug("out group_place:#{group_place.pretty_inspect}")
           @vm_placement[:place_groups] << group_place
         end
 
+        logger.debug("vm_placement: #{@vm_placement[:place_groups].pretty_inspect}" )
         logger.obj2file(@vm_placement, 'vm_placement_2')
         @vm_placement
       end
