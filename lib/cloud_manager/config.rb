@@ -54,7 +54,7 @@ module Serengeti
         v = @config[m.to_s]
         if v.nil?
           puts "method missing: #{m}"
-          super
+          return nil
         end
         v
       end
