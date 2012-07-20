@@ -79,7 +79,10 @@ module Serengeti
               place_obj = PlacementService.new(self)
               placement = place_obj.cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
               @placement_failed = placement[:failed_num]
-              placement[:error_msg].each { |m| set_cluster_error_msg(m) } if placement[:error_msg].size > 0
+              if placement[:error_msg].size > 0
+                placement[:error_msg].each { |m| set_cluster_error_msg(m) }
+                raise 'placement failed!'
+              end
               logger.obj2file(placement, 'placement')
 
               logger.info("Begin deploy")

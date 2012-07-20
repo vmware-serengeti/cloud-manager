@@ -38,6 +38,10 @@ module Serengeti
 
       include Serengeti::CloudManager::Utils
 
+      def clean_cluster(vm_groups_input, existed_vms)
+        nil
+      end
+
       def placement_init(place_service, dc_resource)
         @place_service = place_service
         @dc_resource = dc_resource

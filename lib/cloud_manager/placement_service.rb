@@ -25,6 +25,7 @@ module Serengeti
           {'require' => 'plugin/resource_rp'  , 'obj' => 'ResourcePool'},
           {'require' => 'plugin/resource_storage', 'obj' => 'ResourceStorage'},
           {'require' => 'plugin/resource_network', 'obj' => 'ResourceNetwork'}, ]
+      def_const_value :placement_rp_place_enable, true
     end
 
     class PlacementService < BaseObject
@@ -78,6 +79,13 @@ module Serengeti
         @rc_services.each_value { |service| yield service }
       end
 
+      def group_placement(dc_resource, vm_groups)
+        hosts
+        vm_groups.each do |vm_group|
+
+        end
+      end
+
       # Check resource pools
       def group_placement_rps(dc_res, vm_groups)
         place_rps = []
@@ -96,7 +104,6 @@ module Serengeti
           set_placement_error_msg(err_msg)
           return nil
         end
-        # FIXME, Currently, we just use the first rp
         place_rps
       end
 
@@ -124,12 +131,10 @@ module Serengeti
           vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
           vm.error_msg = nil
 
-          #vm.sys_datastore_moid = 'datastore-6348'
           vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
           logger.debug("vm: system moid #{vm.sys_datastore_moid}")
           vm.resource_pool_moid = vm.res_vms['resource_pool'].rp.mob
           logger.debug("vm: resource pool moid #{vm.resource_pool_moid}")
-          #vm.resource_pool_moid = vm.res_vms['resource_pool'].mobid
           vm.spec = spec
           vm.host_name  = host.name
           vm.host_mob   = host.mob
@@ -237,13 +242,19 @@ module Serengeti
           # check information and check error
           place_err_msg = nil
           # Group's Resource pool check.
-          place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
-          next if place_rps.nil?
-          logger.debug("place_rps: #{place_rps.pretty_inspect}")
-
+          hosts = []
           # Get all hosts with paired info
           # hosts' info is [hostname1, hostname2, ... ]
-          hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
+          if config.placement_rp_place_enable
+            place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
+            next if place_rps.nil?
+            logger.debug("place_rps: #{place_rps.pretty_inspect}")
+
+            hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
+          else
+            hosts = group_placement(dc_resource, virtual_group.to_vm_groups)
+          end
+
           begin
             group_place = place_group_vms_with_hosts(hosts, virtual_group,
                                     cloud.state_sub_vms(:existed),

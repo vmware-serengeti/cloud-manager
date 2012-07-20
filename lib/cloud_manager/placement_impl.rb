@@ -30,9 +30,9 @@ module Serengeti
         vm_groups = vm_groups.values
         target_vg = vm_groups.select { |vm_group| vm_group.instance_per_host }
         return null if target_vg.size == 0
-        
+
         target_vg_names = target_vg.map { |vm_group| vm_group.name }
-        
+
         vm_distribution = {}
         existed_vms.each do |name, vm_info|
           if target_vg_names.include? vm_info.group_name

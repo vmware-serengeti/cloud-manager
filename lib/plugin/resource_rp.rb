@@ -60,6 +60,10 @@ module Serengeti
         vm_match_host_names = place_rps.map { |rp| rp.cluster.hosts.keys }.flatten.compact.uniq
       end
 
+      def rp_id(rp)
+        "#{rp.cluster.name}-#{rp.name}"
+      end
+
       def init_self()
         return if @inited
         vm_groups.each_value do |vm_group|
@@ -69,12 +73,15 @@ module Serengeti
           @rp_group[vm_group.name] = rpses.flatten.compact
         end
         existed_rp = {}
-        @rp_group.each do |rplist|
+        @rp_group.each_value do |rplist|
+          next if rplist.size <= 0
+          logger.debug("rplist size: #{rplist.size}")
           (0...rplist.size).each do |n|
-            break if !existed_rp.key?(rplist.first)
+            logger.debug("rplist #{n}:#{rplist.first.pretty_inspect}")
+            break if !existed_rp.key?(rp_id(rplist.first))
             rplist.rotate!
           end
-          existed_rp[rplist.first] = 1
+          existed_rp[rp_id(rplist.first)] = 1
         end
         logger.debug("rp_groups:#{@rp_group.pretty_inspect}")
         @inited = true
