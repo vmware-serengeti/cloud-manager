@@ -42,6 +42,10 @@ module Serengeti
         @hosts = {}
       end
 
+      def pre_placement_cluster(vm_groups, existed_vms)
+        nil
+      end
+
       def get_virtual_nodes(virtual_group, existed_vms, placed_vms)
         vm_spec_groups = []
         (0...virtual_group.instances).each do |num|

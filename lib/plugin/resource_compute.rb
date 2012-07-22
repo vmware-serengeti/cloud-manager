@@ -58,7 +58,8 @@ module Serengeti
         #logger.debug("recommend hosts: #{hosts.pretty_inspect}")
         sort_result = hostnames.sort { |x,y| hosts[y].real_free_memory <=> hosts[x].real_free_memory }
         index = 0
-        Hash[sort_result.map { |host| [host, vmServers.map { |vm| ComputeServer.new(hosts[host], @total_memory, index+=1) } ] } ]
+        result = Hash[sort_result.map { |host| [host, vmServers.map { |vm| ComputeServer.new(hosts[host], @total_memory, index+=1) } ] } ]
+        result.each { |host, value| result[host] = nil }
       end
 
       def commission(vm_server)

@@ -206,6 +206,10 @@ module Serengeti
         return "#{config.serengeti_cluster_name}#{config.vm_name_split_sign}#{group_name}#{config.vm_name_split_sign}#{num}"
       end
 
+      def gen_disk_name(datastore, vm, type, unit_number)
+        "[#{datastore.name}] #{vm.name}/#{type}-disk-#{unit_number}.vmdk"
+      end
+
       def vm_is_this_cluster?(vm_name)
         logger.debug("vm:#{vm_name} is in cluster?")
         result = get_from_vm_name(vm_name)
