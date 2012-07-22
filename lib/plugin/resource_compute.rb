@@ -20,6 +20,7 @@ module Serengeti
   module CloudManager
     class Config
       def_const_value :enable_inner_compute_service, true
+      def_const_value :compute_service_fault_test, false
       def_const_value :compute_service, {'require' => nil, 'obj' => 'InnerCompute'}
     end
 
@@ -59,7 +60,10 @@ module Serengeti
         sort_result = hostnames.sort { |x,y| hosts[y].real_free_memory <=> hosts[x].real_free_memory }
         index = 0
         result = Hash[sort_result.map { |host| [host, vmServers.map { |vm| ComputeServer.new(hosts[host], @total_memory, index+=1) } ] } ]
-        result.each { |host, value| result[host] = nil }
+        if config.compute_service_fault_test
+          result.each { |host, value| result[host] = nil }
+        end
+        result 
       end
 
       def commission(vm_server)

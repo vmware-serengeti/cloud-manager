@@ -26,6 +26,7 @@ module Serengeti
           {'require' => 'plugin/resource_storage', 'obj' => 'ResourceStorage'},
           {'require' => 'plugin/resource_network', 'obj' => 'ResourceNetwork'}, ]
       def_const_value :placement_rp_place_enable, true
+      def_const_value :placement_pre_action_enable, false
     end
 
     class PlacementService < BaseObject
@@ -240,11 +241,13 @@ module Serengeti
         @vm_placement[:rollback] = nil
  
         # act_vms = [ {'action1' => [act1, act2, act3], :rollback = nil}, {'action2' => [...]}, ... ]
-        act_vms = @place_engine.pre_placement_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
-        if (!act_vms.nil?) && (act_vms.size > 0)
-          @vm_placement[:action] = act_vms
-          @vm_placement[:rollback] = 'fetch_info'
-          return @vm_placement
+        if config.placement_pre_action_enable
+          act_vms = @place_engine.pre_placement_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
+          if (!act_vms.nil?) && (act_vms.size > 0)
+            @vm_placement[:action] = act_vms
+            @vm_placement[:rollback] = 'fetch_info'
+            return @vm_placement
+          end
         end
 
         info = { :dc_resource => dc_resource, :vm_groups => vm_groups_input, :place_service => self }
