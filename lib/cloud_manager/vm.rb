@@ -360,6 +360,7 @@ module Serengeti
       # deploy vm and config vm's networking, disk
       def deploy
         begin
+          @action = VM_ACTION_CREATE
           @status = VM_STATE_CLONE
           mov_vm(:placed, :deploy)
 

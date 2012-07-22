@@ -39,9 +39,9 @@ module Serengeti
 
         #logger.debug("operate vm list:#{matched_vms.pretty_inspect}")
         logger.debug("vms name: #{matched_vms.collect{ |vm| vm.name }.pretty_inspect}")
-        yield matched_vms
 
-        logger.debug("#{act} all vm's")
+        #logger.debug("#{act} all vm's")
+        matched_vms
       end
 
       def list_vms(cloud_provider, cluster_info, cluster_data, task)
@@ -55,26 +55,23 @@ module Serengeti
 
       def delete(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_DELETE, task) do
-          serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_DELETE) do |vms|
-            group_each_by_threads(vms, :callee=>'destory vm') { |vm| vm.delete }
-          end
+          vms = serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_DELETE)
+          group_each_by_threads(vms, :callee=>'destory vm') { |vm| vm.delete }
         end
       end
 
       def start(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_START, task) do
-          serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_START) do |vms|
-            vms.each { |vm| vm.action = VmInfo::VM_ACTION_START }
-            cluster_wait_ready(vms)
-          end
+          vms = serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_START)
+          vms.each { |vm| vm.action = VmInfo::VM_ACTION_START }
+          cluster_wait_ready(vms)
         end
       end
 
       def stop(cloud_provider, cluster_info, cluster_data, task)
         action_process(CLOUD_WORK_STOP, task) do
-          serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_STOP) do |vms|
-            group_each_by_threads(vms, :callee=>'stop vm') { |vm| vm.stop }
-          end
+          vms = serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_STOP)
+          group_each_by_threads(vms, :callee=>'stop vm') { |vm| vm.stop }
         end
       end
 

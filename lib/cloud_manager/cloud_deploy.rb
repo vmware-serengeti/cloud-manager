@@ -39,6 +39,9 @@ module Serengeti
         end
       end
 
+      def cluster_vm_group_delete(group, options = {})
+      end
+
       def cluster_deploy(vm_placement, options={})
         policy = config.deploy_policy
         policy.downcase!
