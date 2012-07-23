@@ -71,7 +71,7 @@ module Serengeti
               logger.info("Begin deploy")
               @status = CLUSTER_DEPLOY
               successful = cluster_deploy(placement[:action])
-              next if placement['rollback'] == 'fetch_info'
+              next if placement[:rollback] == 'fetch_info'
 
               logger.info("Begin waiting cluster ready")
               #Wait cluster ready
