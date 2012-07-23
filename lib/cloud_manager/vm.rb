@@ -21,9 +21,7 @@ module Serengeti
     class Config
       def_const_value :wait_ip_timeout_sec, 60*5
       def_const_value :wait_ip_sleep_sec  ,  4
-      def vm_data_disk_start_index
-        vm_place_swap_disk ? 2 : 1
-      end
+      def_const_value :vm_data_disk_start_index,  2
     end
 
     class DiskInfo
@@ -200,6 +198,7 @@ module Serengeti
         @deleted = false
         @cloud = cloud
         @host_name = nil
+        @res_vms = nil
         logger.debug("init vm: #{vm_name}")
       end
 
@@ -361,6 +360,7 @@ module Serengeti
       # deploy vm and config vm's networking, disk
       def deploy
         begin
+          @action = VM_ACTION_CREATE
           @status = VM_STATE_CLONE
           mov_vm(:placed, :deploy)
 
@@ -498,6 +498,7 @@ module Serengeti
 
       def volumes(limitation = Serengeti::CloudManager.config.vm_data_disk_start_index)
         if @disks.empty?
+          return [] if res_vms.nil?
           return res_vms['storage'].get_volumes_for_os('data') 
         else
           return @disks.collect { |path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \

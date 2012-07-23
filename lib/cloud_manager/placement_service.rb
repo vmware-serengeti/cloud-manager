@@ -25,12 +25,11 @@ module Serengeti
           {'require' => 'plugin/resource_rp'  , 'obj' => 'ResourcePool'},
           {'require' => 'plugin/resource_storage', 'obj' => 'ResourceStorage'},
           {'require' => 'plugin/resource_network', 'obj' => 'ResourceNetwork'}, ]
+      def_const_value :placement_rp_place_enable, true
+      def_const_value :placement_pre_action_enable, false
     end
 
     class PlacementService < BaseObject
-      class PlaceServiceException < PlacementException
-      end
-
       def initialize(cloud)
         @rc_services = {}
         @place_engine = cloud.create_service_obj(config.placement_engine.first, cloud) # Currently, we only use the first engine
@@ -39,7 +38,7 @@ module Serengeti
         @vm_placement = {}
         @vm_placement[:failed_num] = 0
         @vm_placement[:error_msg] = []
-        @vm_placement[:place_groups] = []
+        @vm_placement[:action] = []
         @cloud = cloud
       end
 
@@ -78,6 +77,13 @@ module Serengeti
         @rc_services.each_value { |service| yield service }
       end
 
+      def group_placement(dc_resource, vm_groups)
+        hosts
+        vm_groups.each do |vm_group|
+
+        end
+      end
+
       # Check resource pools
       def group_placement_rps(dc_res, vm_groups)
         place_rps = []
@@ -96,7 +102,6 @@ module Serengeti
           set_placement_error_msg(err_msg)
           return nil
         end
-        # FIXME, Currently, we just use the first rp
         place_rps
       end
 
@@ -112,8 +117,52 @@ module Serengeti
         vm_servers_group
       end
 
-      def place_group_vms_with_hosts(hosts, virtual_group, group_place, existed_vms, placed_vms)
-        # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]] 
+      def create_vm_instances(group, scores, selected_host)
+        logger.debug("specs:#{group[:specs]}")
+        vms = []
+        group[:specs].each_index do |idx|
+          spec = group[:specs][idx] 
+          vm = Serengeti::CloudManager::VmInfo.new(spec['name'], cloud)
+          cluster_hosts = cloud.hosts
+          host = cluster_hosts[selected_host]
+
+          vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
+          vm.error_msg = nil
+
+          vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
+          logger.debug("vm: system moid #{vm.sys_datastore_moid}")
+          vm.resource_pool_moid = vm.res_vms['resource_pool'].rp.mob
+          logger.debug("vm: resource pool moid #{vm.resource_pool_moid}")
+          vm.spec = spec
+          vm.host_name  = host.name
+          vm.host_mob   = host.mob
+          vm.storage_service = service('storage')
+
+          vm.network_config_json = vm.res_vms['network'].spec
+          vm.network_res = vm.res_vms['network'].network_res
+          logger.debug("vm network json: #{vm.network_config_json}")
+          logger.debug("vm network port group: #{vm.network_res.port_group(0)}")
+
+          vms << vm
+        end
+        vms
+      end
+
+      def remove_empty_scores!(scores)
+        scores.each do |name, score|
+          score.each do |host, value|
+            if value.nil?
+              logger.warn("remove host:#{host} for #{name} service can not support it")
+              next scores.each_value { |score_| score_.delete(host) } 
+            end
+          end
+        end
+        scores.first[1].size
+      end
+
+      def place_group_vms_with_hosts(hosts, virtual_group, existed_vms, placed_vms)
+        group_place = []
+        # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]]
         virtual_nodes = @place_engine.get_virtual_nodes(virtual_group, existed_vms, placed_vms)
 
         # Return such like this [[vmServer1, vmServer2],[vmServer3]]
@@ -126,15 +175,18 @@ module Serengeti
           service_loop do |service|
             hosts = service.check_capacity(group[:vm].vm(service.name), hosts)
             logger.debug("after #{service.name} check: #{hosts.pretty_inspect}")
-            raise PlaceServiceException,'Do not find hosts can match resources requirement' if hosts.nil?
+            raise PlacementException, "Do not find any hosts can match resources requirement after #{service.name} check" if hosts.nil?
           end
 
           # Each service calc their values
           scores = {}
           service_loop do |service|
-            # Return value is {host1=>value1, host2=>value2}
+            # service will return {host1=>vm1, host2=>vm2}
             scores[service.name] = service.evaluate_hosts(group[:vm].vm(service.name), hosts)
           end
+
+          sore_size = remove_empty_scores!(scores)
+          raise PlacementException, 'Resource service cannot find any hosts to match resources requirement' if sore_size <= 0
 
           #logger.debug("scores: #{scores.pretty_inspect}")
           logger.debug("scores: #{scores.pretty_inspect}")
@@ -144,7 +196,7 @@ module Serengeti
           selected_host = nil
           loop do
             selected_host = @place_engine.select_host(group[:vnode], scores)
-            raise PlaceServiceException,'Do not select suitable host' if selected_host.nil?
+            raise PlacementException,'Do not select suitable host' if selected_host.nil?
             logger.debug("host select :#{selected_host}")
 
             committed_service = []
@@ -155,7 +207,7 @@ module Serengeti
               else
                 # Fail to commit service
                 success = false
-                committed_service.each { |plug| service.discommit(scores[service.name][selected_host]) }
+                committed_service.each { | commit | commit.discommit(scores[service.name][selected_host]) }
                 logger.debug("VM commit is failed.")
                 break
               end
@@ -171,79 +223,75 @@ module Serengeti
             #service_loop { |service| service.assigned(service.name, selected_host, scores[service.name][selected_host]) }
 
             # PLACE VM, just for fast devlop. It will remove, if finish vm's deploy service
-            logger.debug("specs:#{group[:specs]}")
-            group[:specs].each_index do |idx|
-              spec = group[:specs][idx] 
-              vm = Serengeti::CloudManager::VmInfo.new(spec['name'], cloud)
-              cluster_hosts = cloud.hosts
-              host = cluster_hosts[selected_host]
+            vms = create_vm_instances(group, scores, selected_host)
 
-              vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
-              vm.error_msg = nil
-
-              #vm.sys_datastore_moid = 'datastore-6348'
-              vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
-              logger.debug("vm: system moid #{vm.sys_datastore_moid}")
-              vm.resource_pool_moid = vm.res_vms['resource_pool'].rp.mob
-              logger.debug("vm: resource pool moid #{vm.resource_pool_moid}")
-              #vm.resource_pool_moid = vm.res_vms['resource_pool'].mobid
-              vm.spec = spec
-              vm.host_name  = host.name
-              vm.host_mob   = host.mob
-              vm.storage_service = service('storage')
-
-              vm.network_config_json = vm.res_vms['network'].spec
-              vm.network_res = vm.res_vms['network'].network_res
-              logger.debug("vm network json: #{vm.network_config_json}")
-              logger.debug("vm network port group: #{vm.network_res.port_group(0)}")
-
-              cloud.state_sub_vms(:placed)[vm.name] = vm
-              group_place << vm
-            end
-
+            vms.each { |vm| cloud.state_sub_vms_set_vm(:placed, vm) }
+            group_place << vms
           end
         end
-        group_place.flatten
+        group_place = group_place.flatten.compact
+        logger.debug("group_place:#{group_place.pretty_inspect}")
+        group_place
       end
 
       def cluster_placement(dc_resource, vm_groups_input, vm_groups_existed)
         @vm_placement[:failed_num] = 0
         @vm_placement[:error_msg] = []
-        @vm_placement[:place_groups] = []
+        @vm_placement[:action] = []
+        @vm_placement[:rollback] = nil
  
+        # act_vms = [ {'action1' => [act1, act2, act3], :rollback = nil}, {'action2' => [...]}, ... ]
+        if config.placement_pre_action_enable
+          act_vms = @place_engine.pre_placement_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
+          if (!act_vms.nil?) && (act_vms.size > 0)
+            @vm_placement[:action] = act_vms
+            @vm_placement[:rollback] = 'fetch_info'
+            return @vm_placement
+          end
+        end
+
         info = { :dc_resource => dc_resource, :vm_groups => vm_groups_input, :place_service => self }
         service_loop { |service| service.init_self(info) }
 
         @place_engine.placement_init(self, dc_resource)
         virtual_groups = @place_engine.get_virtual_groups(vm_groups_input)
 
+        group_place = [] 
         virtual_groups.each_value do |virtual_group|
           # check information and check error
-          group_place   = []
           place_err_msg = nil
           # Group's Resource pool check.
-          place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
-          next if place_rps.nil?
-          logger.debug("place_rps: #{place_rps.pretty_inspect}")
-
+          hosts = []
           # Get all hosts with paired info
           # hosts' info is [hostname1, hostname2, ... ]
-          hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
+          if config.placement_rp_place_enable
+            place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
+            next if place_rps.nil?
+            logger.debug("place_rps: #{place_rps.pretty_inspect}")
+
+            hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
+          else
+            hosts = group_placement(dc_resource, virtual_group.to_vm_groups)
+          end
+
           begin
-            place_group_vms_with_hosts(hosts, virtual_group, group_place,
+            group_place = place_group_vms_with_hosts(hosts, virtual_group,
                                     cloud.state_sub_vms(:existed),
                                     cloud.state_sub_vms(:placed))
-          rescue PlaceServiceException => e
+          rescue PlacementException => e
             ## can not alloc virual_group anymore
-            set_placement_error_msg("Can not alloc resource for vm group #{virtual_group.name}: #{place_err_msg}")
+            error_msg = "Can not alloc resource for vm group #{virtual_group.name}: #{e.message}"
+            set_placement_error_msg(error_msg)
             @vm_placement[:failed_num] += 1
             logger.error("VM group #{virtual_group.name} failed to place vm, "\
-                          "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
-            raise 
+                         "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
+            raise error_msg
           end
-          @vm_placement[:place_groups] << group_place
+          logger.debug("out group_place:#{group_place.pretty_inspect}")
+          @vm_placement[:action] << { 'act' => 'group_deploy', 'group' => group_place }
         end
 
+        logger.debug("vm_placement: #{@vm_placement[:action].pretty_inspect}" )
         logger.obj2file(@vm_placement, 'vm_placement_2')
         @vm_placement
       end
@@ -251,4 +299,3 @@ module Serengeti
 
   end
 end
-

@@ -28,45 +28,36 @@ module Serengeti
     class Cloud
       include Serengeti::CloudManager::Parallel
 
-      #TODO cluster_changes
-      def cluster_deploy(cluster_changes, vm_placement, options={})
-        policy = config.deploy_policy #@input_cluster_info['deploy_policy'] || DEPLOY_GROUP_POLICY.first
+      def cluster_vm_group_deploy(group, options = {})
+        group_each_by_threads(group, :callee=>'deploy vms') do |vm|
+          logger.debug("deploy vm: #{vm.pretty_inspect}")
+          if (vm.error_code.to_i != 0)
+            logger.debug("VM #{vm.name} can not deploy because:#{vm.error_msg}.")
+            next
+          end
+          vm.deploy()
+        end
+      end
+
+      def cluster_vm_group_delete(group, options = {})
+        group_each_by_threads(vms, :callee=>'destory vm') { |vm| vm.delete }
+      end
+
+      def cluster_deploy(vm_placement, options={})
+        policy = config.deploy_policy
         policy.downcase!
         policy = DEPLOY_GROUP_POLICY.first if !DEPLOY_GROUP_POLICY.include?(policy)
 
         logger.debug("Enter cluster_deploy policy: #{policy}")
 
         #Begin to parallel deploy vms
-        unless cluster_changes.empty?
-          cluster_changes.each do |group|
-            group_each_by_threads(group, :callee=>'deploy changes', :order=>(policy==DEPLOY_GROUP_ORDER)) do |vm|
-              #TODO add change code here
-              logger.info("Changed vm #{vm.pretty_inspect}")
-              vm.status = VM_STATE_DONE
-            end
-          end
-          logger.info("Finish all changes")
-        end
-
         order = ( policy == DEPLOY_GROUP_ORDER )
         group_each_by_threads(vm_placement, :order => order, :callee => 'deploy group') do |group|
-          group_each_by_threads(group, :callee=>'deploy vms') do |vm|
-            if (vm.error_code.to_i != 0)
-              logger.debug("VM #{vm.name} can not deploy because:#{vm.error_msg}.")
-              next
-            end
-            vm.deploy()
-          end
+          self.send("cluster_vm_#{group['act']}", group['group'], group)
         end
 
         logger.info("Finish all deployments")
         "finished"
-      end
-
-      ###################################
-      # inner used functions
-      def gen_disk_name(datastore, vm, type, unit_number)
-        "[#{datastore.name}] #{vm.name}/#{type}-disk-#{unit_number}.vmdk"
       end
 
     end
