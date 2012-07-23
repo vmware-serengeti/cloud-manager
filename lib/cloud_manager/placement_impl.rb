@@ -67,7 +67,7 @@ module Serengeti
           end
         end
 
-        [ {'act'=>'group_delete', 'group' => delete_vms} ]
+        delete_vms
       end
 
       # this method should only be called once, during a placement cycle
