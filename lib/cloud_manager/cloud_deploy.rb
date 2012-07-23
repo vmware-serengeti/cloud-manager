@@ -40,6 +40,7 @@ module Serengeti
       end
 
       def cluster_vm_group_delete(group, options = {})
+        group_each_by_threads(vms, :callee=>'destory vm') { |vm| vm.delete }
       end
 
       def cluster_deploy(vm_placement, options={})
