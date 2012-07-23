@@ -67,7 +67,14 @@ describe Serengeti::CloudManager::FullPlacement do
 
   it "should filter out existed vm that violate instance_per_host constraint" do
     existed_vms = {}
-    {"vm1" => "host1", "vm2"=>"host1", "vm3"=>"host2", "vm4"=> "host3"}.each do |vm_name, host_name|
+    {"data-vm1" => "host1", "data-vm2"=>"host2", "data-vm3"=>"host3"}.each do |vm_name, host_name|
+      vm = Serengeti::CloudManager::VmInfo.new(vm_name, nil)
+      vm.host_name = host_name
+      # group hdfs has attribute instance_per_host=1
+      vm.group_name = HDFS_GROUP_NAME
+      existed_vms[vm_name] = vm
+    end
+    {"cp-vm1" => "host1", "cp-vm2"=>"host1", "cp-vm3"=>"host2", "cp-vm4"=> "host3"}.each do |vm_name, host_name|
       vm = Serengeti::CloudManager::VmInfo.new(vm_name, nil)
       vm.host_name = host_name
       # group mapr1 has attribute instance_per_host=2
@@ -75,10 +82,31 @@ describe Serengeti::CloudManager::FullPlacement do
       existed_vms[vm_name] = vm
     end
     
-    deleted_vms = @placement.clean_cluster(@vm_groups, existed_vms)
-    deleted_vms.map {|vm| vm.name}.should eq ["vm3", "vm4"]
+    deleted_vms = @placement.pre_placement_cluster(@vm_groups, existed_vms)[0]['delete']
+    deleted_vms.map {|vm| vm.name}.should eq ["cp-vm3", "cp-vm4"]
   end
-  
+
+    it "should filter out existed vm that violate STRICT group association constraint" do
+    existed_vms = {}
+    {"data-vm1" => "host1", "data-vm2"=>"host2"}.each do |vm_name, host_name|
+      vm = Serengeti::CloudManager::VmInfo.new(vm_name, nil)
+      vm.host_name = host_name
+      # group hdfs has attribute instance_per_host=1
+      vm.group_name = HDFS_GROUP_NAME
+      existed_vms[vm_name] = vm
+    end
+    {"cp-vm1" => "host1", "cp-vm2"=>"host1", "cp-vm3"=>"host3", "cp-vm4"=> "host3"}.each do |vm_name, host_name|
+      vm = Serengeti::CloudManager::VmInfo.new(vm_name, nil)
+      vm.host_name = host_name
+      # group mapr1 has attribute instance_per_host=2
+      vm.group_name = MAPR_GROUP_NAME
+      existed_vms[vm_name] = vm
+    end
+
+    deleted_vms = @placement.pre_placement_cluster(@vm_groups, existed_vms)[0]['delete']
+    deleted_vms.map {|vm| vm.name}.should eq ["cp-vm3", "cp-vm4"]
+  end
+
   it "should raise exception when the cluster is not cleaned before calling get_virtual_nodes" do
     existed_vms = {}
     {"vm1" => "host1", "vm2"=>"host1", "vm3"=>"host2", "vm4"=> "host3"}.each do |vm_name, host_name|
