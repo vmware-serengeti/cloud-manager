@@ -68,7 +68,7 @@ module Serengeti
       # fetch vm_group information from dc resources came from vSphere (dc_res)
       # It will assign existed vm to each vm group, and put them to VM_STATE_READY status.
       # Return: the vm_group structure
-      def create_vm_group_from_resources(dc_res, serengeti_cluster_name)
+      def create_vm_group_from_resources(dc_res)
         vm_groups = {}
         dc_res.clusters.each_value do |cluster|
           cluster.vms.each_value do |vm|
@@ -78,8 +78,8 @@ module Serengeti
             cluster_name = result[1]
             group_name = result[2]
             num = result[3]
-            logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
-            next if (cluster_name != serengeti_cluster_name)
+            #logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
+            next if (cluster_name != config.serengeti_cluster_name)
             vm_group = vm_groups[group_name]
             if vm_group.nil?
               # Create new Group
@@ -90,7 +90,7 @@ module Serengeti
             # Update existed vm info
             vm.status = VmInfo::VM_STATE_READY
             vm.action = VmInfo::VM_ACTION_START # existed VM action is VM_ACTION_START
-            logger.debug("Add existed vm")
+            logger.debug("Add #{vm.name} to existed vm")
             @vm_lock.synchronize { state_sub_vms(:existed)[vm.name] = vm }
           end
         end

@@ -33,14 +33,6 @@ module Serengeti
           @vm_lock.synchronize { state_vms_init }
           #logger.debug("#{cluster_info.inspect}")
 
-         begin
-          rescue => e
-            logger.error("Prepare working failed.")
-            logger.debug("#{e} - #{e.backtrace.join("\n")}")
-            cluster_failed(task)
-            #TODO add all kinds of error handlers here
-            raise e
-          end
           retry_num = config.deploy_retry_num
           cycle_num = 0 
           loop do
@@ -97,8 +89,8 @@ module Serengeti
           ###########################################################
           # Cluster deploy successfully
         end
-      end
 
+      end
     end
 
   end
