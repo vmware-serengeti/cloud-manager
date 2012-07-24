@@ -46,10 +46,22 @@ module Serengeti
         vm_distribution.each do |vg_name, host_usages|
           vg = vm_groups.find { |vg| vg.name == vg_name}
           host_usages.each do |host, vms|
+           # delete vms that violate instance_per_host constraint
             if vms.size != vg.instance_per_host
               delete_vms.concat(vms)
               vms.each do |vm|
-                @logger.debug("VM " + vm.name + " on host " + vm.host_name + " should be removed")
+                @logger.debug("remove VM " + vm.name + " on host " + host + \
+                    " as it violates instance_per_host constraint.")
+              end
+              next
+            end
+            # delete vms that violate STRICT group association constraint
+            if vg.referred_group and vg.associate_type == 'STRICT' and \
+                (vm_distribution[vg.referred_group].nil? or not vm_distribution[vg.referred_group].key?(host))
+              delete_vms.concat(vms)
+              vms.each do |vm|
+                @logger.debug("remove VM " + vm.name + " on host " + host + \
+                    " as it violates STIRCT group association constraint.")
               end
             end
           end
