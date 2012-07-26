@@ -2,7 +2,8 @@ module Serengeti
   module CloudManager
 
     class FogDummy < BaseObject
-      def initialize(noused)
+      def initialize(cloud)
+        @cloud = cloud
         @ip_start = 2
         logger.debug("Enter Cloud fog_dummy...")
         @debug_dc = YAML.load(File.open(config.ut_dc_config_file))
@@ -12,9 +13,14 @@ module Serengeti
         @debug_dc_tree = nil
       end
 
-      def login(vc_addr, vc_user, vc_pass)
-        logger.debug("Connect to #{vc_addr} and login, user:#{vc_user}, pass:#{vc_pass}")
-        @vc_addr = vc_addr
+      def cloud
+        @cloud
+      end
+
+
+      def login()
+        cloud.get_provider_info
+        @vc_addr = 'fog_test'
       end
 
       def logout

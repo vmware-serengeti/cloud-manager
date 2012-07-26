@@ -497,8 +497,12 @@ module Serengeti
       end
 
       def volumes(limitation = Serengeti::CloudManager.config.vm_data_disk_start_index)
-        @disks.collect { |path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
-          if disk.unit_number >= limitation }.compact.sort
+        if @disks.empty?
+          return res_vms['storage'].get_volumes_for_os('data') 
+        else
+          return @disks.collect { |path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
+            if disk.unit_number >= limitation }.compact.sort
+        end
       end
     end
 

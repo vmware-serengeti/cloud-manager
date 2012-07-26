@@ -34,6 +34,9 @@ module Serengeti
           @size = size
           @value = value
         end
+        def get_volumes_for_os(type)
+          '/dev/sdc'
+        end
       end
 
       def get_system_ds_moid(vm)
@@ -74,7 +77,9 @@ module Serengeti
           info = cloud.get_provider_info()
           clusters_name = cloud.get_clusters_name_within_input()
           info['clusters'] = clusters_name
-          @server = cloud.create_service_obj(config.storage_service, info) # Currently, we only use the first engine
+          info['share_datastore_pattern'] = cloud.vc_share_datastore_pattern
+          info['local_datastore_pattern'] = cloud.vc_local_datastore_pattern
+          @server = cloud.create_service_obj(config.storage_service, info)
         end
       end
 

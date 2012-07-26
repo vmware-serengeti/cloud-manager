@@ -31,6 +31,7 @@ module Serengeti
       def_const_value :debug_deploy       , true
       def_const_value :debug_waiting_ip   , true
       def_const_value :debug_placement_datastore, true
+      def_const_value :serengeti_cluster_name, 'test'
     end
 
     class Cloud
@@ -57,12 +58,15 @@ module Serengeti
       attr_reader :config
 
       attr_reader :client
+
+      include Serengeti::CloudManager::Utils
       def initialize(cluster_info)
         @dc_resource = nil
         @clusters = nil
         @vm_lock = Mutex.new
         state_vms_init  #:existed,:deploy,:failed,:finished,:placed
         @need_abort = nil
+        config.serengeti_cluster_name = cluster_info["name"]
         @cluster_name = cluster_info["name"]
 
         @status = CLUSTER_BIRTH

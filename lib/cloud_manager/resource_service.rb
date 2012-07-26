@@ -53,6 +53,7 @@ module Serengeti
       def rps; @cm_server.rps; end
       def dc_resource; @cm_server.dc_resource; end
       def vm_groups; @cm_server.vm_groups; end
+      def clusters; @cm_server.clusters; end
 
       def initialize(cm_server)
         @cm_server = cm_server
@@ -64,6 +65,7 @@ module Serengeti
       attr_reader :rps
       attr_reader :vm_groups
       attr_reader :placement_service
+      attr_reader :clusters
 
       def initialize(cloud)
         @cloud = cloud
@@ -86,6 +88,7 @@ module Serengeti
         @rps = dc_resource.resource_pools
         @vm_groups = vm_groups
         @placement_service = placement_service
+        @clusters = dc_resource.clusters
       end
 
       def inner_create_servers(vm_specs)
@@ -107,6 +110,7 @@ module Serengeti
       end
 
       def commit(vmServers, options = {})
+        logger.debug("Call #{name} commission")
         @server.commission(vmServers)
       end
 

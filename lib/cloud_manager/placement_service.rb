@@ -18,6 +18,7 @@
 module Serengeti
   module CloudManager
     class Config
+      #def_const_value :placement_engine, [{'require' => 'plugin/placement_rr', 'obj' => 'RRPlacement'}]
       def_const_value :placement_engine, [{'require' => 'cloud_manager/placement_impl', 'obj' => 'FullPlacement'}]
       def_const_value :res_services,
         [ {'require' => 'plugin/resource_compute', 'obj' => 'ResourceCompute'},
@@ -96,7 +97,7 @@ module Serengeti
           return nil
         end
         # FIXME, Currently, we just use the first rp
-        [place_rps[0]]
+        place_rps
       end
 
       def create_vm_with_each_resource(virtual_nodes)
@@ -111,25 +112,20 @@ module Serengeti
         vm_servers_group
       end
 
-      def place_group_vms_with_rp(place_rps, vm_group, group_place, existed_vms, placed_vms)
-        # Get all hosts with paired info
-        hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
-        # hosts' info is [hostname1, hostname2, ... ]
-
+      def place_group_vms_with_hosts(hosts, virtual_group, group_place, existed_vms, placed_vms)
         # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]] 
-        virtual_nodes = @place_engine.get_virtual_nodes(vm_group, existed_vms, placed_vms)
+        virtual_nodes = @place_engine.get_virtual_nodes(virtual_group, existed_vms, placed_vms)
 
         # Return such like this [[vmServer1, vmServer2],[vmServer3]]
         #logger.debug("vns:#{virtual_nodes.pretty_inspect}")
-        #specs like this [[vpec1, spec2],[spec3]]
-        #logger.debug("vns->specs#{specs.pretty_inspect}")
-        
         vm_servers_groups = create_vm_with_each_resource(virtual_nodes)
 
         vm_servers_groups.each do |group|
           # Check capacity
+          logger.debug("Check capacity: #{hosts.pretty_inspect}")
           service_loop do |service|
             hosts = service.check_capacity(group[:vm].vm(service.name), hosts)
+            logger.debug("after #{service.name} check: #{hosts.pretty_inspect}")
             raise PlaceServiceException,'Do not find hosts can match resources requirement' if hosts.nil?
           end
 
@@ -188,7 +184,8 @@ module Serengeti
               #vm.sys_datastore_moid = 'datastore-6348'
               vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
               logger.debug("vm: system moid #{vm.sys_datastore_moid}")
-              vm.resource_pool_moid = place_rps[0].mob
+              vm.resource_pool_moid = vm.res_vms['resource_pool'].rp.mob
+              logger.debug("vm: resource pool moid #{vm.resource_pool_moid}")
               #vm.resource_pool_moid = vm.res_vms['resource_pool'].mobid
               vm.spec = spec
               vm.host_name  = host.name
@@ -229,8 +226,11 @@ module Serengeti
           next if place_rps.nil?
           logger.debug("place_rps: #{place_rps.pretty_inspect}")
 
+          # Get all hosts with paired info
+          # hosts' info is [hostname1, hostname2, ... ]
+          hosts = place_rps.map { |rp| rp.cluster.hosts.values.map { |h| h.name } }.flatten.uniq
           begin
-            place_group_vms_with_rp(place_rps, virtual_group, group_place,
+            place_group_vms_with_hosts(hosts, virtual_group, group_place,
                                     cloud.state_sub_vms(:existed),
                                     cloud.state_sub_vms(:placed))
           rescue PlaceServiceException => e
@@ -239,7 +239,7 @@ module Serengeti
             @vm_placement[:failed_num] += 1
             logger.error("VM group #{virtual_group.name} failed to place vm, "\
                           "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
-            next
+            raise 
           end
           @vm_placement[:place_groups] << group_place
         end
