@@ -20,15 +20,6 @@ module Serengeti
   module CloudManager
     class Config
       def_const_value :vm_sys_disk_size     , 05 * 1024 #MB
-      def_const_value :min_disk_size        , 01 * 1024 #MB
-      def_const_value :remainder_disk_size  , 16 * 1024 #MB
-
-      def_const_value :swap_disk_size     , [2048, 4096, 16384, 65536]
-      def_const_value :swap_mem_size      , [1024, 2048, 4096, 8192]
-      def_const_value :max_swap_disk_size , 12288
-
-      def_const_value :vm_place_swap_disk , true
-      def_const_value :vm_sys_disk_colocated_with_data_disk, true
     end
 
     class Placement < BaseObject

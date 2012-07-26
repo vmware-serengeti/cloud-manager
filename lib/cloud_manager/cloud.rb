@@ -211,14 +211,13 @@ module Serengeti
         #@cluster_name = cluster_info["name"]
         logger.info("Connect to Cloud Server...")
         @input_cluster_info = cluster_info
-        @status = CLUSTER_CONNECT
 
-        @client = create_plugin_obj(config.client_connection, self)
-        #client connect need more connect sessions
-        client_op(self, 'vSphere login') { @client.login() }
-
-        logger.debug("Create Resources ...")
-        @resources = Resources.new(@client, self)
+        if @client.nil?
+          @status = CLUSTER_CONNECT
+          @client = create_plugin_obj(config.client_connection, self)
+          #client connect need more connect sessions
+          client_op(self, 'vSphere login') { @client.login() }
+        end
 
         # Create inputed vm_group from serengeti input
         logger.debug("Create vm group from input...")
@@ -226,6 +225,9 @@ module Serengeti
         logger.obj2file(vm_groups_input, 'vm_groups_input')
 
         # Fetch Cluster information
+        logger.debug("Create Resources ...")
+        @resources = Resources.new(@client, self)
+
         @status = CLUSTER_FETCH_INFO
         dc_resources = client_op(self, 'Fetch vSphere info') do
           @resources.fetch_datacenter(@cloud_provider.vc_datacenter, cluster_info['template_id'])
@@ -274,7 +276,7 @@ module Serengeti
           Thread.current[:action] = ''
         rescue => e
           logger.error("#{act} failed with #{e} #{e.backtrace.join("\n")}")
-          set_cluster_error_msg("#{act} failed with #{e}")
+          set_cluster_error_msg("#{act} failed with: #{e}")
           cluster_failed(task)
           Thread.current[:action] = ''
           return 'failed'

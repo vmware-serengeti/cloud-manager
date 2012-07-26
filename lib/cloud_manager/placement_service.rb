@@ -26,12 +26,10 @@ module Serengeti
           {'require' => 'plugin/resource_storage', 'obj' => 'ResourceStorage'},
           {'require' => 'plugin/resource_network', 'obj' => 'ResourceNetwork'}, ]
       def_const_value :placement_rp_place_enable, true
+      def_const_value :placement_pre_action_enable, false
     end
 
     class PlacementService < BaseObject
-      class PlaceServiceException < PlacementException
-      end
-
       def initialize(cloud)
         @rc_services = {}
         @place_engine = cloud.create_service_obj(config.placement_engine.first, cloud) # Currently, we only use the first engine
@@ -40,7 +38,7 @@ module Serengeti
         @vm_placement = {}
         @vm_placement[:failed_num] = 0
         @vm_placement[:error_msg] = []
-        @vm_placement[:place_groups] = []
+        @vm_placement[:action] = []
         @cloud = cloud
       end
 
@@ -150,9 +148,21 @@ module Serengeti
         vms
       end
 
+      def remove_empty_scores!(scores)
+        scores.each do |name, score|
+          score.each do |host, value|
+            if value.nil?
+              logger.warn("remove host:#{host} for #{name} service can not support it")
+              next scores.each_value { |score_| score_.delete(host) } 
+            end
+          end
+        end
+        scores.first[1].size
+      end
+
       def place_group_vms_with_hosts(hosts, virtual_group, existed_vms, placed_vms)
         group_place = []
-        # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]] 
+        # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]]
         virtual_nodes = @place_engine.get_virtual_nodes(virtual_group, existed_vms, placed_vms)
 
         # Return such like this [[vmServer1, vmServer2],[vmServer3]]
@@ -165,15 +175,18 @@ module Serengeti
           service_loop do |service|
             hosts = service.check_capacity(group[:vm].vm(service.name), hosts)
             logger.debug("after #{service.name} check: #{hosts.pretty_inspect}")
-            raise PlaceServiceException,'Do not find hosts can match resources requirement' if hosts.nil?
+            raise PlacementException, "Do not find any hosts can match resources requirement after #{service.name} check" if hosts.nil?
           end
 
           # Each service calc their values
           scores = {}
           service_loop do |service|
-            # Return value is {host1=>value1, host2=>value2}
+            # service will return {host1=>vm1, host2=>vm2}
             scores[service.name] = service.evaluate_hosts(group[:vm].vm(service.name), hosts)
           end
+
+          sore_size = remove_empty_scores!(scores)
+          raise PlacementException, 'Resource service cannot find any hosts to match resources requirement' if sore_size <= 0
 
           #logger.debug("scores: #{scores.pretty_inspect}")
           logger.debug("scores: #{scores.pretty_inspect}")
@@ -183,7 +196,7 @@ module Serengeti
           selected_host = nil
           loop do
             selected_host = @place_engine.select_host(group[:vnode], scores)
-            raise PlaceServiceException,'Do not select suitable host' if selected_host.nil?
+            raise PlacementException,'Do not select suitable host' if selected_host.nil?
             logger.debug("host select :#{selected_host}")
 
             committed_service = []
@@ -194,7 +207,7 @@ module Serengeti
               else
                 # Fail to commit service
                 success = false
-                committed_service.each { |plug| service.discommit(scores[service.name][selected_host]) }
+                committed_service.each { | commit | commit.discommit(scores[service.name][selected_host]) }
                 logger.debug("VM commit is failed.")
                 break
               end
@@ -224,11 +237,17 @@ module Serengeti
       def cluster_placement(dc_resource, vm_groups_input, vm_groups_existed)
         @vm_placement[:failed_num] = 0
         @vm_placement[:error_msg] = []
-        @vm_placement[:place_groups] = []
+        @vm_placement[:action] = []
+        @vm_placement[:rollback] = nil
  
-        act_vms = @place_engine.pre_placement_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
-        if (!act_vms.nil?) && (act_vms.size > 0)
-          #TODO
+        # act_vms = [ {'action1' => [act1, act2, act3], :rollback = nil}, {'action2' => [...]}, ... ]
+        if config.placement_pre_action_enable
+          act_vms = @place_engine.pre_placement_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
+          if (!act_vms.nil?) && (act_vms.size > 0)
+            @vm_placement[:action] = act_vms
+            @vm_placement[:rollback] = 'fetch_info'
+            return @vm_placement
+          end
         end
 
         info = { :dc_resource => dc_resource, :vm_groups => vm_groups_input, :place_service => self }
@@ -261,17 +280,18 @@ module Serengeti
                                     cloud.state_sub_vms(:placed))
           rescue PlacementException => e
             ## can not alloc virual_group anymore
-            set_placement_error_msg("Can not alloc resource for vm group #{virtual_group.name}: #{place_err_msg}")
+            error_msg = "Can not alloc resource for vm group #{virtual_group.name}: #{e.message}"
+            set_placement_error_msg(error_msg)
             @vm_placement[:failed_num] += 1
             logger.error("VM group #{virtual_group.name} failed to place vm, "\
-                          "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
-            raise
+                         "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
+            raise error_msg
           end
           logger.debug("out group_place:#{group_place.pretty_inspect}")
-          @vm_placement[:place_groups] << group_place
+          @vm_placement[:action] << { 'act' => 'group_deploy', 'group' => group_place }
         end
 
-        logger.debug("vm_placement: #{@vm_placement[:place_groups].pretty_inspect}" )
+        logger.debug("vm_placement: #{@vm_placement[:action].pretty_inspect}" )
         logger.obj2file(@vm_placement, 'vm_placement_2')
         @vm_placement
       end
@@ -279,4 +299,3 @@ module Serengeti
 
   end
 end
-
