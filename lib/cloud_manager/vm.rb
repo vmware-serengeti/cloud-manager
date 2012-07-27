@@ -34,6 +34,8 @@ module Serengeti
     end
 
     class VmInfo
+      include Utils
+      
       VM_STATE_BIRTH      = { :doing => "Initializing"  , :done => 'Not Exist' }
       VM_STATE_PLACE      = { :doing => "Initializing"  , :done => 'Not Exist' }
       VM_STATE_CLONE      = { :doing => "Cloning"       , :done => 'Created' }
@@ -162,6 +164,13 @@ module Serengeti
         data.each { |name, size| ds << { :name => name, :size => \
           (size+ResourceInfo::DISK_SIZE_UNIT_CONVERTER-1)/ResourceInfo::DISK_SIZE_UNIT_CONVERTER } }
         ds
+      end
+
+      def group_name
+        return @group_name if @group_name
+        result = get_from_vm_name(@name)
+        raise "VM name is not in the right format" if result.nil? or result.size != 4
+        result[2]
       end
 
       def inspect
