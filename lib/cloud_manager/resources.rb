@@ -185,7 +185,7 @@ module Serengeti
         vm
       end
 
-      def fetch_datacenter(datacenter_name, template_ref)
+      def fetch_datacenter(datacenter_name)
         datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
         if datacenter_mob.nil?
           logger.debug("Do not find the datacenter: #{datacenter_name}")
@@ -207,7 +207,7 @@ module Serengeti
 
         datacenter.racks = @cloud.racks
 
-        datacenter.vm_template = fetch_vm_by_moid(template_ref, datacenter_mob)
+        datacenter.vm_template = fetch_vm_by_moid(config.serengeti_template_id, datacenter_mob)
         datacenter.port_group = @client.get_portgroups_by_dc_mob(datacenter_mob)
         datacenter.hosts = {}
         datacenter.resource_pools = {}

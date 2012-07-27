@@ -98,7 +98,7 @@ module Serengeti
           vms.each_value do |vm|
             result = get_from_vm_name(vm.name)
             next if result.nil?
-            vm.cluster_name = @cluster_name #Serengeti cluster_name
+            vm.cluster_name = config.serengeti_cluster_name #Serengeti cluster_name
             vm.group_name = result[2]
             servers << vm
           end
@@ -127,7 +127,7 @@ module Serengeti
       # Get cluster operation's progress
       def get_progress
         progress = IaasProcess.new
-        progress.cluster_name = @cluster_name
+        progress.cluster_name = config.serengeti_cluster_name
         progress.result = get_result
         progress.status = @status
         progress.finished = @finished

@@ -68,6 +68,7 @@ module Serengeti
         end
 
         return nil if delete_vms.empty?
+
         [ {'act'=>'group_delete', 'group' => delete_vms} ]
       end
 
