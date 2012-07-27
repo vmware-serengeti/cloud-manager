@@ -34,7 +34,7 @@ module Serengeti
           #logger.debug("#{cluster_info.inspect}")
 
           retry_num = config.deploy_retry_num
-          cycle_num = 0 
+          cycle_num = 0
           loop do
             begin
               if cycle_num > retry_num
@@ -75,10 +75,10 @@ module Serengeti
               logger.info("reload datacenter resources from cloud")
 
               logger.obj2file(dc_resources, "dc_resource-roll-back-#{cycle_num}")
-              cycle_num += 1 
+              cycle_num += 1
             rescue => e
               logger.warn("#{e} - #{e.backtrace.join("\n")}")
-              cycle_num += 1 
+              cycle_num += 1
               if cycle_num >= retry_num
                 logger.warn("Loop placement faild #{cycle_num} loop")
                 raise e

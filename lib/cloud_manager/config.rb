@@ -30,7 +30,7 @@ module Serengeti
       end
 
       def config
-        Serengeti::CloudManager.config 
+        Serengeti::CloudManager.config
       end
     end
 

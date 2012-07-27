@@ -35,6 +35,8 @@ module Serengeti
       def_const_value :serengeti_template_id, 'vm-0'
       def_const_value :serengeti_cluster_share_datastore_pattern, []
       def_const_value :serengeti_cluster_local_datastore_pattern, []
+      def_const_value :vc_local_datastore_pattern, []
+      def_const_value :vc_share_datastore_pattern, []
     end
 
     class Cloud
@@ -45,14 +47,11 @@ module Serengeti
       attr_accessor :clusters
       attr_accessor :vm_groups
       attr_accessor :vms
-      attr_reader :input_cluster_info
       attr_reader :action
 
       attr_accessor :placement_failed
       attr_accessor :cloud_error_msg_que
 
-      attr_reader :vc_share_datastore_pattern
-      attr_reader :vc_local_datastore_pattern
       attr_reader :vc_req_datacenter
       attr_reader :vc_req_rps
 
@@ -91,7 +90,7 @@ module Serengeti
       end
 
       def state_vms_init
-        @state_vms = { 
+        @state_vms = {
           :existed  => { }, :deploy   => { },
           :failed   => { }, :finished => { },
           :placed   => { },
@@ -142,8 +141,8 @@ module Serengeti
 
         raise "cloud_provider's IP address is nil." if @cloud_provider.vc_addr.nil?
 
-        @vc_share_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_shared_datastore_pattern || [])
-        @vc_local_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_local_datastore_pattern || [])
+        config.vc_share_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_shared_datastore_pattern || [])
+        config.vc_local_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_local_datastore_pattern || [])
         @racks = nil
       end
 
@@ -159,7 +158,10 @@ module Serengeti
           input_group = vm_groups_input[exist_group.name]
           next if input_group.nil?
           logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
-          exist_group.vm_ids.each_value { |vm| vm.ha_enable = input_group.req_info.ha }
+          exist_group.vm_ids.each_value { |vm| vm.ha_enable = (input_group.req_info.ha == 'on') }
+          logger.debug("input group: ha:#{input_group.req_info.ha}")
+          exist_group.vm_ids.each_value { |vm| vm.ha_enable = vm.ft_enable = (input_group.req_info.ha == 'ft')
+          }
         end
       end
 
@@ -195,7 +197,7 @@ module Serengeti
           :vsphere_username => @cloud_provider.vc_user,
           :vsphere_password => @cloud_provider.vc_pwd,
         }
-#        logger.debug("login info:#{info.pretty_inspect}")
+        logger.debug("login info:#{info.pretty_inspect}")
         info
       end
 
@@ -211,8 +213,6 @@ module Serengeti
 
       def prepare_working(cluster_info, cluster_data)
         # Connect to Cloud server
-        @input_cluster_info = cluster_info
-
         # Create inputed vm_group from serengeti input
         logger.debug("Create vm group from input...")
         vm_groups_input = create_vm_group_from_serengeti_input(cluster_info, @cloud_provider.vc_datacenter)
@@ -240,7 +240,7 @@ module Serengeti
         dc_res.vm_template.disks.each_value { |disk| break vm_sys_disk_size = disk.size if disk.unit_number == 0 }
         logger.debug("template vm disk size: #{@vm_sys_disk_size}")
         config.vm_sys_disk_size = vm_sys_disk_size
-        
+
         # Create VM Group Info from resources
         logger.debug("Create vm group from resources...")
         @vm_lock.synchronize { @state_vms[:existed] = {} }
@@ -258,9 +258,9 @@ module Serengeti
       end
 
       def release_connection
-        if !cloud_error_msg_que.empty?
+        if !@cloud_error_msg_que.empty?
           logger.debug("cloud manager have error/warning message. please chcek it, it is helpful for debugging")
-          logger.debug("#{cloud_error_msg_que.pretty_inspect}")
+          logger.debug("#{@cloud_error_msg_que.pretty_inspect}")
         end
         return if @client.nil?
         @client.logout

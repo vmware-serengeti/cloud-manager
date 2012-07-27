@@ -24,7 +24,7 @@ module Serengeti
       def_const_value :compute_service, {'require' => nil, 'obj' => 'InnerCompute'}
     end
 
-    class InnerCompute < InnerServer 
+    class InnerCompute < InnerServer
       def total_memory(vmServers)
         @total_memory = 0
         #logger.debug("specs:#{vm_specs.pretty_inspect}")
@@ -63,7 +63,7 @@ module Serengeti
         if config.compute_service_fault_test
           result.each { |host, value| result[host] = nil }
         end
-        result 
+        result
       end
 
       def commission(vm_server)
@@ -89,7 +89,6 @@ module Serengeti
         end
       end
 
-
       def name
         "compute"
       end
@@ -105,7 +104,7 @@ module Serengeti
         @server.decommission(vmServer)
       end
 
-    end 
+    end
   end
 end
 

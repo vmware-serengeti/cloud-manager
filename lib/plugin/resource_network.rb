@@ -33,6 +33,20 @@ module Serengeti
       end
 
       def query_capacity(vmServers, info)
+        vmServers.each do |spec|
+          group_name = spec['vm_group_name']
+          vm_group = vm_groups[group_name]
+
+          #check portgroup
+          unknown_pg = vm_group.network_res.not_existed_port_group(port_groups)
+          if unknown_pg
+            failed_vm_num = vm_group.instances - vm_group.vm_ids.size
+            error_msg = "group #{vm_group.name}: can not find port group:#{unknown_pg} in vSphere."
+            logger.error(error_msg)
+            raise PlacementException,error_msg
+          end
+          #TODO add more networking check here
+        end
         info['hosts']
       end
 
@@ -52,7 +66,7 @@ module Serengeti
 
       def decommission(vmServer)
       end
- 
+
     end
 
     class Config

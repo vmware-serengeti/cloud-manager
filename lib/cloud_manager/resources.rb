@@ -53,7 +53,7 @@ module Serengeti
         end
 
         def inspect
-          "<Datastore: #{@mob} / #{@name} size(#{real_free_space}MB / #{@free_space}MB / #{@total_space}MB>"
+          "<Datastore: #{@mob} / #{@name} size(#{real_free_space}MB / #{@free_space}MB / #{@total_space}MB)>"
         end
         def initialize
           @unaccounted_space = 0
@@ -77,16 +77,12 @@ module Serengeti
         attr_accessor :datacenter
         attr_accessor :resource_pools
         attr_accessor :hosts
-        #attr_accessor :share_datastores
-        #attr_accessor :local_datastores
         attr_accessor :idle_cpu
         attr_accessor :total_memory
         attr_accessor :free_memory
         attr_accessor :unaccounted_memory
         attr_accessor :mem_over_commit
         attr_accessor :vms
-        attr_accessor :share_datastore_pattern
-        attr_accessor :local_datastore_pattern
         attr_reader   :vc_req
         attr_accessor :disconnected_hosts
 
@@ -157,9 +153,9 @@ module Serengeti
 
         def inspect
           msg = "<Host: #{@mob} / #{@name}, #{real_free_memory}MB/#{@free_memory}MB/#{@total_memory}MB>, vm #{@vms.size}\n datastores:\n"
-          #share_datastores.each_value { |datastore|msg<<"share "<<datastore.inspect }
-          #local_datastores.each_value { |datastore|msg<<"local "<<datastore.inspect }
-          #msg
+          share_datastores.each_value { |datastore|msg<<"share "<<datastore.inspect }
+          local_datastores.each_value { |datastore|msg<<"local "<<datastore.inspect }
+          msg
         end
       end
 
@@ -200,10 +196,10 @@ module Serengeti
         logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
         #raise "Missing share_datastore_pattern in director config" if @cloud.vc_share_datastore_pattern.nil?
-        logger.debug("share pattern:#{@cloud.vc_share_datastore_pattern}")
-        logger.debug("local pattern:#{@cloud.vc_local_datastore_pattern}")
-        datacenter.share_datastore_pattern    = @cloud.vc_share_datastore_pattern
-        datacenter.local_datastore_pattern = @cloud.vc_local_datastore_pattern
+        logger.debug("share pattern:#{config.vc_share_datastore_pattern}")
+        logger.debug("local pattern:#{config.vc_local_datastore_pattern}")
+        datacenter.share_datastore_pattern = config.vc_share_datastore_pattern
+        datacenter.local_datastore_pattern = config.vc_local_datastore_pattern
 
         datacenter.racks = @cloud.racks
 
@@ -240,10 +236,6 @@ module Serengeti
           cluster.mob                 = attr["mo_ref"]
           cluster.name                = attr["name"]
           cluster.vms                 = {}
-          cluster.share_datastore_pattern = @cloud.input_cluster_info["vc_shared_datastore_pattern"] ||
-                                                                    datacenter.share_datastore_pattern || []
-          cluster.local_datastore_pattern = @cloud.input_cluster_info["vc_local_datastore_pattern"]  ||
-                                                                    datacenter.local_datastore_pattern || []
 
           logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 

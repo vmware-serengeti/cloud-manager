@@ -21,11 +21,7 @@ module Serengeti
   module CloudManager
 
     class Cloud
-      class NetworkRes
-        def logger
-          Serengeti::CloudManager.logger
-        end
-
+      class NetworkRes < BaseObject
         IP = '(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])'
         def initialize(networking)
           @net_config = networking
@@ -45,6 +41,10 @@ module Serengeti
           @lock = Mutex.new
         end
 
+        def card_op
+          @net_config.each { |network| yield network}
+        end
+
         def range_extend(range, level, out_ip, out_range)
           return out_range[out_ip] = 1 if (level >= 5)
           (range[level]..range[level+4]).each { |ip| range_extend(range, level+1, "#{out_ip}.#{ip}", out_range) }
@@ -59,6 +59,7 @@ module Serengeti
         def dhcp?(card);  @net_config[card]['type'] == 'dhcp'; end
         def static?(card); @net_config[card]['type'] == 'static'; end
         def port_group(card); @net_config[card]['port_group']; end
+        def port_groups(); @net_config.map { |net| net['port_group'] } end
         def netmask(card); @net_config[card]['netmask'];end
         def gateway(card); @net_config[card]['gateway'];end
         def dns(card); @net_config[card]['dns']; end
@@ -68,11 +69,17 @@ module Serengeti
           nil
         end
 
-        def ip_num(card); @lock.synchronize { return @net_config[card]['ip_pool'].size}; end
+        def ip_num(card)
+          @lock.synchronize { return @net_config[card]['ip_pool'].size}
+        end
 
-        def ip_alloc(card) @lock.synchronize { return @net_config[card]['ip_pool'].shift.first} end
+        def ip_alloc(card)
+          @lock.synchronize { return @net_config[card]['ip_pool'].shift.first}
+        end
 
-        def ip_remove(card, ip) @lock.synchronize { @net_config[card]['ip_pool'].delete(ip.to_s)} end
+        def ip_remove(card, ip)
+          @lock.synchronize { @net_config[card]['ip_pool'].delete(ip.to_s)}
+        end
 
         def ip_release(card, ip)
           @lock.synchronize { @net_config[card]['ip_pool'][ip.to_s] = 2}

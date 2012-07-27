@@ -45,11 +45,14 @@ module Serengeti
         # Create Client pool for faster access vSphere
         @connection = {}
         @connection[:con] = []
+        @connection[:ha_ft] = []
         @connection[:err] = []
         group_each_by_threads(connect_list, :callee => 'cloud login') do |con|
           begin
             connection = Fog::Compute.new(cloud.get_provider_info)
             @con_lock.synchronize { @connection[:con] << connection }
+            ha_ft = Fog::Highavailability.new(cloud.get_provider_info)
+            @con_lock.synchronize { @connection[:ha_ft] << ha_ft }
           rescue => e
             @con_lock.synchronize { @connection[:err] << e }
           end
@@ -62,8 +65,12 @@ module Serengeti
         logger.debug("Use #{@connection[:con].size} channels to connect cloud service\n}")
       end
 
-      def fog_op
+      def compute_op
         yield @con_lock.synchronize { @connection[:con].rotate!.first }
+      end
+
+      def ha_ft_op
+        yield @con_lock.synchronize { @connection[:ha_ft].rotate!.first }
       end
 
       def logout
@@ -93,7 +100,7 @@ module Serengeti
           'memory' => vm.spec['req_mem'],
         }
         logger.debug("clone info: #{info.pretty_inspect}")
-        result = fog_op { |con| con.vm_clone(info) }
+        result = compute_op { |con| con.vm_clone(info) }
         logger.debug("after clone: result :#{result} ")
         update_vm_with_properties_string(vm, result["vm_attributes"])
       end
@@ -105,24 +112,24 @@ module Serengeti
       # TODO add vm_xxxx return state checking
       def vm_destroy(vm)
         check_connection
-        task_state = fog_op { |con| con.vm_destroy('instance_uuid' => vm.instance_uuid) }
+        task_state = compute_op { |con| con.vm_destroy('instance_uuid' => vm.instance_uuid) }
       end
 
       def vm_reboot(vm)
         check_connection
-        task_state = fog_op { |con| con.vm_reboot('instance_uuid' => vm.instance_uuid) }
+        task_state = compute_op { |con| con.vm_reboot('instance_uuid' => vm.instance_uuid) }
       end
 
       def vm_power_off(vm)
         check_connection
-        task_state = fog_op { |con| con.vm_power_off(\
+        task_state = compute_op { |con| con.vm_power_off(\
                   'instance_uuid' => vm.instance_uuid, 'force'=>false, 'wait' => true) }
         #task_state #'success', 'running', 'queued', 'error'
       end
 
       def vm_power_on(vm)
         check_connection
-        task_state = fog_op { |con| con.vm_power_on('instance_uuid' => vm.instance_uuid) }
+        task_state = compute_op { |con| con.vm_power_on('instance_uuid' => vm.instance_uuid) }
       end
 
       def vm_create_disk(vm, disk, options={})
@@ -132,7 +139,7 @@ module Serengeti
           'disk_size' => disk.size / DISK_SIZE_TIMES }
         info['provison_type'] = (disk.shared && disk.type == 'data') ? 'thin' : nil
         logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB, type:#{info['provison_type']}")
-        result = fog_op { |con| con.vm_create_disk(info) }
+        result = compute_op { |con| con.vm_create_disk(info) }
       end
 
       # Update vm's network configuration
@@ -140,25 +147,27 @@ module Serengeti
         check_connection
         card = 0
         vm.network_config_json.each do |config_json|
-          fog_op { |con| con.vm_update_network('instance_uuid' => vm.instance_uuid,
+          compute_op { |con| con.vm_update_network('instance_uuid' => vm.instance_uuid,
                                               'adapter_name' => "Network adapter #{card + 1}",
                                               'portgroup_name' => vm.network_res.port_group(card)) }
 
           logger.debug("network json:#{config_json}") if config.debug_networking
-          fog_op { |con| con.vm_config_ip('vm_moid' => vm.mob, 
+          compute_op { |con| con.vm_config_ip('vm_moid' => vm.mob,
                                           'config_json' => config_json) }
           card += 1
         end
       end
 
 
+      ##################################################
+      # High Availability Interface
       def vm_set_ha(vm, enable)
         check_connection
         # default is enable
         try_num = 3
         return if enable
         try_num.times do |num|
-          result = fog_op { |con| con.vm_disable_ha('vm_moid' => vm.mob) }
+          result = ha_ft_op { |ha| ha.vm_disable_ha('vm_moid' => vm.mob) }
           if result['task_state'] == 'success'
             logger.debug("vm:#{vm.name} disable ha success.")
             return
@@ -169,13 +178,38 @@ module Serengeti
 
       def is_vm_in_ha_cluster(vm)
         check_connection
-        fog_op { |con| con.is_vm_in_ha_cluster('vm_moid' => vm.mob) }
+        compute_op { |con| con.is_vm_in_ha_cluster('vm_moid' => vm.mob) }
       end
 
+      def vm_set_ft(vm, enable)
+        check_connection
+        return if !enable
+
+        result = {}
+        result['task_state'] = 'running'
+        loop do
+          result = ha_ft_op { |ft| ft.vm_enable_ft('vm_moid' => vm.mob) }
+          logger.debug("FT result: #{result.pretty_inspect}")
+          case result['task_state']
+          when 'running'
+            sleep(4)
+            logger.debug("Waiting FT work")
+          when 'error'
+            raise "FT failed #{result.pretty_inspect}"
+            break
+          when 'success'
+            logger.debug("Enable FT success!!")
+            break
+          end
+        end
+      end
+
+      ###############################################
+      # Get/Set interface
       # get hash value from ref object
       def ct_mob_ref_to_attr_hash(mob_ref, attr_s)
         check_connection
-        fog_op { |con| con.ct_mob_ref_to_attr_hash(mob_ref, attr_s) }
+        compute_op { |con| con.ct_mob_ref_to_attr_hash(mob_ref, attr_s) }
       end
 
       ###################################################
@@ -183,13 +217,13 @@ module Serengeti
 
       FROM_WHERE = {
         :vm_moid => :_by_moid  , :dc_mob => :_by_dc_mob, :path     => :_by_path,
-        :dc_mob => :_by_dc_mob, :cs_path => :_by_path  , :cs_mob => :_by_cs_mob, 
-        :host_mob => :_by_host_mob , :vm_mob => :_by_vm_mob, 
+        :dc_mob => :_by_dc_mob, :cs_path => :_by_path  , :cs_mob => :_by_cs_mob,
+        :host_mob => :_by_host_mob , :vm_mob => :_by_vm_mob,
         }
       GET_OBJ = {
         :vm_mob => :vm_mob_ref, :portgroups => :portgroups, :clusters => :cluster,
         :cs_mob_ref => :cs_mob_ref, :hosts => :hosts, :rps => :rps, :ds_name => :ds_name,
-        :datastores => :datastores, :vms => :vms, :disks => :disks, 
+        :datastores => :datastores, :vms => :vms, :disks => :disks,
         :vm_properties => :vm_properties,
       }
 
@@ -198,85 +232,85 @@ module Serengeti
         raise "Unknown from: #{from}" if !from && !FROM_WHERE.key?(from)
         check_connection
         func = "get_#{GET_OBJ[thing]}_by_#{FROM_WHERE[from]}"
-        fog_op { |con| con.__send__(func, *arg) }
+        compute_op { |con| con.__send__(func, *arg) }
       end
 
       # needs vm mobid to get the properties of this vm
       def get_vm_properties_by_vm_mob(vm)
         check_connection
-        vm_properties = fog_op { |con| con.get_vm_properties(vm.mob) }
+        vm_properties = compute_op { |con| con.get_vm_properties(vm.mob) }
         update_vm_with_properties_string(vm, vm_properties)
       end
 
 
       def get_vm_mob_ref_by_moid(vm_ref, dc_mob)
         check_connection
-        fog_op { |con| con.get_vm_mob_ref_by_moid(vm_ref) }
+        compute_op { |con| con.get_vm_mob_ref_by_moid(vm_ref) }
       end
 
       def get_portgroups_by_dc_mob(dc_mob)
         check_connection
-        fog_op { |con| con.get_portgroups_by_dc_mob(dc_mob) }
+        compute_op { |con| con.get_portgroups_by_dc_mob(dc_mob) }
       end
 
       # get datacenter management object by a given path (with name)
       def get_dc_mob_ref_by_path(options={})
         check_connection
-        fog_op { |con| con.get_dc_mob_ref_by_path(options) }
+        compute_op { |con| con.get_dc_mob_ref_by_path(options) }
       end
 
       # get clusters belong to given datacenter
       def get_clusters_by_dc_mob(dc_mob_ref, options = {})
         check_connection
-        fog_op { |con| con.get_clusters_by_dc_mob(dc_mob_ref, options) }
+        compute_op { |con| con.get_clusters_by_dc_mob(dc_mob_ref, options) }
       end
 
       #get cluster by a given path
       def get_cs_mob_ref_by_path(path, options = {})
         check_connection
-        fog_op { |con| con.get_cs_mob_ref_by_path(path, options) }
+        compute_op { |con| con.get_cs_mob_ref_by_path(path, options) }
       end
 
       #get hosts belong to a given cluster
       def get_hosts_by_cs_mob(cs_mob_ref, options = {})
         check_connection
-        fog_op { |con| con.get_hosts_by_cs_mob(cs_mob_ref, options) }
+        compute_op { |con| con.get_hosts_by_cs_mob(cs_mob_ref, options) }
       end
 
       #get resource pools belong to a given cluster
       def get_rps_by_cs_mob(cs_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_rps_by_cs_mob(cs_mob_ref, options) }
+        compute_op { |con| con.get_rps_by_cs_mob(cs_mob_ref, options) }
       end
 
       #get datastore array belong to a given cluster
       def get_datastores_by_cs_mob(cs_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_datastores_by_cs_mob(cs_mob_ref, options) }
+        compute_op { |con| con.get_datastores_by_cs_mob(cs_mob_ref, options) }
       end
 
       #get datadstores accessible from a given host
       def get_datastores_by_host_mob(host_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_datastores_by_host_mob(host_mob_ref, options) }
+        compute_op { |con| con.get_datastores_by_host_mob(host_mob_ref, options) }
       end
 
       #get vm list provision from a given host
       def get_vms_by_host_mob(host_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_vms_by_host_mob(host_mob_ref, options) }
+        compute_op { |con| con.get_vms_by_host_mob(host_mob_ref, options) }
       end
 
       #get disk list for a specific vm
       #return a array with hash as each hash {\'path\', \'size\', \'scsi_num\'}
       def get_disks_by_vm_mob(vm_mob_ref, options={})
         check_connection
-        fog_op { |con| con.get_disks_by_vm_mob(vm_mob_ref, options) }
+        compute_op { |con| con.get_disks_by_vm_mob(vm_mob_ref, options) }
       end
 
       def get_ds_name_by_path(path)
         check_connection
-        fog_op { |con| con.get_ds_name_by_path(path) }
+        compute_op { |con| con.get_ds_name_by_path(path) }
       end
 
       ###################################################

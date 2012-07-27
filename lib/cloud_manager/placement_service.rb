@@ -24,7 +24,9 @@ module Serengeti
         [ {'require' => 'plugin/resource_compute', 'obj' => 'ResourceCompute'},
           {'require' => 'plugin/resource_rp'  , 'obj' => 'ResourcePool'},
           {'require' => 'plugin/resource_storage', 'obj' => 'ResourceStorage'},
-          {'require' => 'plugin/resource_network', 'obj' => 'ResourceNetwork'}, ]
+          {'require' => 'plugin/resource_network', 'obj' => 'ResourceNetwork'},
+          {'require' => 'plugin/resource_ft', 'obj' => 'ResourceFT'},
+          {'require' => 'plugin/resource_ha', 'obj' => 'ResourceHA'}, ]
       def_const_value :placement_rp_place_enable, true
     end
 
@@ -43,6 +45,10 @@ module Serengeti
 
       def service(name)
         @rc_services[name]
+      end
+
+      def services
+        @rc_services
       end
 
       def cloud
@@ -106,7 +112,7 @@ module Serengeti
 
       def create_vm_with_each_resource(virtual_nodes)
         vm_servers_group = []
-        specs = virtual_nodes.each do |node| 
+        specs = virtual_nodes.each do |node|
           vm = VmServer.new
           specs = node.map { |spec| spec.to_spec }
           service_loop { |service| vm.init_with_vm_service(service, specs) }
@@ -120,28 +126,12 @@ module Serengeti
         logger.debug("specs:#{group[:specs]}")
         vms = []
         group[:specs].each_index do |idx|
-          spec = group[:specs][idx] 
-          vm = Serengeti::CloudManager::VmInfo.new(spec['name'], cloud)
+          spec = group[:specs][idx]
+          vm = VmInfo.new(spec['name'], cloud)
           cluster_hosts = cloud.hosts
           host = cluster_hosts[selected_host]
-
-          vm.res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
-          vm.error_msg = nil
-
-          vm.sys_datastore_moid = service('storage').get_system_ds_moid(vm.res_vms['storage'])
-          logger.debug("vm: system moid #{vm.sys_datastore_moid}")
-          vm.resource_pool_moid = vm.res_vms['resource_pool'].rp.mob
-          logger.debug("vm: resource pool moid #{vm.resource_pool_moid}")
-          vm.spec = spec
-          vm.host_name  = host.name
-          vm.host_mob   = host.mob
-          vm.storage_service = service('storage')
-
-          vm.network_config_json = vm.res_vms['network'].spec
-          vm.network_res = vm.res_vms['network'].network_res
-          logger.debug("vm network json: #{vm.network_config_json}")
-          logger.debug("vm network port group: #{vm.network_res.port_group(0)}")
-
+          res_vms = Hash[scores.map { |name, score| [name, score[selected_host][idx]] } ]
+          vm.assign_resources(spec, host, res_vms, services)
           vms << vm
         end
         vms
@@ -152,7 +142,7 @@ module Serengeti
           score.each do |host, value|
             if value.nil?
               logger.warn("remove host:#{host} for #{name} service can not support it")
-              next scores.each_value { |score_| score_.delete(host) } 
+              next scores.each_value { |score_| score_.delete(host) }
             end
           end
         end
@@ -161,10 +151,9 @@ module Serengeti
 
       def place_group_vms_with_hosts(hosts, virtual_group, existed_vms, placed_vms)
         group_place = []
-        # Return such like this [[vmSpec1, vmSpec2],[vmSpec3]]
         virtual_nodes = @place_engine.get_virtual_nodes(virtual_group, existed_vms, placed_vms)
+        return [] if virtual_nodes.empty?
 
-        # Return such like this [[vmServer1, vmServer2],[vmServer3]]
         #logger.debug("vns:#{virtual_nodes.pretty_inspect}")
         vm_servers_groups = create_vm_with_each_resource(virtual_nodes)
 
@@ -238,9 +227,8 @@ module Serengeti
         @vm_placement[:error_msg] = []
         @vm_placement[:action] = []
         @vm_placement[:rollback] = nil
- 
-        # act_vms = [ {'action1' => [act1, act2, act3], :rollback = nil}, {'action2' => [...]}, ... ]
 
+        # act_vms = [ {'action1' => [act1, act2, act3], :rollback = nil}, {'action2' => [...]}, ... ]
         act_vms = @place_engine.pre_placement_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
         if (!act_vms.nil?) && (act_vms.size > 0)
           @vm_placement[:action] = act_vms
@@ -254,7 +242,7 @@ module Serengeti
         @place_engine.placement_init(self, dc_resource)
         virtual_groups = @place_engine.get_virtual_groups(vm_groups_input)
 
-        group_place = [] 
+        group_place = []
         virtual_groups.each_value do |virtual_group|
           # check information and check error
           place_err_msg = nil

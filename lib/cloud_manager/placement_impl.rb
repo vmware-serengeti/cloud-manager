@@ -23,6 +23,9 @@ module Serengeti
         @logger = Serengeti::CloudManager::logger
       end
 
+      def ft_placement(vm_groups, existed_vms)
+      end
+
       # this method filter out existed VMs that violate instance_per_host constraint
       # TODO: should check group association constraints
       def pre_placement_cluster(vm_groups, existed_vms)
@@ -30,9 +33,9 @@ module Serengeti
         vm_groups = vm_groups.values
         target_vg = vm_groups.select { |vm_group| vm_group.instance_per_host }
         return nil if target_vg.size == 0
-        
+
         target_vg_names = target_vg.map { |vm_group| vm_group.name }
-        
+
         vm_distribution = {}
         existed_vms.each do |name, vm_info|
           if target_vg_names.include? vm_info.group_name
@@ -73,7 +76,7 @@ module Serengeti
       end
 
       # this method should only be called once, during a placement cycle
-      # initialize the object. FIXME put into initialize 
+      # initialize the object. FIXME put into initialize
       def get_virtual_groups(vm_groups)
         # Don't combine any associated groups for now
         # TODO: use the concept of virtual_groups
@@ -100,13 +103,9 @@ module Serengeti
         # host map by group, {:group1 => {:host1 => 2, :host2 => 4}, ...}
         @host_map_by_group = {}
         @vm_groups.each {|name, _| @host_map_by_group[name] = {}}
-        
+
         @vm_groups
       end
-
-#      def gen_cluster_vm_name(group_name, num)
-#        "vm" + num.to_s
-#      end
 
       def increase_host_usage(group_name, host_name, vm_cnt)
         if @host_map_by_cluster.key?(host_name)
@@ -139,7 +138,7 @@ module Serengeti
         end
         candidate
       end
-      
+
       # Virtual node is a group of VM that should be placed on the same host
       # call this method for each virtual group once
       def get_virtual_nodes(virtual_group, existed_vms, placed_vms)
@@ -169,8 +168,8 @@ module Serengeti
           @logger.debug("Virtual node include vms " + vnode.to_s)
           vnode = VirtualNode.new
         end
-        
-        validate_host_map(vm_group.name, vm_group.instance_per_host) if vm_group.instance_per_host        
+
+        validate_host_map(vm_group.name, vm_group.instance_per_host) if vm_group.instance_per_host
         virtual_nodes
       end
 
@@ -187,7 +186,7 @@ module Serengeti
           end
         end
       end
-      
+
       # Assumptions:
       # 1. referred groups should be placed before the groups that have group associations
       # 2. host availability organize in format {"stroage" => {host2 => val1, host1 => val2,..}, ...}
@@ -226,7 +225,7 @@ module Serengeti
               "available host list is empty after checking instance_per_host constraint"
           end
         end
-        
+
         if vm_group.referred_group
           # this group associate with another vm group
           referred_group_host_map = @host_map_by_group[vm_group.referred_group]
@@ -252,7 +251,7 @@ module Serengeti
 
           candidate = least_used_host(referred_candidates)
           candidate = least_used_host(not_referred_candidates) if candidate.nil?
-          
+
           candidate
         else
           # no group association, return the least used candidate
@@ -273,7 +272,7 @@ module Serengeti
           vm_cnt = vm_group.instance_per_host
         end
 
-        increase_host_usage(vm_group.name, host_name, vm_cnt)        
+        increase_host_usage(vm_group.name, host_name, vm_cnt)
       end
     end
   end

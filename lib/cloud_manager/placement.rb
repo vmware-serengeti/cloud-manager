@@ -24,7 +24,7 @@ module Serengeti
 
     class Placement < BaseObject
       def initialize(cloud)
-        @cloud = cloud 
+        @cloud = cloud
       end
 
       include Serengeti::CloudManager::Utils

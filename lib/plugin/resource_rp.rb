@@ -48,9 +48,9 @@ module Serengeti
         if rp.limit_mem != -1 && (rp.real_free_memory < mem)
           logger.debug("rp:#{rp.name} has not enough memory to vm_group")
           return false
-        end 
+        end
         true
-      end 
+      end
 
       def suitable_host_with_rp(vm_group, mem)
         place_rps = vm_group.req_rps.map do |cluster_name, rps|
