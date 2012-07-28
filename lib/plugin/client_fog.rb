@@ -158,7 +158,6 @@ module Serengeti
         end
       end
 
-
       ##################################################
       # High Availability Interface
       def vm_set_ha(vm, enable)

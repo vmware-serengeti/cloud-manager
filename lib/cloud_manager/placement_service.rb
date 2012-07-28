@@ -208,7 +208,6 @@ module Serengeti
           if success
             logger.debug("assign to #{selected_host}")
             @place_engine.assign_host(group[:vnode], selected_host)
-            #service_loop { |service| service.assigned(service.name, selected_host, scores[service.name][selected_host]) }
 
             # PLACE VM, just for fast devlop. It will remove, if finish vm's deploy service
             vms = create_vm_instances(group, scores, selected_host)
@@ -228,11 +227,11 @@ module Serengeti
         @vm_placement[:action] = []
         @vm_placement[:rollback] = nil
 
-        # act_vms = [ {'action1' => [act1, act2, act3], :rollback = nil}, {'action2' => [...]}, ... ]
+        # act_vms = { :action => {'action1' => [act1, act2, act3], }, {'action2' => [...]}, :rollback = nil... }
         act_vms = @place_engine.pre_placement_cluster(vm_groups_input, cloud.state_sub_vms(:existed))
         if (!act_vms.nil?) && (act_vms.size > 0)
-          @vm_placement[:action] = act_vms
-          @vm_placement[:rollback] = 'fetch_info'
+          @vm_placement[:action] = act_vms[:action]
+          @vm_placement[:rollback] = act_vms[:rollback]
           return @vm_placement
         end
 
@@ -248,7 +247,6 @@ module Serengeti
           place_err_msg = nil
           # Group's Resource pool check.
           hosts = []
-          # Get all hosts with paired info
           # hosts' info is [hostname1, hostname2, ... ]
           if config.placement_rp_place_enable
             place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)

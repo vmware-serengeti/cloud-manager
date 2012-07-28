@@ -159,7 +159,6 @@ module Serengeti
           next if input_group.nil?
           logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
           exist_group.vm_ids.each_value { |vm| vm.ha_enable = (input_group.req_info.ha == 'on') }
-          logger.debug("input group: ha:#{input_group.req_info.ha}")
           exist_group.vm_ids.each_value { |vm| vm.ha_enable = vm.ft_enable = (input_group.req_info.ha == 'ft')
           }
         end

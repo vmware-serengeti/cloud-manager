@@ -72,7 +72,8 @@ module Serengeti
 
         return nil if delete_vms.empty?
 
-        [ {'act'=>'group_delete', 'group' => delete_vms} ]
+        {:action => [ {'act'=>'group_delete', 'group' => delete_vms} ],
+         :rollback => 'fetch_info'}
       end
 
       # this method should only be called once, during a placement cycle

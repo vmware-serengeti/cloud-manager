@@ -157,7 +157,7 @@ module Serengeti
     end
 
     # This structure contains the group information
-    class VmGroupInfo
+    class VmGroupInfo < BaseObject
       attr_accessor :name       #Group name
       attr_accessor :req_info   #class ResourceInfo
       attr_reader   :vc_req
@@ -166,10 +166,6 @@ module Serengeti
       attr_accessor :network_res
       attr_accessor :vm_ids    #classes VmInfo
       attr_accessor :placement_policies
-
-      def logger
-        Serengeti::CloudManager.logger
-      end
 
       def initialize(rp=nil)
         @vm_ids = {}
@@ -210,10 +206,6 @@ module Serengeti
 
           'port_groups' => network_res.port_groups,
         }
-      end
-
-      def config
-        Serengeti::CloudManager.config
       end
 
       def size
