@@ -33,16 +33,8 @@ module Serengeti
           @vm_lock.synchronize { state_vms_init }
           #logger.debug("#{cluster_info.inspect}")
 
-         begin
-          rescue => e
-            logger.error("Prepare working failed.")
-            logger.debug("#{e} - #{e.backtrace.join("\n")}")
-            cluster_failed(task)
-            #TODO add all kinds of error handlers here
-            raise e
-          end
           retry_num = config.deploy_retry_num
-          cycle_num = 0 
+          cycle_num = 0
           loop do
             begin
               if cycle_num > retry_num
@@ -71,7 +63,7 @@ module Serengeti
               logger.info("Begin deploy")
               @status = CLUSTER_DEPLOY
               successful = cluster_deploy(placement[:action])
-              next if placement['rollback'] == 'fetch_info'
+              next if placement[:rollback] == 'fetch_info'
 
               logger.info("Begin waiting cluster ready")
               #Wait cluster ready
@@ -83,10 +75,10 @@ module Serengeti
               logger.info("reload datacenter resources from cloud")
 
               logger.obj2file(dc_resources, "dc_resource-roll-back-#{cycle_num}")
-              cycle_num += 1 
+              cycle_num += 1
             rescue => e
               logger.warn("#{e} - #{e.backtrace.join("\n")}")
-              cycle_num += 1 
+              cycle_num += 1
               if cycle_num >= retry_num
                 logger.warn("Loop placement faild #{cycle_num} loop")
                 raise e
@@ -97,8 +89,8 @@ module Serengeti
           ###########################################################
           # Cluster deploy successfully
         end
-      end
 
+      end
     end
 
   end

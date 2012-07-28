@@ -40,7 +40,7 @@ module Serengeti
                 Thread.current[:action] = action_msg
                 yield item
               rescue => e
-                logger.debug("#{options[:callee]} threads failed #{e} - #{e.backtrace.join("\n")}")
+                logger.error("#{options[:callee]} threads failed #{e} - #{e.backtrace.join("\n")}")
               end
               Thread.current[:thread_callee] = ''
             end
@@ -241,7 +241,7 @@ module Serengeti
       def create_service_obj(plugin, parameter = nil)
         create_plugin_obj(plugin, parameter)
       end
-      
+
     end
 
   end

@@ -34,6 +34,8 @@ module Serengeti
     end
 
     class VmInfo
+      include Utils
+
       VM_STATE_BIRTH      = { :doing => "Initializing"  , :done => 'Not Exist' }
       VM_STATE_PLACE      = { :doing => "Initializing"  , :done => 'Not Exist' }
       VM_STATE_CLONE      = { :doing => "Cloning"       , :done => 'Created' }
@@ -130,6 +132,7 @@ module Serengeti
       attr_accessor :assign_ip
       attr_accessor :can_ha
       attr_accessor :ha_enable
+      attr_accessor :ft_enable
       attr_accessor :deleted
       def succeed?;  ready?  end
       def finished?; succeed? || (@error_code.to_i != 0)  end
@@ -164,6 +167,13 @@ module Serengeti
         ds
       end
 
+      def group_name
+        return @group_name if @group_name
+        result = get_from_vm_name(@name)
+        raise "VM name is not in the right format" if result.nil? or result.size != 4
+        result[2]
+      end
+
       def inspect
         "Action:#{action} #{to_describe.pretty_inspect} "\
         "volumes:#{volumes.pretty_inspect} "\
@@ -194,6 +204,7 @@ module Serengeti
         @assign_ip = []
         @network_cards = []
         @ha_enable = true
+        @ft_enable = false
         @network_config_json = []
         @deleted = false
         @cloud = cloud
@@ -236,7 +247,9 @@ module Serengeti
         attrs[:error_msg]   = @error_msg.to_s
         attrs[:datastores]  = datastores
         attrs[:vc_cluster]  = {:name => @rp_cluster_name, :vc_rp => @rp_name}
-        attrs[:ha]          = @ha_enable
+        attrs[:ha]          = 'off'
+        attrs[:ha]          = 'on' if @ha_enable
+        attrs[:ha]          = 'ft' if @ft_enable
         attrs
       end
 
@@ -260,42 +273,32 @@ module Serengeti
         @cloud.vm_sys_disk_size
       end
 
-      def assign_resources(vm_group, cur_rp, host, used_datastores)
-        req_mem = vm_group.req_info.mem
-        cur_rp.unaccounted_memory += req_mem
-        host.unaccounted_memory += req_mem
+      def assign_resources(spec, host, res_vms, service)
+        @error_msg = nil
 
+        @status = VmInfo::VM_STATE_PLACE
+        @res_vms = res_vms
+        @sys_datastore_moid = service['storage'].get_system_ds_moid(res_vms['storage'])
+        logger.debug("vm: system moid #{sys_datastore_moid}")
+        @resource_pool_moid = res_vms['resource_pool'].rp.mob
+        logger.debug("vm: resource pool moid #{resource_pool_moid}")
+        @spec = spec
         @host_name  = host.name
         @host_mob   = host.mob
-        @req_rp     = vm_group.req_info
+        @storage_service = service['storage']
 
-        sys_datastore = used_datastores[0]
-        @sys_datastore_moid = sys_datastore[:datastore].mob
-        @resource_pool_moid = cur_rp.mob
-        @template_id = vm_group.req_info.template_id
-        @rp_name = cur_rp.name
-        @rp_cluster_name = cur_rp.cluster.name
-        @rp_cluster_mob = cur_rp.cluster.mob
-        @vm_group = vm_group
-        @network_res = vm_group.network_res
-        @ha_enable = vm_group.req_info.ha
-        cur_rp.used_counter += 1
+        logger.debug("ha: #{spec['ha']}")
+        @ft_enable = (spec['ha'] == 'ft')
+        @ha_enable = (spec['ha'] == 'on') || @ft_enable
+        logger.debug("ft_enable: #{ft_enable}")
 
-        unit_number = 0
-        used_datastores.each do |datastore|
-          fullpath = "[#{datastore[:datastore].name}] #{name}/#{datastore[:type]}#{unit_number}.vmdk"
-          logger.debug("vm:#{datastore[:datastore].inspect}, used:#{datastore[:size].to_i}MB")
-          datastore[:datastore].unaccounted_space += datastore[:size].to_i
-          disk = disk_add(datastore[:size].to_i, fullpath)
-          disk.datastore_name = datastore[:datastore].name
-          disk.shared = (vm_group.req_info.disk_type == DISK_TYPE_SHARE)
-          disk.unit_number = unit_number
-          disk.type = datastore[:type]
-          unit_number += 1
-        end
+        @network_config_json = res_vms['network'].spec
+        @network_res = res_vms['network'].network_res
+        logger.debug("vm network json: #{network_config_json}")
+        logger.debug("vm network port group: #{network_res.port_group(0)}")
       end
 
-      def op_failed(src, e)
+      def op_failed(src, e, working)
         logger.error("#{working} vm:#{name} failed.\n #{e} - #{e.backtrace.join("\n")}")
         @error_code = -1
         @error_msg = "#{working} vm:#{name} failed. #{e}"
@@ -307,14 +310,13 @@ module Serengeti
           yield
           return 'OK'
         rescue PlacementException => e
-          op_failed(src, e)
+          op_failed(src, e, working)
         rescue DeployException => e
-          op_failed(src, e)
+          op_failed(src, e, working)
         rescue FetchException => e
-          op_failed(src, e)
-        rescue RuntimeError => e
-          # debug failed
-        else
+          op_failed(src, e, working)
+        rescue => e
+          op_failed(src, e, working)
         end
         return nil
       end
@@ -337,7 +339,7 @@ module Serengeti
       def self.fetch_vm_from_cloud(vm_mob, cloud)
         vm_existed = cloud.client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
         return nil if block_given? and !yield(vm_existed["name"])
-        
+
         client = cloud.client
         vm = Serengeti::CloudManager::VmInfo.new(vm_existed["name"], cloud)
 
@@ -396,10 +398,17 @@ module Serengeti
       def wait_ready
         logger.debug("vm:#{name} can ha?:#{can_ha}, enable ? #{ha_enable}")
         if !ha_enable && can_ha?
-          return if !cloud_op('Disable HA') { client.vm_set_ha(self, ha_enable)}
+          return if !cloud_op('Disable HA') { client.vm_set_ha(self, ha_enable) }
           logger.debug("disable ha of vm #{name}")
         elsif (!can_ha? && ha_enable)
           logger.debug("vm:#{name} can not enable ha on unHA cluster")
+        end
+
+        logger.debug("vm #{name} ft:#{ft_enable}")
+        if ft_enable
+          # Call enable FT interface
+          return if !cloud_op('Operate FT') { client.vm_set_ft(self, ft_enable) }
+          logger.debug("Enable FT of vm #{name}")
         end
 
         # Power On vm
@@ -424,7 +433,7 @@ module Serengeti
             sleep(config.wait_ip_sleep_sec)
 
             if (wait_time) > config.wait_ip_timeout_sec
-              raise "#{name} wait IP time out (#{wait_time}s, please check ip conflict. )"
+              raise DeployException, "#{name} wait IP time out (#{wait_time}s, please check ip conflict. )"
             end
           end
         end
@@ -499,7 +508,7 @@ module Serengeti
       def volumes(limitation = Serengeti::CloudManager.config.vm_data_disk_start_index)
         if @disks.empty?
           return [] if res_vms.nil?
-          return res_vms['storage'].get_volumes_for_os('data') 
+          return res_vms['storage'].get_volumes_for_os('data')
         else
           return @disks.collect { |path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
             if disk.unit_number >= limitation }.compact.sort

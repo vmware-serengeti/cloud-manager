@@ -98,7 +98,7 @@ module Serengeti
           vms.each_value do |vm|
             result = get_from_vm_name(vm.name)
             next if result.nil?
-            vm.cluster_name = @cluster_name #Serengeti cluster_name
+            vm.cluster_name = config.serengeti_cluster_name #Serengeti cluster_name
             vm.group_name = result[2]
             servers << vm
           end
@@ -115,7 +115,7 @@ module Serengeti
           result.success = state_sub_vms_size(:finished)
           result.failure = state_sub_vms_size(:failed) + @placement_failed + @cluster_failed_num
           result.succeed = @success && result.failure <= 0
-          result.error_msg = (cloud_error_msg_que.nil?) ? cloud_error_msg_que.join : ''
+          result.error_msg = (@cloud_error_msg_que.nil?) ? @cloud_error_msg_que.join : ''
           result.running = result.deploy + result.waiting + result.waiting_start
           result.total = result.running + result.success + result.failure
           result.servers = []
@@ -127,7 +127,7 @@ module Serengeti
       # Get cluster operation's progress
       def get_progress
         progress = IaasProcess.new
-        progress.cluster_name = @cluster_name
+        progress.cluster_name = config.serengeti_cluster_name
         progress.result = get_result
         progress.status = @status
         progress.finished = @finished

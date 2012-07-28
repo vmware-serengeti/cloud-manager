@@ -49,6 +49,8 @@ Gem::Specification.new do |s|
     "lib/plugin/fog_dummy.rb",
     "lib/plugin/placement_rr.rb",
     "lib/plugin/resource_compute.rb",
+    "lib/plugin/resource_ft.rb",
+    "lib/plugin/resource_ha.rb",
     "lib/plugin/resource_network.rb",
     "lib/plugin/resource_rp.rb",
     "lib/plugin/resource_storage.rb",

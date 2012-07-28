@@ -17,13 +17,9 @@
 # @version 0.5.1
 module Serengeti
   module CloudManager
-    class VmServer
+    class VmServer < BaseObject
       attr_accessor :error_code
       attr_accessor :error_msg
-
-      def logger
-        Serengeti::CloudManager.logger
-      end
 
       def initialize
         @plugin_vm = {}
@@ -54,10 +50,24 @@ module Serengeti
       def dc_resource; @cm_server.dc_resource; end
       def vm_groups; @cm_server.vm_groups; end
       def clusters; @cm_server.clusters; end
+      def port_groups; @cm_server.port_groups; end
 
       def initialize(cm_server)
         @cm_server = cm_server
       end
+
+      def query_capacity(vmServers, info)
+        info['hosts']
+      end
+
+      def commission(vm_server)
+        true
+      end
+
+      def decommission(vm_server)
+      end
+
+
     end
 
     class CMService < BaseObject
@@ -66,6 +76,7 @@ module Serengeti
       attr_reader :vm_groups
       attr_reader :placement_service
       attr_reader :clusters
+      attr_reader :port_groups
 
       def initialize(cloud)
         @cloud = cloud
@@ -89,6 +100,7 @@ module Serengeti
         @vm_groups = vm_groups
         @placement_service = placement_service
         @clusters = dc_resource.clusters
+        @port_groups = dc_resource.port_group
       end
 
       def inner_create_servers(vm_specs)

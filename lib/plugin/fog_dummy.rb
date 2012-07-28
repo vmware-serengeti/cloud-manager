@@ -116,6 +116,8 @@ module Serengeti
 
       def vm_set_ha(vm, enable) end
 
+      def vm_set_ft(vm, enable) end
+
       def is_vm_in_ha_cluster(vm) true end
 
       def get_vms_by_host_mob(host_mob, options={})

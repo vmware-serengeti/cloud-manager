@@ -19,86 +19,72 @@
 module Serengeti
   module CloudManager
     class Config
-      def_const_value :storage_service, {'require' => 'fog', 'obj' => 'Fog::Storage'}
-      def_const_value :enable_inner_storage_service, false
+      def_const_value :ft_service, {'require' => '', 'obj' => 'InnerFT'}
+      def_const_value :enable_inner_ft_service, true
     end
 
-    class InnerStorage < InnerServer
-      class StorageServer
+    class InnerFT < InnerServer
+      class FTServer
         attr_reader :host
-        attr_reader :size
         attr_reader :value
-        attr_accessor :id
-        def initialize(host, size, value)
+        def initialize(host, value)
           @host = host
-          @size = size
           @value = value
-        end
-        def get_volumes_for_os(type)
-          '/dev/sdc'
         end
       end
 
-      def get_system_ds_moid(vm)
+      def initialize(cm_server)
+        super
       end
 
       def query_capacity(vmServers, info)
-        info["hosts"]
+        hostnames = info["hosts"]
+        match_host_names = nil
+        vmServers.each do |spec|
+          next if spec['ha'] != 'ft'
+          raise PlacementException, "vm #{spec['name']}, FT could not support more than one vCpu." if spec['cpu'].to_i > 1
+          raise PlacementException, "vm #{spec['name']}, FT should use shared system storage." if spec['system_shared'] == false
+          raise PlacementException, "vm #{spec['name']}, FT should use shared data storage." if spec['data_shared'] == false
+        end
+        hostnames
       end
 
       def recommendation(vmServers, hostnames)
         index = 0
-        Hash[hostnames.map { |host| [host, vmServers.map { |vm| StorageServer.new(hosts[host], 1000, index += 1) } ] }]
+        Hash[hostnames.map { |host| [host, vmServers.map { |vm| FTServer.new(hosts[host], index+=1) } ] } ]
       end
 
-      def get_system_ds_moid(vm)
-        'test'
-      end
-
-
-      def commission(vmServers)
+      def commission(vm_server)
         true
       end
 
-      def decommission(vmServers)
-      end
-
-      def create_volumes(vmServer)
+      def decommission(vm_server)
       end
     end
-
-    class ResourceStorage < CMService
+ 
+    class ResourceFT < CMService
       def initialize(cloud)
         super
-        if config.enable_inner_storage_service
-          @server = InnerStorage.new(self)
+        if config.enable_inner_ft_service
+          @server = InnerFT.new(self)
         else
           # Init fog storage_server
           info = cloud.get_provider_info()
-          clusters_name = cloud.get_clusters_name_within_input()
-          info['clusters'] = clusters_name
-          info['share_datastore_pattern'] = config.vc_share_datastore_pattern
-          info['local_datastore_pattern'] = config.vc_local_datastore_pattern
-          @server = cloud.create_service_obj(config.storage_service, info)
+          @server = cloud.create_service_obj(config.ft_service, info)
         end
       end
 
       def name
-        "storage"
+        "ft"
       end
 
       def create_servers(vm_specs)
-        inner_create_servers(vm_specs) { config.enable_inner_storage_service }
-      end
-
-      def deploy(vmServer)
-        @server.create_volumes(vmServer)
+        inner_create_servers(vm_specs) {config.enable_inner_ft_service }
       end
 
       def delete(vmServer)
-        @server.delete_volumes(vmServer)
+        @server.decommission(vmServer)
       end
     end
-
   end
 end

@@ -50,11 +50,11 @@ module Serengeti
         vm_spec_groups = []
         (0...virtual_group.instances).each do |num|
           vm_name = gen_cluster_vm_name(virtual_group.name, num)
-          next if existed_vms.key?(vm_name) 
+          next if existed_vms.key?(vm_name)
           next if placed_vms.key?(vm_name)
 
           spec = Node.new(virtual_group, vm_name)
-          vm_spec_groups << [spec] 
+          vm_spec_groups << [spec]
         end
         vm_spec_groups
       end
@@ -79,7 +79,7 @@ module Serengeti
             logger.debug("mini: #{@hosts[mini_host]} #{@hosts[host]}")
             mini_host = host if @hosts[mini_host] > @hosts[host]
           else
-            @hosts[host] = 1 
+            @hosts[host] = 1
             return host
           end
         end
