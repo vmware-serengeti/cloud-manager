@@ -22,6 +22,7 @@ module Serengeti
     class Config
       def_const_value :linked_clone, false
       def_const_value :client_connection_pool_size, 5
+      def_const_value :ha_service_ready, false
     end
 
     class FogAdaptor < BaseObject
@@ -51,8 +52,10 @@ module Serengeti
           begin
             connection = Fog::Compute.new(cloud.get_provider_info)
             @con_lock.synchronize { @connection[:con] << connection }
-            ha_ft = Fog::Highavailability.new(cloud.get_provider_info)
-            @con_lock.synchronize { @connection[:ha_ft] << ha_ft }
+            if config.ha_service_ready
+              ha_ft = Fog::Highavailability.new(cloud.get_provider_info)
+              @con_lock.synchronize { @connection[:ha_ft] << ha_ft }
+            end
           rescue => e
             @con_lock.synchronize { @connection[:err] << e }
           end
@@ -70,6 +73,7 @@ module Serengeti
       end
 
       def ha_ft_op
+
         yield @con_lock.synchronize { @connection[:ha_ft].rotate!.first }
       end
 
@@ -166,7 +170,11 @@ module Serengeti
         try_num = 3
         return if enable
         try_num.times do |num|
-          result = ha_ft_op { |ha| ha.vm_disable_ha('vm_moid' => vm.mob) }
+          if config.ha_service_ready
+            result = ha_ft_op { |ha| ha.vm_disable_ha('vm_moid' => vm.mob) }
+          else
+            result = compute_op { |con| con.vm_disable_ha('vm_moid' => vm.mob) }
+          end
           if result['task_state'] == 'success'
             logger.debug("vm:#{vm.name} disable ha success.")
             return
@@ -183,6 +191,7 @@ module Serengeti
       def vm_set_ft(vm, enable)
         check_connection
         return if !enable
+        return if config.ha_service_ready
 
         result = {}
         result['task_state'] = 'running'
