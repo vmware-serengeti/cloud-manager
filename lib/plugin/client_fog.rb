@@ -73,7 +73,6 @@ module Serengeti
       end
 
       def ha_ft_op
-
         yield @con_lock.synchronize { @connection[:ha_ft].rotate!.first }
       end
 
@@ -191,7 +190,7 @@ module Serengeti
       def vm_set_ft(vm, enable)
         check_connection
         return if !enable
-        return if config.ha_service_ready
+        return if !config.ha_service_ready
 
         result = {}
         result['task_state'] = 'running'
