@@ -62,9 +62,9 @@ module Serengeti
       def self.cluster_helper(parameter, options={})
         cloud = nil
         begin
-          cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'], parameter['targets'])
           #Handle cloud_provider
           read_provider_from_file(parameter)
+          cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'])
           if (options[:wait])
             begin
               yield cloud
