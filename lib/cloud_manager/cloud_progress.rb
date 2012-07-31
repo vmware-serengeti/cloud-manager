@@ -115,7 +115,7 @@ module Serengeti
           result.success = state_sub_vms_size(:finished)
           result.failure = state_sub_vms_size(:failed) + @placement_failed + @cluster_failed_num
           result.succeed = @success && result.failure <= 0
-          result.error_msg = (@cloud_error_msg_que.nil?) ? @cloud_error_msg_que.join : ''
+          result.error_msg = (@cloud_error_msg_que.nil?) ? '' : @cloud_error_msg_que.join
           result.running = result.deploy + result.waiting + result.waiting_start
           result.total = result.running + result.success + result.failure
           result.servers = []

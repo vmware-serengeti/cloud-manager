@@ -48,14 +48,14 @@ module Serengeti
     class Manager
       def self.read_provider_from_file(parameter)
         cloud_path = ENV["CLOUD_MANAGER_CONFIG_DIR"] || './'
-        provider_file = "#{cloud_path}/conf/cloud-manager.#{parameter['cloud_provider']['name']}.yaml"
+        provider_file = "#{cloud_path}/cloud-manager.#{parameter['cloud_provider']['name']}.yaml"
         begin
           provider_config = YAML.load(File.open(provider_file))
           parameter['cloud_provider']['vc_addr'] = provider_config['vc_addr']
           parameter['cloud_provider']['vc_user'] = provider_config['vc_user']
           parameter['cloud_provider']['vc_pwd']  = provider_config['vc_pwd']
         rescue => e
-          puts("fail to read #{provider_file}.")
+          puts("fail to read #{provider_file}. It will read config from parameter 'cloud_provider'")
         end
       end
 
@@ -64,7 +64,10 @@ module Serengeti
         begin
           #Handle cloud_provider
           read_provider_from_file(parameter)
-          cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'], parameter['targets'])
+          cloud = IaasTask.new(parameter['cluster_definition'],
+                               parameter['cloud_provider'],
+                               parameter['cluster_data'],
+                               parameter['targets'])
           if (options[:wait])
             begin
               yield cloud

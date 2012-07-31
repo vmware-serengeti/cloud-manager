@@ -55,6 +55,7 @@ module Serengeti
               @placement_failed = placement[:failed_num]
               if placement[:error_msg].size > 0
                 placement[:error_msg].each { |m| set_cluster_error_msg(m) }
+                logger.error("place failed test")
                 raise 'placement failed!'
               end
               logger.obj2file(placement, 'placement')

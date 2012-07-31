@@ -35,12 +35,12 @@ module Serengeti
 
         @status = action
         matched_vms = dc_resources.clusters.values.map { |cs| cs.vms.values }.flatten
-	#for delete action, delete whole cluster currently
-	if action == CLUSTER_DELETE
-	  matched_vms = matched_vms.select { |vm| vm_is_this_cluster?(vm.name) }
-	else
-	  matched_vms = matched_vms.select { |vm| vm_match_targets?(vm.name, @targets) }
-	end
+        #for delete action, delete whole cluster currently
+        if action == CLUSTER_DELETE
+          matched_vms = matched_vms.select { |vm| vm_is_this_cluster?(vm.name) }
+        else
+          matched_vms = matched_vms.select { |vm| vm_match_targets?(vm.name, @targets) }
+        end
 
         #logger.debug("operate vm list:#{matched_vms.pretty_inspect}")
         logger.debug("vms name: #{matched_vms.collect{ |vm| vm.name }.pretty_inspect}")

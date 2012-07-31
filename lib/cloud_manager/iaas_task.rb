@@ -23,7 +23,7 @@ module Serengeti
         @cluster_definition = cluster_definition
         @cloud_provider = cloud_provider
         @cluster_data = cluster_data
-	@targets = targets
+        @targets = targets
         @serengeti = Serengeti::CloudManager::Cloud.new(@cluster_definition, @targets)
 
         @output_lock = Mutex.new
