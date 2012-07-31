@@ -63,6 +63,7 @@ module Serengeti
         cloud = nil
         begin
           #Handle cloud_provider
+          read_provider_from_file(parameter)
           cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'])
           if (options[:wait])
             begin
