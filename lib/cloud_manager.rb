@@ -47,7 +47,7 @@ module Serengeti
   module CloudManager
     class Manager
       def self.read_provider_from_file(parameter)
-        cloud_path = ENV["SERENGETI_HOME"] || './'
+        cloud_path = ENV["CLOUD_MANAGER_CONFIG_DIR"] || './'
         provider_file = "#{cloud_path}/conf/cloud-manager.#{parameter['cloud_provider']['name']}.yaml"
         begin
           provider_config = YAML.load(File.open(provider_file))
@@ -64,7 +64,7 @@ module Serengeti
         begin
           #Handle cloud_provider
           read_provider_from_file(parameter)
-          cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'])
+          cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'], parameter['targets'])
           if (options[:wait])
             begin
               yield cloud

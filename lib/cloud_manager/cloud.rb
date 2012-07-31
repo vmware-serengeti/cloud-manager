@@ -68,9 +68,9 @@ module Serengeti
         @vm_lock = Mutex.new
         state_vms_init  #:existed,:deploy,:failed,:finished,:placed
         @need_abort = nil
-	config.serengeti_cluster_name = cluster_info['name']
+        config.serengeti_cluster_name = cluster_info['name']
         config.serengeti_template_id = cluster_info['template_id']
-	@targets = targets
+        @targets = targets
 
         @status = CLUSTER_BIRTH
         @rs_lock = Mutex.new
