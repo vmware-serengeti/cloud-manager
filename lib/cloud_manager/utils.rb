@@ -242,7 +242,7 @@ module Serengeti
         return false if (target_info["cluster_name"] != config.serengeti_cluster_name  || vm_info["cluster_name"] != target_info["cluster_name"])
         return false if (target_info["group_name"] && vm_info["group_name"] != target_info["group_name"])
         return false if (target_info["num"] && vm_info["num"] != target_info["num"])
-        logger.debug("vm:#{vm_name} match: #{target}")
+        logger.debug("vm:#{vm_name} match: #{target.pretty_inspect}")
         true
       end
 

@@ -22,7 +22,7 @@ module Serengeti
     class Config
       def_const_value :linked_clone, false
       def_const_value :client_connection_pool_size, 5
-      def_const_value :ha_service_ready, false
+      def_const_value :ha_service_ready, true
     end
 
     class FogAdaptor < BaseObject
