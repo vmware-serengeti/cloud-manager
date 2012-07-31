@@ -189,13 +189,15 @@ module Serengeti
 
       def vm_set_ft(vm, enable)
         check_connection
-        return if !enable
         return if !config.ha_service_ready
-
         result = {}
         result['task_state'] = 'running'
         loop do
-          result = ha_ft_op { |ft| ft.vm_enable_ft('vm_moid' => vm.mob) }
+          if enable
+            result = ha_ft_op { |ft| ft.vm_enable_ft('vm_moid' => vm.mob) }
+          else
+            result = ha_ft_op { |ft| ft.vm_disable_ft('vm_moid' => vm.mob) }
+          end
           logger.debug("FT result: #{result.pretty_inspect}")
           case result['task_state']
           when 'running'
