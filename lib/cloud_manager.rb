@@ -47,7 +47,7 @@ module Serengeti
   module CloudManager
     class Manager
       def self.read_provider_from_file(parameter)
-        cloud_path = ENV["CLOUD_MANAGER_CONFIG_DIR"] || './'
+        cloud_path = ENV["CLOUD_MANAGER_CONFIG_DIR"] || '/opt/serengeti/conf'
         provider_file = "#{cloud_path}/cloud-manager.#{parameter['cloud_provider']['name']}.yaml"
         begin
           provider_config = YAML.load(File.open(provider_file))

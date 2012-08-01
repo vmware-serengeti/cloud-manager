@@ -210,6 +210,23 @@ module Serengeti
         info
       end
 
+      def remove_shadow_vm(dc_res, vm_group_input)
+        dc_res.clusters.each_value do |cluster|
+          cluster.hosts.each_value do |host|
+            host.vms.each_value do |vm|
+              next if !vm_is_this_cluster?(vm.name)
+              result = parse_vm_from_name(vm.name)
+              next if !vm_group_input[result['group_name']]
+              next if vm_group_input[result['group_name']].req_info.ha != 'ft'
+              next if @client.is_vm_ft_primary(vm)
+              logger.debug("#{vm.name} is not a ft primary vm.")
+              host.vms.delete(vm.name)
+            end
+          end
+        end
+ 
+      end
+
       def prepare_working(cluster_info, cluster_data)
         # Connect to Cloud server
         # Create inputed vm_group from serengeti input
@@ -242,6 +259,7 @@ module Serengeti
 
         # Create VM Group Info from resources
         logger.debug("Create vm group from resources...")
+        remove_shadow_vm(dc_res, vm_groups_input)
         @vm_lock.synchronize { @state_vms[:existed] = {} }
         @vm_lock.synchronize { @state_vms[:finished] = {} }
         vm_groups_existed = create_vm_group_from_resources(dc_res)

@@ -71,28 +71,30 @@ module Serengeti
       def create_vm_group_from_resources(dc_res)
         vm_groups = {}
         dc_res.clusters.each_value do |cluster|
-          cluster.vms.each_value do |vm|
-            logger.debug("vm :#{vm.name}")
-            result = parse_vm_from_name(vm.name)
-            next unless result
-            cluster_name = result["cluster_name"]
-            group_name = result["group_name"]
-            num = result["num"]
-            #logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
-            next if (cluster_name != config.serengeti_cluster_name)
-            vm_group = vm_groups[group_name]
-            if vm_group.nil?
-              # Create new Group
-              vm_group = VmGroupInfo.new()
-              vm_group.name = group_name
-              vm_groups[group_name] = vm_group
+          cluster.hosts.each_value do |host|
+            host.vms.each_value do |vm|
+              logger.debug("vm :#{vm.name}")
+              result = parse_vm_from_name(vm.name)
+              next unless result
+              cluster_name = result["cluster_name"]
+              group_name = result["group_name"]
+              num = result["num"]
+              #logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
+              next if (cluster_name != config.serengeti_cluster_name)
+              vm_group = vm_groups[group_name]
+              if vm_group.nil?
+                # Create new Group
+                vm_group = VmGroupInfo.new()
+                vm_group.name = group_name
+                vm_groups[group_name] = vm_group
+              end
+              # Update existed vm info
+              vm.status = VmInfo::VM_STATE_READY
+              vm.action = VmInfo::VM_ACTION_START # existed VM action is VM_ACTION_START
+              logger.debug("Add #{vm.name} to existed vm")
+              vm_group.add_vm(vm)
+              @vm_lock.synchronize { state_sub_vms(:existed)[vm.name] = vm }
             end
-            # Update existed vm info
-            vm.status = VmInfo::VM_STATE_READY
-            vm.action = VmInfo::VM_ACTION_START # existed VM action is VM_ACTION_START
-            logger.debug("Add #{vm.name} to existed vm")
-            vm_group.add_vm(vm)
-            @vm_lock.synchronize { state_sub_vms(:existed)[vm.name] = vm }
           end
         end
         #logger.debug("res_group:#{vm_groups}")

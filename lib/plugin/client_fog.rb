@@ -182,6 +182,11 @@ module Serengeti
         end
       end
 
+      def is_vm_ft_primary(vm)
+        check_connection
+        return ha_ft_op { |ha| ha.is_vm_ft_primary('vm_moid' => vm.mob) }
+      end
+
       def is_vm_in_ha_cluster(vm)
         check_connection
         compute_op { |con| con.is_vm_in_ha_cluster('vm_moid' => vm.mob) }
@@ -192,6 +197,7 @@ module Serengeti
         return if !config.ha_service_ready
         result = {}
         result['task_state'] = 'running'
+        enable_string = (enable)? 'Enable': 'Disable'
         loop do
           if enable
             result = ha_ft_op { |ft| ft.vm_enable_ft('vm_moid' => vm.mob) }
@@ -207,7 +213,7 @@ module Serengeti
             raise "FT failed #{result.pretty_inspect}"
             break
           when 'success'
-            logger.debug("Enable FT success!!")
+            logger.debug("#{enable_string} FT success!!")
             break
           end
         end

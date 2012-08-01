@@ -339,7 +339,6 @@ module Serengeti
           next if vm.nil?
 
           vm.host_name = host.name
-          cluster.vms[vm.name] = vm
           vms[vm.name] = vm
         end
         vms
