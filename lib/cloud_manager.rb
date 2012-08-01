@@ -108,6 +108,7 @@ module Serengeti
       def self.list_vms_cluster(parameter, options={})
         cloud = nil
         begin
+          read_provider_from_file(parameter)
           cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'], parameter['targets'])
           return cloud.list_vms
         ensure
