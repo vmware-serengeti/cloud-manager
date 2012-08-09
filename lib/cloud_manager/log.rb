@@ -80,9 +80,6 @@ module Serengeti
         File.open("#{file_str}.yaml", 'w'){ |f| YAML.dump(obj, f) }
       end
 
-      def detail(msg)
-      end
-
       def error(msg)
         @logger.error(msg2str(msg))
       end

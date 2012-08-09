@@ -197,7 +197,6 @@ module Serengeti
           :vsphere_username => @cloud_provider.vc_user,
           :vsphere_password => @cloud_provider.vc_pwd,
         }
-        logger.debug("login info:#{info.pretty_inspect}")
         info
       end
 

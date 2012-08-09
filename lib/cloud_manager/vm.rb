@@ -465,6 +465,9 @@ module Serengeti
         @status = VM_STATE_DELETE
         #logger.debug("Can we delete #{name} same as #{cluster_info["name"]}?")
         logger.debug("delete vm : #{name}")
+        if ft_enable
+          return if !cloud_op('Delete') { client.vm_set_ft(self, false) }
+        end
         return if !cloud_op('Delete') { client.vm_destroy(self) }
         @deleted = true
         @status = VM_STATE_DONE
