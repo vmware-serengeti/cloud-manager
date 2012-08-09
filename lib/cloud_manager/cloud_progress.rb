@@ -96,10 +96,10 @@ module Serengeti
       def get_result_by_vms(servers, vms_all, options={})
         vms_all.each_value do |vms|
           vms.each_value do |vm|
-            result = get_from_vm_name(vm.name)
+            result = parse_vm_from_name(vm.name)
             next if result.nil?
             vm.cluster_name = config.serengeti_cluster_name #Serengeti cluster_name
-            vm.group_name = result[2]
+            vm.group_name = result["group_name"]
             servers << vm
           end
         end

@@ -62,14 +62,15 @@ module Serengeti
       attr_reader :client
 
       include Serengeti::CloudManager::Utils
-      def initialize(cluster_info)
+      def initialize(cluster_info, targets)
         @dc_resource = nil
         @clusters = nil
         @vm_lock = Mutex.new
         state_vms_init  #:existed,:deploy,:failed,:finished,:placed
         @need_abort = nil
-        config.serengeti_cluster_name = cluster_info["name"]
+	config.serengeti_cluster_name = cluster_info['name']
         config.serengeti_template_id = cluster_info['template_id']
+	@targets = targets
 
         @status = CLUSTER_BIRTH
         @rs_lock = Mutex.new

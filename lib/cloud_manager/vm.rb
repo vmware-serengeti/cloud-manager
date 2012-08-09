@@ -169,9 +169,9 @@ module Serengeti
 
       def group_name
         return @group_name if @group_name
-        result = get_from_vm_name(@name)
-        raise "VM name is not in the right format" if result.nil? or result.size != 4
-        result[2]
+        result = parse_vm_from_name(@name)
+        raise "VM name is not in the right format" if result.nil? or result.length != 3
+        result["group_name"]
       end
 
       def inspect

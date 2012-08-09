@@ -19,11 +19,12 @@
 module Serengeti
   module CloudManager
     class IaasTask
-      def initialize(cluster_definition, cloud_provider, cluster_data)
+      def initialize(cluster_definition, cloud_provider, cluster_data, targets)
         @cluster_definition = cluster_definition
         @cloud_provider = cloud_provider
         @cluster_data = cluster_data
-        @serengeti = Serengeti::CloudManager::Cloud.new(@cluster_definition)
+	@targets = targets
+        @serengeti = Serengeti::CloudManager::Cloud.new(@cluster_definition, @targets)
 
         @output_lock = Mutex.new
         @finished = nil

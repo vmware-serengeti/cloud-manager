@@ -73,11 +73,11 @@ module Serengeti
         dc_res.clusters.each_value do |cluster|
           cluster.vms.each_value do |vm|
             logger.debug("vm :#{vm.name}")
-            result = get_from_vm_name(vm.name)
+            result = parse_vm_from_name(vm.name)
             next unless result
-            cluster_name = result[1]
-            group_name = result[2]
-            num = result[3]
+            cluster_name = result["cluster_name"]
+            group_name = result["group_name"]
+            num = result["num"]
             #logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
             next if (cluster_name != config.serengeti_cluster_name)
             vm_group = vm_groups[group_name]

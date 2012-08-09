@@ -198,23 +198,59 @@ module Serengeti
     end
 
     module Utils
-      def get_from_vm_name(vm_name, options={})
-        return /([\w\s\d]+)#{config.vm_name_split_sign}([\w\s\d]+)#{config.vm_name_split_sign}([\d]+)/.match(vm_name)
+      def parse_vm_from_name(vm_name, options={})
+        #result = /([\w\s\d]+)#{config.vm_name_split_sign}([\w\s\d]+)#{config.vm_name_split_sign}([\d]+)/.match(vm_name)
+	result = vm_name.split(config.vm_name_split_sign)
+	ret = Hash.new
+
+	raise "#{vm_name} is invalid!" unless result
+	if result[0]
+	  return nil unless (result[0] =~ /[\w\s\d]+/)
+	  ret["cluster_name"] = result[0]
+	end
+        if result[1]
+	  return nil unless (result[1] =~ /[\w\s\d]+/)
+	  ret["group_name"] = result[1]
+	end
+        if result[2]
+	  return nil unless (result[2] =~ /[\d]+/)
+	  ret["num"] = result[2]
+	end
+	ret
       end
 
       def gen_cluster_vm_name(group_name, num)
-        return "#{config.serengeti_cluster_name}#{config.vm_name_split_sign}#{group_name}#{config.vm_name_split_sign}#{num}"
+	[config.serengeti_cluster_name, group_name, num].compact.join(config.vm_name_split_sign)
       end
 
       def gen_disk_name(datastore, vm, type, unit_number)
         "[#{datastore.name}] #{vm.name}/#{type}-disk-#{unit_number}.vmdk"
       end
 
+      def vm_match_targets?(vm_name, targets)
+	logger.debug("vm:#{vm_name} match?")
+	targets.each{ |target|
+	    return true if vm_match_one_target?(vm_name, target)
+	}
+	false
+      end
+
+      def vm_match_one_target?(vm_name, target)
+	target_info = parse_vm_from_name(target)
+	vm_info = parse_vm_from_name(vm_name)
+	return false unless vm_info
+	return false if (target_info["cluster_name"] != config.serengeti_cluster_name  || vm_info["cluster_name"] != target_info["cluster_name"])
+	return false if (target_info["group_name"] && vm_info["group_name"] != target_info["group_name"])
+	return false if (target_info["num"] && vm_info["num"] != target_info["num"])
+	logger.debug("vm:#{vm_name} match: #{target}")
+	true
+      end
+
       def vm_is_this_cluster?(vm_name)
         logger.debug("vm:#{vm_name} is in cluster?")
-        result = get_from_vm_name(vm_name)
+        result = parse_vm_from_name(vm_name)
         return false unless result
-        return false unless (result[1] == config.serengeti_cluster_name)
+        return false unless (result["cluster_name"] == config.serengeti_cluster_name)
 
         logger.debug("vm:#{vm_name} is in cluster:#{config.serengeti_cluster_name}")
         true
