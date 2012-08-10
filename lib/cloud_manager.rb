@@ -75,7 +75,6 @@ module Serengeti
               cloud.release_connection if cloud
             end
           else
-            # options["sync"] == false
             Thread.new do
               begin
                 yield cloud
