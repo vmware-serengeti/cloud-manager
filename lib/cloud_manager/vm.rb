@@ -407,9 +407,9 @@ module Serengeti
         logger.debug("vm #{name} ft:#{ft_enable}")
         if ft_enable
           # Call enable FT interface
-          if power_state == 'poweredOn'
-            return if !cloud_op('Power Off') { client.vm_power_on(self) }
-          end
+          #if power_state == 'poweredOn'
+            #return if !cloud_op('Power Off') { client.vm_power_off(self) }
+          #end
           return if !cloud_op('Operate FT') { client.vm_set_ft(self, ft_enable) }
           logger.debug("Enable FT on vm #{name}")
         end
