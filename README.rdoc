@@ -15,21 +15,23 @@ cloud-manager is a Ruby cloud manager library, top to bottom:
 
 It uses GROUP to collect same functional VMs to one unit, such as master, worker, client, and etc. Therefore,
 in one GROUP, each VM has same configuration. So it places massive VMs in a simple way.
+It also present the concept of virtual group (VG). VG is a set of VMs, which should be placed in one host.
+All kinds of GROUP, can place their VM in one Virtual Group. VG can handle the relationship between different GROUPs.
 
 == Placement Idea (round robin)
 
 Currently, It uses round robin strategy to put hadoop cluster's VMs to vSphere Cloud.
 It manages five type resources in vSphere: clusters, resource pools, hosts, datastores and networking.
-At present, our choose method is "round robin". Firstly, It chooses resouce pools in one cluster. 
+At present, our choose method is "round robin". Firstly, It chooses resouce pools in one cluster.
 And then, it chooses hosts one by one. In one host, It will check free memory size, datastores' free
-space and networking resources. if this host has enough resources for placing vm, it assigns cpu, 
+space and networking resources. if this host has enough resources for placing vm, it assigns cpu,
 memory, disks and networking for vm.
 
 == Getting Started
 
 === Install
 
-  sudo gem install cloud-manager
+  sudo gem install cloud-manager-0.5.0.gem --local --no-ri --no-rdoc
 
 === cloud provider definition
 
@@ -51,8 +53,13 @@ cloud_provider: {
   "vc_shared_datastore_pattern": ["share", "san*"], #define the datastore_pattern for share storage
   "vc_local_datastore_pattern": ["local*", "vmfs*"], #define the datastore_pattern for local storage
 
-  "cloud_adapter": "fog" #If you want to use fog to connect to cloud provider, write 'fog' here.
-}
+=== cloud-manager configuration
+It has a config class to config cloud-manager's configuration.
+You could write config field in the file that define cloud_provider info.
+
+config:
+  client_connection: ['./lib/plugin/client_fog', 'FogAdapter'] #Load FogAdapter as a cloud client.
+  placement_plugin:  ['plugin/placement_Your_Write', 'MyPlacement'] #You could select your own placement plugin
 
 === cluster definition
 
@@ -60,14 +67,14 @@ It uses json string to describe cluster definition
 
 cluster_definition: {
   "name": "hadoop_cluster_test",
-    "template_id": "vm_template_mob_in_vc", #such like this: 'vm-1234'
+    "template_id": "vm_template_mob_in_vc", #such like this: 'vm-1234', it is the template vm's mo_id in vSphere
     "deploy_policy":"group_parallel", #default is ‘group_parallel’, can choose 'group_order'
-    "vc_clusters": [    #Cluster can rewrite the cluster/resource pool requirement
-    {
+    "vc_clusters":    #Cluster can rewrite the cluster/resource pool requirement
+    [  {
       "name": "Cluster1",
       "vc_rps": ["resource_pool1", "resource_pool2"]
-    }
-  ],
+      }
+    ],
 
     "networking": [{ #Cluster should define networking configuration
       "port_group": "CFNetwork",
@@ -77,7 +84,8 @@ cluster_definition: {
       "gateway": "10.1.1.254",
       "dns": ["10.1.100.100", "10.1.100.240"]
     }],
-#Cluster can add a filter to select more the datastore pattern like this
+
+    #Cluster can add a filter to select more the datastore pattern like this
     "vc_shared_datastore_pattern": ["share", "san*"],    # Using wildcard to select more 
     "vc_local_datastore_pattern": ["local*", "vmfs?-*"], # datastores, both '*' and '?'
 
@@ -88,10 +96,11 @@ cluster_definition: {
       "cpu": 2,           # CPU core number
       "memory": 2048,     # Memory size: 2048M
       "storage": {
+        "type": 'shared',
         "name_pattern": ["share"], # This pattern will overwrite the cluster's datastore pattern
         "size": 10        # Disk size: 10G
       }
-      "ha":true
+      "ha": 'on'          # ha flag can be set to 'off','on','ft'. Default is 'off'
     },
 
     { #Another group for 'worker'
@@ -108,15 +117,21 @@ cluster_definition: {
         "name_pattern": ["local", "vmfs*"],
         "size": 50
       }
-      "ha":false
+      "ha": 'off'
     },
   ]
 }
 
 === Placement Output
 
-Placement module will output cluster's VMs placement in two dimensional Array, like this:
-[[Group1 VM placement], [Group2 VM placement], ... [GroupN VM placement]]
+Placement module will output cluster's VMs placement result in two dimensional Array:
+placement[:action] =  [ {'act'=>'act function name', 'group' => [[Group1 VM placement], [Group2 VM placement], ... [GroupN VM placement]] },
+                        {'act'=> ... },
+                      ]
+placement[:failed_num] show the number of failed
+placement[:error_msg]  show the error messages, during placement. If placement is failed, we could read info from 
+placement[:rollback]   tell us it will be rollback to which point. by default is nil
+  this field to know what has happen.
 
 == How to setup UT?
 
@@ -140,8 +155,9 @@ spec/func.cluster_def.yaml  #define func test cases
 note:
 You had better prepare your cloud provider info firstly.
 You could place you own func.vc.yaml's full-path to env variable FUNC_CLOUD_PROVIDER_FILE, and 
-ut.vc.yaml's full-path to env variable UT_CLOUD_PROVIDER_FILE
+ut.yaml's full-path to env variable UT_CLOUD_PROVIDER_FILE
 for example: 
+
 export FUNC_CLOUD_PROVIDER_FILE='/home/serengeti/cloud-manager/your-func.vc.yaml'
 
 == example
@@ -150,9 +166,10 @@ Here is an example of wading through server creation/start/stop/delete for vSphe
 require 'cloud-manager'
 
 # create a cluster
-  IaasTask task = Iaas.create_cluster(parameter, :wait => false)
+  IaasTask task = Serengeti::CloudManager::Manager.create_cluster(parameter, :wait => false)
         # parameter["cluster_definition"] is a Hash object which contains the definition of this cluster
         # parameter["cloud_provider"] is a Hash object, which contains how to login the cloud server and the resource requirement.
+        # parameter["targets"] is a target array. It points out which nodes or group should be handled.
         # options[:wait] can make object running in synchronous(wait = true) or asynchronous(wait = false) model
 
 # if caller doesn't care the progress, call this method to wait until this task is finished.
@@ -173,11 +190,34 @@ require 'cloud-manager'
       end
 
 # start the cluster
-  IaasTask task = Iaas.start_cluster(parameter, :options => { :wait => true })
+  IaasTask task = Serengeti::CloudManager::Manager.start_cluster(parameter, :options => { :wait => true })
 # stop the cluster
-  IaasTask task = Iaas.stop_cluster(parameter, :options => { :wait => true })
+  IaasTask task = Serengeti::CloudManager::Manager.stop_cluster(parameter, :options => { :wait => true })
 # delete the cluster
-  IaasTask task = Iaas.delete_cluster(parameter, :options => { :wait => true })
+  IaasTask task = Serengeti::CloudManager::Manager.delete_cluster(parameter, :options => { :wait => true })
+
+== How to write your own placement algorithm
+
+  The placement algorithm can be loaded by placement service. You can add item in your config file 
+  placement_engine: [{'require' => 'plugin/myplacement', 'obj' => 'MyPlacement'}]
+  And the placement service will load plugin/myplacement.rb in runtime, and new MyPlacement object as its placement engine
+  The placement engine should implement those interface
+
+  pre_placement_cluster(vm_groups, existed_vms)
+  get_virtual_groups(vm_groups)
+  get_virtual_nodes(virtual_group, existed_vms, placed_vms)
+  select_host(vms, scores)
+  assign_host(vms, host)
+
+  You could read the plugin/placement_rr.rb to see, how to write a simple placement algorithm module
+  In cloud_manager/placement_imp.rb, you can see a more complicated placement algorithm module.
+
+== How to write your own resource plugin
+  
+  You could write your own resource plugin for your special use,
+
+  You could read the plugin/resource_*.rb files to know how to write it. We implement some useful resource plugins, such as
+  resource pool, compute, networking, HA and FT. Each resource service should be derived from CMService
 
 == Contributing to cloud-manager
 
