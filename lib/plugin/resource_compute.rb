@@ -21,7 +21,7 @@ module Serengeti
     class Config
       def_const_value :enable_inner_compute_service, true
       def_const_value :compute_service_fault_test, false
-      def_const_value :support_overcommit, false
+      def_const_value :compute_support_memory_overcommit, false
       def_const_value :compute_service, {'require' => nil, 'obj' => 'InnerCompute'}
     end
 
@@ -51,7 +51,7 @@ module Serengeti
 
       def query_capacity(vmServers, info)
         #logger.debug("hosts: #{hosts.pretty_inspect}")
-        if config.support_overcommit
+        if config.compute_support_memory_overcommit
           total_memory(vmServers)
           logger.debug("query hosts: #{info['hosts']} total_mem:#{@total_memory}")
           return info['hosts'].select { |h| hosts[h].real_free_memory > @total_memory if hosts.key?(h) }
@@ -73,14 +73,14 @@ module Serengeti
 
       def commission(vm_server)
         logger.debug("compute vm_server: #{vm_server.first.pretty_inspect}")
-        if config.support_overcommit
+        if config.compute_support_memory_overcommit
           vm_server.first.host.unaccounted_memory += vm_server.first.total_memory
         end
         true
       end
 
       def decommission(vm_server)
-        if config.support_overcommit
+        if config.compute_support_memory_overcommit
           vm_server.first.host.unaccounted_memory -= vm_server.first.total_memory
         end
       end

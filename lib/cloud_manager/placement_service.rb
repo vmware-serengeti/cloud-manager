@@ -177,7 +177,6 @@ module Serengeti
           raise PlacementException, 'Resource service cannot find any hosts to match resources requirement' if sore_size <= 0
 
           #logger.debug("scores: #{scores.pretty_inspect}")
-          logger.debug("scores: #{scores.pretty_inspect}")
           # place engine to decide how to place
 
           success = true

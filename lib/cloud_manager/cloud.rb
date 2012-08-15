@@ -23,6 +23,7 @@ module Serengeti
       def_const_value :template_placement , false
 
       def_const_value :debug_log_trace    , false
+      def_const_value :debug_provider_login_info, false
       def_const_value :debug_log_trace_depth , 3
       def_const_value :debug_log_obj2file , false
       def_const_value :debug_placement    , true
@@ -197,7 +198,7 @@ module Serengeti
           :vsphere_username => @cloud_provider.vc_user,
           :vsphere_password => @cloud_provider.vc_pwd,
         }
-        logger.debug("info: #{info.pretty_inspect}")
+        logger.debug("info: #{info.pretty_inspect}") if config.debug_provider_login_info
         info
       end
 
