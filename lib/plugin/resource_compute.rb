@@ -1,5 +1,5 @@
 ###############################################################################
-#    Copyright (c) 2012 VMware, Inc. All Rights Reserved.
+#   Copyright (c) 2012 VMware, Inc. All Rights Reserved.
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -21,6 +21,7 @@ module Serengeti
     class Config
       def_const_value :enable_inner_compute_service, true
       def_const_value :compute_service_fault_test, false
+      def_const_value :support_overcommit, false
       def_const_value :compute_service, {'require' => nil, 'obj' => 'InnerCompute'}
     end
 
@@ -50,9 +51,13 @@ module Serengeti
 
       def query_capacity(vmServers, info)
         #logger.debug("hosts: #{hosts.pretty_inspect}")
-        total_memory(vmServers)
-        logger.debug("query hosts: #{info['hosts']} total_mem:#{@total_memory}")
-        info['hosts'].select { |h| hosts[h].real_free_memory > @total_memory if hosts.key?(h) }
+        if config.support_overcommit
+          total_memory(vmServers)
+          logger.debug("query hosts: #{info['hosts']} total_mem:#{@total_memory}")
+          return info['hosts'].select { |h| hosts[h].real_free_memory > @total_memory if hosts.key?(h) }
+        else
+          return info['hosts']
+        end
       end
 
       def recommendation(vmServers, hostnames)
@@ -68,12 +73,16 @@ module Serengeti
 
       def commission(vm_server)
         logger.debug("compute vm_server: #{vm_server.first.pretty_inspect}")
-        vm_server.first.host.unaccounted_memory += vm_server.first.total_memory
+        if config.support_overcommit
+          vm_server.first.host.unaccounted_memory += vm_server.first.total_memory
+        end
         true
       end
 
       def decommission(vm_server)
-        vm_server.first.host.unaccounted_memory -= vm_server.first.total_memory
+        if config.support_overcommit
+          vm_server.first.host.unaccounted_memory -= vm_server.first.total_memory
+        end
       end
     end
 

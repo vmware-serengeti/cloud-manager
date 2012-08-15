@@ -48,6 +48,7 @@ module Serengeti
     class Manager
       def self.read_provider_from_file(parameter)
         cloud_path = ENV["CLOUD_MANAGER_CONFIG_DIR"] || '/opt/serengeti/conf'
+        puts("read #{cloud_path }.")
         provider_file = "#{cloud_path}/cloud-manager.#{parameter['cloud_provider']['name']}.yaml"
         begin
           provider_config = YAML.load(File.open(provider_file))
@@ -75,6 +76,7 @@ module Serengeti
               cloud.release_connection if cloud
             end
           else
+            # options["sync"] == false
             Thread.new do
               begin
                 yield cloud

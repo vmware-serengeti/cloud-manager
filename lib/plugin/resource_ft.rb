@@ -1,5 +1,5 @@
 ###############################################################################
-#    Copyright (c) 2012 VMware, Inc. All Rights Reserved.
+#   Copyright (c) 2012 VMware, Inc. All Rights Reserved.
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
@@ -42,9 +42,11 @@ module Serengeti
         match_host_names = nil
         vmServers.each do |spec|
           next if spec['ha'] != 'ft'
-          raise PlacementException, "vm #{spec['name']}, FT could not support more than one vCpu." if spec['cpu'].to_i > 1
-          raise PlacementException, "vm #{spec['name']}, FT should use shared system storage." if spec['system_shared'] == false
-          raise PlacementException, "vm #{spec['name']}, FT should use shared data storage." if spec['data_shared'] == false
+          error_msg = []
+          error_msg << "vm #{spec['name']}, FT could not support more than one vCpu." if spec['cpu'].to_i > 1
+          error_msg << "vm #{spec['name']}, FT should use shared system storage." if spec['system_shared'] == false
+          error_msg << "vm #{spec['name']}, FT should use shared data storage." if spec['data_shared'] == false
+          raise PlacementException, error_msg.join if !error_msg.empty?
         end
         hostnames
       end
