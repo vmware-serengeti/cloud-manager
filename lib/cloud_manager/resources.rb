@@ -60,17 +60,6 @@ module Serengeti
         end
       end
 
-      def is_vc_req_rp?(resource_pool, vc_req)
-        return false if resource_pool.nil?
-        return true if vc_req['vc_rps'].nil?
-        vc_req['vc_rps'].each { |rp_name| return true if rp_name.eql?(resource_pool.name) }
-        false
-      end
-
-      def is_vc_req_ds?(datastore, vc_req)
-        true
-      end
-
       class Cluster
         attr_accessor :mob
         attr_accessor :name
@@ -244,7 +233,7 @@ module Serengeti
           cluster.hosts = fetch_hosts(cluster, cluster_mob)
 
           datacenter.hosts.merge!(cluster.hosts)
-          logger.debug("cluster hosts:#{cluster.hosts.pretty_inspect}")
+          #logger.debug("cluster hosts:#{cluster.hosts.pretty_inspect}")
           datacenter.resource_pools[cluster.name] = cluster.resource_pools
 
           clusters[cluster.name] = cluster

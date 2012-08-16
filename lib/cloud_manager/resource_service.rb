@@ -113,10 +113,12 @@ module Serengeti
 
       def check_capacity(vmServers, hosts, options = {})
         info = { 'hosts' => hosts }
+        #logger.debug("check vms:#{vmServers.pretty_inspect}")
         result = @server.query_capacity(vmServers, info)
       end
 
       def evaluate_hosts(vmServers, hosts, options = {})
+        #logger.debug("eva vms:#{vmServers.pretty_inspect}")
         @server.recommendation(vmServers, hosts)
         # TODO change result to wanted
       end

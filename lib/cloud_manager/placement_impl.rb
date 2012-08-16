@@ -29,6 +29,9 @@ module Serengeti
       # this method filter out existed VMs that violate instance_per_host constraint
       # TODO: should check group association constraints
       def pre_placement_cluster(vm_groups, existed_vms)
+        result = super
+        return result if !result.nil?
+
         @logger.debug("checking cluster status, filter out VMs that violate instancePerHost constraint")
         vm_groups = vm_groups.values
         target_vg = vm_groups.select { |vm_group| vm_group.instance_per_host }
