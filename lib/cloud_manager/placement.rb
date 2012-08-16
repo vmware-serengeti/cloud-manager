@@ -35,8 +35,8 @@ module Serengeti
 
       def pre_placement_cluster(vm_groups, existed_vms)
         delete_vms = []
-        #remove unused vm
 
+        #remove unused vm
         existed_vms.each_value do |vm|
           result = parse_vm_from_name(vm.name)
           vm_group = vm_groups[result['group_name']]
