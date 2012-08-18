@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["VMware Serengeti team (Haiyu Wang, Jun Xiao)"]
-  s.date = "2012-06-02"
+  s.date = "2012-08-21"
   s.description = "Cloud-manager"
   s.email = "hadoop-bj@vmware.com"
   s.extra_rdoc_files = [
@@ -85,7 +85,7 @@ Gem::Specification.new do |s|
   ]
 
   s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])
-  s.add_dependency(%q<json>, ["~> 1.5.4"])
+  s.add_dependency(%q<json>, [">= 1.5.4"])
 
 end
 
