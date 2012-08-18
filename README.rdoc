@@ -9,7 +9,7 @@ cloud-manager is a Ruby cloud manager library, top to bottom:
 
 == Version Description
 
-  version = 0.5.0
+  version = 0.6.0
 
 == How hadoop cluster are layout
 
