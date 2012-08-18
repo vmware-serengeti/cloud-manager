@@ -226,21 +226,18 @@ module Serengeti
             end
           end
         end
- 
       end
 
       def prepare_working(cluster_info, cluster_data)
-        # Connect to Cloud server
-        # Create inputed vm_group from serengeti input
         logger.debug("Create vm group from input...")
         vm_groups_input = create_vm_group_from_serengeti_input(cluster_info, @cloud_provider.vc_datacenter)
         logger.obj2file(vm_groups_input, 'vm_groups_input')
 
         if @client.nil?
+          # Connect to Cloud server
           logger.info("Connect to Cloud Server...")
           @status = CLUSTER_CONNECT
           @client = create_plugin_obj(config.client_connection, self)
-          #client connect need more connect sessions
           client_op(self, 'vSphere login') { @client.login() }
         end
 
@@ -256,16 +253,16 @@ module Serengeti
         # Set template vm system disk size
         vm_sys_disk_size = nil
         dc_res.vm_template.disks.each_value { |disk| break vm_sys_disk_size = disk.size if disk.unit_number == 0 }
-        logger.debug("template vm disk size: #{@vm_sys_disk_size}")
         config.vm_sys_disk_size = vm_sys_disk_size
 
         # Create VM Group Info from resources
         logger.debug("Create vm group from resources...")
         remove_shadow_vm(dc_res, vm_groups_input)
-        @vm_lock.synchronize { @state_vms[:existed] = {} }
-        @vm_lock.synchronize { @state_vms[:finished] = {} }
+        @vm_lock.synchronize do
+          @state_vms[:existed] = {}
+          @state_vms[:finished] = {}
+        end
         vm_groups_existed = create_vm_group_from_resources(dc_res)
-
         logger.obj2file(vm_groups_existed, 'vm_groups_existed')
 
         setting_existed_group_by_input(vm_groups_existed, vm_groups_input)

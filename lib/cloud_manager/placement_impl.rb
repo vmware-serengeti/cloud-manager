@@ -23,9 +23,6 @@ module Serengeti
         @logger = Serengeti::CloudManager::logger
       end
 
-      def ft_placement(vm_groups, existed_vms)
-      end
-
       # this method filter out existed VMs that violate instance_per_host constraint
       # TODO: should check group association constraints
       def pre_placement_cluster(vm_groups, existed_vms)

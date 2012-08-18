@@ -281,6 +281,8 @@ module Serengeti
         @sys_datastore_moid = service['storage'].get_system_ds_moid(res_vms['storage'])
         logger.debug("vm: system moid #{sys_datastore_moid}")
         @resource_pool_moid = res_vms['resource_pool'].rp.mob
+        @rp_cluster_name = res_vms['resource_pool'].rp.cluster.name
+        @rp_name = res_vms['resource_pool'].rp.name
         logger.debug("vm: resource pool moid #{resource_pool_moid}")
         @spec = spec
         @host_name  = host.name
