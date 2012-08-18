@@ -84,7 +84,7 @@ Gem::Specification.new do |s|
     "spec/assets/unit/placement_constraint_groups.yaml"
   ]
 
-  s.add_dependency(%q<fog>, ["~> 1.3.1.serengeti.1"])
+  s.add_dependency(%q<fog>)
   s.add_dependency(%q<json>, [">= 1.5.4"])
 
 end
