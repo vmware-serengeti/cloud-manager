@@ -109,8 +109,10 @@ module Serengeti
             end
           end
           callee_msg = ":<#{callee_msg}>" if callee_msg.to_s.size > 0
-          msg = "[#{action_msg}#{callee_msg}#{backtrace}]#{msg}"
-          msg
+          out_msg = "#{action_msg}#{callee_msg}#{backtrace}"
+          out_msg = "[#{out_msg}]" if out_msg.size > 0
+          out_msg = "#{out_msg}#{msg}"
+          out_msg
         when ::Exception
           "EXCEPTION #{ msg.message } (#{ msg.class })\n" <<
           (msg.backtrace || []).join("\n")
