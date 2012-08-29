@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -26,7 +25,9 @@ module Serengeti
     class Cloud
       attr_accessor :vm_groups_existed
       attr_accessor :vm_groups_input
-      def create_and_update(cloud_provider, cluster_info, cluster_data, task)
+
+      def create()
+        cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
         action_process(CLOUD_WORK_CREATE, task) do
           logger.info("enter create_and_update...")
           create_cloud_provider(cloud_provider)

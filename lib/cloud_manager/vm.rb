@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -213,9 +212,7 @@ module Serengeti
         logger.debug("init vm: #{vm_name}")
       end
 
-      def logger
-        Serengeti::CloudManager.logger
-      end
+      include Serengeti::CloudManager::Utils
 
       # return value between [0..100]
       def get_progress
@@ -269,10 +266,6 @@ module Serengeti
         logger.warn("#{msg}")
       end
 
-      def vm_sys_disk_size
-        @cloud.vm_sys_disk_size
-      end
-
       def assign_resources(spec, host, res_vms, service)
         @error_msg = nil
 
@@ -321,11 +314,6 @@ module Serengeti
           op_failed(src, e, working)
         end
         return nil
-      end
-
-      def config
-        raise "Not assign cloud instance to vm:#{name}" if @cloud.nil?
-        @cloud.config
       end
 
       def client

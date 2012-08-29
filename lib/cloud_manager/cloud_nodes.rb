@@ -13,27 +13,32 @@
 #   limitations under the License.
 ################################################################################
 
-# @version 0.5.0
+# @version 0.6.0
 
 module Serengeti
   module CloudManager
-    class IaasProcess
-      attr_accessor :cluster_name
-      attr_accessor :progress
-      attr_accessor :result
-      attr_accessor :finished
-      attr_accessor :status
-      def initialize
-        @progress = 0
-        @finished = false
-        @status = "birth"
-        @result = ""
-      end
-      def finished? ;@finished end
-      def inspect
-        "#{@progress}%, finished ? #{@finished?'yes':'no'}, status:#{@status}, servers:\n#{result.inspect}"
-      end
+    class Cloud
+
     end
+
+    class Nodes
+      def initialize(cloud)
+        @cloud = cloud
+      end
+
+      SUPPORT_FUNC = ['create', 'update', 'resize', 'delete', 'start', 'stop', 'list']
+
+      def method_missing(m, *args, &block)
+        if SUPPORT_FUNC.include?(m)
+          @cloud.update_targets()
+          return @cloud.send(m, *args)
+        end
+        super
+      end
+
+
+    end
+
   end
 end
 

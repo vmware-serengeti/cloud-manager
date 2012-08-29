@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -32,7 +31,7 @@ module Serengeti
       # fetch vm_group information from user input (cluster_info)
       # It will assign template/rps/networking/datastores info to each vm group
       # Return: the vm_group structure
-      def create_vm_group_from_serengeti_input(cluster_info, datacenter_name)
+      def create_vm_group_from_input(cluster_info, datacenter_name)
         vm_groups = {}
         #logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
         input_groups = cluster_info["groups"]
@@ -80,7 +79,7 @@ module Serengeti
               group_name = result["group_name"]
               num = result["num"]
               #logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
-              next if (cluster_name != config.serengeti_cluster_name)
+              next if (cluster_name != config.cloud_cluster_name)
               vm_group = vm_groups[group_name]
               if vm_group.nil?
                 # Create new Group

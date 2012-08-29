@@ -13,27 +13,20 @@
 #   limitations under the License.
 ################################################################################
 
-# @version 0.5.0
+# @version 0.6.0
 
 module Serengeti
   module CloudManager
-    class IaasProcess
-      attr_accessor :cluster_name
-      attr_accessor :progress
-      attr_accessor :result
-      attr_accessor :finished
-      attr_accessor :status
-      def initialize
-        @progress = 0
-        @finished = false
-        @status = "birth"
-        @result = ""
-      end
-      def finished? ;@finished end
-      def inspect
-        "#{@progress}%, finished ? #{@finished?'yes':'no'}, status:#{@status}, servers:\n#{result.inspect}"
+
+    class Cloud
+      def update()
+        cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
+        action_process(CLOUD_WORK_CREATE, task) do
+          logger.info("enter update...")
+        end
       end
     end
+
   end
 end
 

@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -149,6 +148,7 @@ module Serengeti
       end
 
       include Serengeti::CloudManager::Parallel
+      include Serengeti::CloudManager::Utils
       #########################################################
       # Begin Resource functions
       def initialize(client, cloud, mem_over_commit = 1.0)
@@ -157,10 +157,6 @@ module Serengeti
         @datacenter   = {}
         @lock         = Mutex.new
         @mem_over_commit  = mem_over_commit
-      end
-
-      def logger
-        Serengeti::CloudManager.logger
       end
 
       def fetch_vm_by_moid(vm_ref, dc_mob)
@@ -192,7 +188,7 @@ module Serengeti
 
         datacenter.racks = @cloud.racks
 
-        datacenter.vm_template = fetch_vm_by_moid(config.serengeti_template_id, datacenter_mob)
+        datacenter.vm_template = fetch_vm_by_moid(config.cloud_template_id, datacenter_mob)
         datacenter.port_group = @client.get_portgroups_by_dc_mob(datacenter_mob)
         datacenter.hosts = {}
         datacenter.resource_pools = {}

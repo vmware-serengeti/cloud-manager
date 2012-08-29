@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 
@@ -46,6 +45,8 @@ require 'cloud_manager/cluster'
 module Serengeti
   module CloudManager
     class Manager
+      include Serengeti::CloudManager::Utils
+
       def self.read_provider_from_file(parameter)
         cloud_path = ENV["CLOUD_MANAGER_CONFIG_DIR"] || '/opt/serengeti/conf'
         Serengeti::CloudManager.logger.debug("read config from #{cloud_path }.")
@@ -60,61 +61,48 @@ module Serengeti
         end
       end
 
-      def self.cluster_helper(parameter, options={})
-        cloud = nil
+      def self.call_op(cloud, &block)
         begin
-          #Handle cloud_provider
-          read_provider_from_file(parameter)
-          cloud = IaasTask.new(parameter['cluster_definition'],
-                               parameter['cloud_provider'],
-                               parameter['cluster_data'],
-                               parameter['targets'])
-          if (options[:wait])
-            begin
-              yield cloud
-            ensure
-              cloud.release_connection if cloud
-            end
-          else
-            # options["sync"] == false
-            Thread.new do
-              begin
-                yield cloud
-              ensure
-                cloud.release_connection if cloud
-              end
-            end
-          end
+          block.call cloud
+        ensure
+          cloud.release_connection if cloud
+        end
+      end
+
+      def self.op_helper(parameter, options = {}, &block)
+        #Handle cloud_provider
+        read_provider_from_file(parameter)
+        cloud = IaasTask.new(:cluster_definition  => parameter['cluster_definition'],
+                             :cloud_provider      => parameter['cloud_provider'],
+                             :cluster_data        => parameter['cluster_data'],
+                             :targets             => parameter['targets'])
+        if (options[:wait])
+          call_op(cloud, &block)
+        else
+          # options["sync"] == false
+          Thread.new { call_op(cloud, &block) }
         end
         cloud
       end
 
       def self.start_cluster(parameter, options={})
-        cluster_helper(parameter, options) { |cloud| cloud.start }
+        op_helper(parameter, options) { |cloud| cloud.start }
       end
 
       def self.stop_cluster(parameter, options={})
-        cluster_helper(parameter, options) { |cloud| cloud.stop }
+        op_helper(parameter, options) { |cloud| cloud.stop }
       end
 
       def self.delete_cluster(parameter, options={})
-        cluster_helper(parameter, options) { |cloud| cloud.delete }
+        op_helper(parameter, options) { |cloud| cloud.delete }
       end
 
       def self.create_cluster(parameter, options={})
-        cluster_helper(parameter, options) { |cloud| cloud.create_and_update }
+        op_helper(parameter, options) { |cloud| cloud.create }
       end
 
-      # TODO change to show_cluster
       def self.list_vms_cluster(parameter, options={})
-        cloud = nil
-        begin
-          read_provider_from_file(parameter)
-          cloud = IaasTask.new(parameter['cluster_definition'], parameter['cloud_provider'], parameter['cluster_data'], parameter['targets'])
-          return cloud.list_vms
-        ensure
-          cloud.release_connection if cloud
-        end
+        op_helper(parameter, :wait=>true) { |cloud| cloud.list_vms }
       end
 
       def self.set_log_level(level)
