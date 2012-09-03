@@ -13,46 +13,39 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
-# @version 0.5.0
+# @version 0.6.0
 
-# Warp interface to others
 module Serengeti
   module CloudManager
-    class Cluster
-      def initialize()
+    class Cloud
+      def Cluster
+        Cluster.new(self)
       end
 
-      def create(parameter, options={})
+      class Cluster
+        def initialize(cloud)
+          @cloud = cloud
+        end
+
+        SUPPORT_FUNC = ['create', 'update', 'resize', 'delete', 'start', 'stop', 'list']
+
+        def method_missing(m, *args, &block)
+          if SUPPORT_FUNC.include?(m)
+            return @cloud.send(m, *args)
+          end
+          super
+        end
+
+        def groups()
+          Groups.new(@cloud)
+        end
+
+        def nodes()
+          Nodes.new(@cloud)
+        end
+
       end
 
-      def update(parameter, options={})
-      end
-
-      def delete(parameter, options={})
-      end
-
-      def start(parameter, options={})
-      end
-
-      def stop(parameter, options={})
-      end
-
-      def groups()
-      end
-
-      def nodes()
-      end
-
-      def show(parameter, options={})
-      end
-
-      def placement()
-      end
-
-      def deploy()
-      end
     end
-
   end
 end
