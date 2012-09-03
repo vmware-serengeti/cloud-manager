@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 require 'logger'
@@ -77,7 +76,7 @@ module Serengeti
 
       def obj2file(obj, file_str)
         return if !config.debug_log_obj2file
-        File.open("#{file_str}.yaml", 'w'){ |f| YAML.dump(obj, f) }
+        File.open("dbg-#{file_str}.yaml", 'w'){ |f| YAML.dump(obj, f) }
       end
 
       def error(msg)

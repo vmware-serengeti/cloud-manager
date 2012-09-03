@@ -13,25 +13,32 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
   module CloudManager
-    class Group
-      def init(options = {})
+    class Groups
+      def initialize(cloud)
+        @cloud = cloud
       end
 
-      def nodes
+      def each(&block)
+        #NOT FINISHED
+        block.call 
       end
 
-      def to_hash
+      SUPPORT_FUNC = ['create', 'update', 'resize', 'delete', 'start', 'stop', 'list']
+
+      def method_missing(m, *args, &block)
+        if SUPPORT_FUNC.include?(m)
+          @cloud.update_targets()
+          return @cloud.send(m, *args)
+        end
+        super
       end
 
-      def placement()
-      end
-
-      def deploy()
+      def nodes()
+        Node.new(@cloud, self)
       end
 
     end
