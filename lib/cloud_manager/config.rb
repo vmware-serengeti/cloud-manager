@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.1
 # @version 0.5.1
 
 module Serengeti
@@ -53,7 +52,7 @@ module Serengeti
       def method_missing(m, *args, &block)
         v = @config[m.to_s]
         if v.nil?
-          puts "method missing: #{m}"
+          puts "CONFIG ERROR: method missing: #{m}"
           return nil
         end
         v
