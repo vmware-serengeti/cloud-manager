@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -32,10 +31,11 @@ module Serengeti
       # fetch vm_group information from user input (cluster_info)
       # It will assign template/rps/networking/datastores info to each vm group
       # Return: the vm_group structure
-      def create_vm_group_from_serengeti_input(cluster_info, datacenter_name)
+      def create_vm_group_from_input(cluster_info, datacenter_name)
         vm_groups = {}
         #logger.debug("cluster_info: #{cluster_info.pretty_inspect}")
         input_groups = cluster_info["groups"]
+        return nil if input_groups.nil?
         template_id = cluster_info["template_id"] #currently, it is mob_ref
         raise "template_id should a vm mob id (like vm-1234)" if /^vm-[\d]+$/.match(template_id).nil?
         cluster_req_rps = @vc_req_rps
@@ -80,7 +80,7 @@ module Serengeti
               group_name = result["group_name"]
               num = result["num"]
               #logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
-              next if (cluster_name != config.serengeti_cluster_name)
+              next if (cluster_name != config.cloud_cluster_name)
               vm_group = vm_groups[group_name]
               if vm_group.nil?
                 # Create new Group
@@ -131,7 +131,27 @@ module Serengeti
           @ha = rp["ha"] #Maybe 'on' 'off' 'ft'
           @ha = 'off' if rp["ha"].nil?
           @rack_id = nil
-          @vm_folder_path = rp["vm_folder_path"]
+        end
+      end
+    end
+
+    class VmGroupRack
+      attr_accessor :type
+      attr_accessor :racks
+      include Serengeti::CloudManager::Utils
+
+      def initialize(options = {})
+        @type   = options["type"]
+        @racks  = []
+        racks  = options["racks"]
+        if racks
+          racks.each do |rack|
+            if config.cloud_rack_to_hosts.keys.include?(rack)
+              @racks << rack
+            else
+              logger.warn("rack [#{rack}] not in cluster rack info.")
+            end
+          end
         end
       end
     end
@@ -149,7 +169,9 @@ module Serengeti
     class VmGroupPlacementPolicy
       attr_accessor :instance_per_host
       attr_accessor :group_associations
+      attr_accessor :group_racks
 
+      include Serengeti::CloudManager::Utils
       def initialize(options = {})
         @instance_per_host = options["instance_per_host"] if options["instance_per_host"]
         @group_associations = []
@@ -157,6 +179,9 @@ module Serengeti
           options["group_associations"].each do |asn_hash|
             @group_associations << VmGroupAssociation.new(asn_hash)
           end
+        end
+        if !config.cloud_rack_to_hosts.empty? && options["group_racks"]
+          @group_rack = VmGroupRack.new(options["group_racks"])
         end
       end
     end
@@ -169,9 +194,10 @@ module Serengeti
       attr_accessor :instances  #wanted number of instance
       attr_accessor :req_rps
       attr_accessor :network_res
-      attr_accessor :vm_ids     #classes VmInfo
+      attr_accessor :vm_ids    #classes VmInfo
       attr_accessor :placement_policies
 
+      include Serengeti::CloudManager::Utils
       def initialize(rp=nil)
         @vm_ids = {}
         @req_info = ResourceInfo.new(rp)

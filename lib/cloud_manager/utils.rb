@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -198,6 +197,14 @@ module Serengeti
     end
 
     module Utils
+      def logger
+        Serengeti::CloudManager.logger
+      end
+
+      def config
+        Serengeti::CloudManager.config
+      end
+
       def parse_vm_from_name(vm_name, options={})
         #result = /([\w\s\d]+)#{config.vm_name_split_sign}([\w\s\d]+)#{config.vm_name_split_sign}([\d]+)/.match(vm_name)
         result = vm_name.split(config.vm_name_split_sign)
@@ -220,7 +227,7 @@ module Serengeti
       end
 
       def gen_cluster_vm_name(group_name, num)
-        [config.serengeti_cluster_name, group_name, num].compact.join(config.vm_name_split_sign)
+        [config.cloud_cluster_name, group_name, num].compact.join(config.vm_name_split_sign)
       end
 
       def gen_disk_name(datastore, vm, type, unit_number)
@@ -239,7 +246,7 @@ module Serengeti
         target_info = parse_vm_from_name(target)
         vm_info = parse_vm_from_name(vm_name)
         return false unless vm_info
-        return false if (target_info["cluster_name"] != config.serengeti_cluster_name  || vm_info["cluster_name"] != target_info["cluster_name"])
+        return false if (target_info["cluster_name"] != config.cloud_cluster_name  || vm_info["cluster_name"] != target_info["cluster_name"])
         return false if (target_info["group_name"] && vm_info["group_name"] != target_info["group_name"])
         return false if (target_info["num"] && vm_info["num"] != target_info["num"])
         logger.debug("vm:#{vm_name} match: #{target.pretty_inspect}")
@@ -250,9 +257,9 @@ module Serengeti
         logger.debug("vm:#{vm_name} is in cluster?")
         result = parse_vm_from_name(vm_name)
         return false unless result
-        return false unless (result["cluster_name"] == config.serengeti_cluster_name)
+        return false unless (result["cluster_name"] == config.cloud_cluster_name)
 
-        logger.debug("vm:#{vm_name} is in cluster:#{config.serengeti_cluster_name}")
+        logger.debug("vm:#{vm_name} is in cluster:#{config.cloud_cluster_name}")
         true
       end
    end

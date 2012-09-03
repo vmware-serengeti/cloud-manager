@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -21,6 +20,7 @@ module Serengeti
     class Cloud
       CLOUD_WORK_CREATE = 'create'
       CLOUD_WORK_DELETE = 'delete'
+      CLOUD_WORK_UPDATE = 'update'
       CLOUD_WORK_LIST   = 'list'
       CLOUD_WORK_START  = 'start'
       CLOUD_WORK_STOP   = 'stop'
@@ -98,7 +98,7 @@ module Serengeti
           vms.each_value do |vm|
             result = parse_vm_from_name(vm.name)
             next if result.nil?
-            vm.cluster_name = config.serengeti_cluster_name #Serengeti cluster_name
+            vm.cluster_name = config.cloud_cluster_name #Serengeti cluster_name
             vm.group_name = result["group_name"]
             servers << vm
           end
@@ -127,7 +127,7 @@ module Serengeti
       # Get cluster operation's progress
       def get_progress
         progress = IaasProcess.new
-        progress.cluster_name = config.serengeti_cluster_name
+        progress.cluster_name = config.cloud_cluster_name
         progress.result = get_result
         progress.status = @status
         progress.finished = @finished

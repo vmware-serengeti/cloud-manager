@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -32,12 +31,14 @@ module Serengeti
       def_const_value :debug_deploy       , true
       def_const_value :debug_waiting_ip   , true
       def_const_value :debug_placement_datastore, true
-      def_const_value :serengeti_cluster_name, 'test'
-      def_const_value :serengeti_template_id, 'vm-0'
-      def_const_value :serengeti_cluster_share_datastore_pattern, []
-      def_const_value :serengeti_cluster_local_datastore_pattern, []
+      def_const_value :cloud_cluster_name, 'test'
+      def_const_value :cloud_template_id, 'vm-0'
+      def_const_value :cloud_cluster_share_datastore_pattern, []
+      def_const_value :cloud_cluster_local_datastore_pattern, []
       def_const_value :vc_local_datastore_pattern, []
       def_const_value :vc_share_datastore_pattern, []
+      def_const_value :cloud_rack_to_hosts, {}
+      def_const_value :cloud_hosts_to_rack, {}
     end
 
     class Cloud
@@ -53,42 +54,55 @@ module Serengeti
       attr_accessor :placement_failed
       attr_accessor :cloud_error_msg_que
 
-      attr_reader :vc_req_datacenter
       attr_reader :vc_req_rps
 
       attr_reader :racks
       attr_reader :need_abort
-      attr_reader :config
+      #attr_reader :config
 
       attr_reader :client
 
       include Serengeti::CloudManager::Utils
-      def initialize(cluster_info, targets)
+      def initialize(task, options = {})
         @dc_resource = nil
         @clusters = nil
         @vm_lock = Mutex.new
+        @task = task
+
+        @cluster_info       = options[:cluster_definition]
+        @cloud_provider     = options[:cloud_provider]
+        @cluster_last_data  = options[:cluster_data]
+        @targets            = options[:targets]
+        @racks              = @cluster_info['rack_topology']
+        if !@racks.nil?
+          hosts_rack = @racks
+          rack_hosts  = {}
+          hosts_rack.each do |k,v|
+            logger.debug("k=#{k}, v=#{v}")
+            if rack_hosts.key?(v)
+              rack_hosts[v] << k
+            else
+              rack_hosts[v] = [k]
+            end
+          end
+          config.cloud_rack_to_hosts = rack_hosts
+          logger.debug("rack_to_hosts: #{rack_hosts.pretty_inspect}")
+          config.cloud_hosts_to_rack = hosts_rack
+          logger.debug("hosts_to_rack : #{hosts_rack.pretty_inspect}")
+        end
+
         state_vms_init  #:existed,:deploy,:failed,:finished,:placed
         @need_abort = nil
-        config.serengeti_cluster_name = cluster_info['name']
-        config.serengeti_template_id = cluster_info['template_id']
-        @targets = targets
+        config.cloud_cluster_name = @cluster_info['name']
+        config.cloud_template_id  = @cluster_info['template_id']
 
         @status = CLUSTER_BIRTH
-        @rs_lock = Mutex.new
         @client = nil
         @success = false
         @finished = false
         @placement_failed = 0
         @cluster_failed_num = 0
         @cloud_error_msg_que = []
-      end
-
-      def logger
-        Serengeti::CloudManager.logger
-      end
-
-      def config
-        Serengeti::CloudManager.config
       end
 
       def state_vms_init
@@ -128,7 +142,6 @@ module Serengeti
       end
 
       def req_clusters_rp_to_hash(a)
-        # resource_pool's name can be the same between different clusters
         Hash[a.map { |v| [v['name'], v['vc_rps']] } ]
       end
 
@@ -145,7 +158,6 @@ module Serengeti
 
         config.vc_share_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_shared_datastore_pattern || [])
         config.vc_local_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_local_datastore_pattern || [])
-        @racks = nil
       end
 
       def inspect
@@ -153,7 +165,7 @@ module Serengeti
       end
 
       # Setting existed vm parameter from input
-      def setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
+      def setting_existed_group_by_input(vm_groups_existed, vm_groups_input, cluster_data)
         #logger.debug("#{vm_groups_existed.class}")
         vm_groups_existed.each_value do |exist_group|
           #logger.debug("exist group: #{exist_group.pretty_inspect}")
@@ -161,8 +173,20 @@ module Serengeti
           next if input_group.nil?
           logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
           exist_group.vm_ids.each_value { |vm| vm.ha_enable = (input_group.req_info.ha == 'on') }
-          exist_group.vm_ids.each_value { |vm| vm.ha_enable = vm.ft_enable = (input_group.req_info.ha == 'ft')
-          }
+          exist_group.vm_ids.each_value { |vm| vm.ha_enable = vm.ft_enable = (input_group.req_info.ha == 'ft') }
+=begin
+          if cluster_data && cluster_data['groups']
+            cluster_data_instances = cluster_data['groups'].map do |group|
+              group['instances'] if group['name'] == exist_group.name
+            end
+            cluster_data_instances = cluster_data_instances.flatten.compact
+
+            cluster_data_instances.each do |vm|
+              next if !exist_group.vm_ids.key?[vm['name']]
+              exist_group.vm_ids[vm['name']].rack = cluster_data_instances[vm['name']]['rack']
+            end
+          end
+=end
         end
       end
 
@@ -171,11 +195,6 @@ module Serengeti
         vm_groups_existed.each_value do |exist_group|
           input_group = vm_groups_input[exist_group.name]
           next if input_group.nil?
-          if cluster_data && cluster_data['group']
-            cluster_data_instances = cluster_data['group'].select \
-              { |group| group[instances] if group['name'] == exist_group.name}.first
-            cluster_data_instances.each { |vm| input_group.network_res.ip_remove(0, vm['ip_address']) }
-          end
           logger.debug("find same group #{exist_group.name}, and remove existed vm ip from input pool")
           exist_group.vm_ids.each_value { |vm| input_group.network_res.ip_remove(0, vm.ip_address) }
         end
@@ -230,7 +249,7 @@ module Serengeti
 
       def prepare_working(cluster_info, cluster_data)
         logger.debug("Create vm group from input...")
-        vm_groups_input = create_vm_group_from_serengeti_input(cluster_info, @cloud_provider.vc_datacenter)
+        vm_groups_input = create_vm_group_from_input(cluster_info, @cloud_provider.vc_datacenter)
         logger.obj2file(vm_groups_input, 'vm_groups_input')
 
         if @client.nil?
@@ -265,7 +284,7 @@ module Serengeti
         vm_groups_existed = create_vm_group_from_resources(dc_res)
         logger.obj2file(vm_groups_existed, 'vm_groups_existed')
 
-        setting_existed_group_by_input(vm_groups_existed, vm_groups_input)
+        setting_existed_group_by_input(vm_groups_existed, vm_groups_input, cluster_data)
 
         update_input_group_by_existed(vm_groups_input, vm_groups_existed, cluster_data)
 

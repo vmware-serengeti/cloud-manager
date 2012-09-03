@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -151,6 +150,10 @@ module Serengeti
       attr_accessor :action
 
       def can_ha?; @can_ha;end
+      def rack
+        return nil if config.cloud_hosts_to_rack.empty?
+        rack = config.cloud_hosts_to_rack[@host_name]
+      end
 
       def datastores
         data = {}
@@ -210,12 +213,11 @@ module Serengeti
         @cloud = cloud
         @host_name = nil
         @res_vms = nil
+        @rack = nil
         logger.debug("init vm: #{vm_name}")
       end
 
-      def logger
-        Serengeti::CloudManager.logger
-      end
+      include Serengeti::CloudManager::Utils
 
       # return value between [0..100]
       def get_progress
@@ -229,9 +231,11 @@ module Serengeti
       # return service wanted values.
       def to_hash
         progress = VM_ACT_PROGRES[@action]
+        logger.debug("vm :[#{@name}] to hash")
         attrs = {}
         attrs[:name]        = @name
         attrs[:hostname]    = @host_name
+        attrs[:physical_host]= @host_name
         attrs[:ip_address]  = ip_address
         attrs[:status]      = progress ? progress[@status][:status] : ""
         attrs[:action]      = @status[:doing] #@status
@@ -242,6 +246,7 @@ module Serengeti
 
         attrs[:created]     = deleted ? false : @created
         attrs[:deleted]     = deleted
+        attrs[:rack]        = @rack if @rack
 
         attrs[:error_code]  = @error_code.to_i
         attrs[:error_msg]   = @error_msg.to_s
@@ -269,10 +274,6 @@ module Serengeti
         logger.warn("#{msg}")
       end
 
-      def vm_sys_disk_size
-        @cloud.vm_sys_disk_size
-      end
-
       def assign_resources(spec, host, res_vms, service)
         @error_msg = nil
 
@@ -288,6 +289,10 @@ module Serengeti
         @host_name  = host.name
         @host_mob   = host.mob
         @storage_service = service['storage']
+
+        if !config.cloud_hosts_to_rack.empty?
+          @rack = config.cloud_hosts_to_rack[@host_name]
+        end
 
         logger.debug("ha: #{spec['ha']}")
         @ft_enable = (spec['ha'] == 'ft')
@@ -321,11 +326,6 @@ module Serengeti
           op_failed(src, e, working)
         end
         return nil
-      end
-
-      def config
-        raise "Not assign cloud instance to vm:#{name}" if @cloud.nil?
-        @cloud.config
       end
 
       def client
@@ -512,6 +512,8 @@ module Serengeti
       def ready?
         @status == VM_STATE_DONE
       end
+
+      def physical_host; @host_name; end
 
       def volumes(limitation = Serengeti::CloudManager.config.vm_data_disk_start_index)
         if @disks.empty?

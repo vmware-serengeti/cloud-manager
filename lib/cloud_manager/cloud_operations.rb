@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 
 module Serengeti
@@ -25,7 +24,7 @@ module Serengeti
         CLUSTER_STOP   => 'stop',
       }
 
-      def serengeti_vms_op(cloud_provider, cluster_info, cluster_data, action)
+      def cloud_vms_op(cloud_provider, cluster_info, cluster_data, action)
         act = CLUSTER_ACTION_MESSAGE[action]
         act = 'unknown' if act.nil?
         logger.info("enter #{act} cluster ... ")
@@ -49,7 +48,8 @@ module Serengeti
         matched_vms
       end
 
-      def list_vms(cloud_provider, cluster_info, cluster_data, task)
+      def list_vms()
+        cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
         action_process(CLOUD_WORK_LIST, task) do
           logger.debug("enter list_vms...")
           create_cloud_provider(cloud_provider)
@@ -59,24 +59,27 @@ module Serengeti
       end
 
       #TODO: support deleting node/group
-      def delete(cloud_provider, cluster_info, cluster_data, task)
+      def delete()
+        cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
         action_process(CLOUD_WORK_DELETE, task) do
-          vms = serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_DELETE)
+          vms = cloud_vms_op(@cloud_provider, @cluster_info, @cluster_data, CLUSTER_DELETE)
           group_each_by_threads(vms, :callee=>'destory vm') { |vm| vm.delete }
         end
       end
 
-      def start(cloud_provider, cluster_info, cluster_data, task)
+      def start()
+        cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
         action_process(CLOUD_WORK_START, task) do
-          vms = serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_START)
+          vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_START)
           vms.each { |vm| vm.action = VmInfo::VM_ACTION_START }
           cluster_wait_ready(vms)
         end
       end
 
-      def stop(cloud_provider, cluster_info, cluster_data, task)
+      def stop()
+        cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
         action_process(CLOUD_WORK_STOP, task) do
-          vms = serengeti_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_STOP)
+          vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_STOP)
           group_each_by_threads(vms, :callee=>'stop vm') { |vm| vm.stop }
         end
       end
