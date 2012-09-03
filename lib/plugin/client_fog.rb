@@ -13,7 +13,6 @@
 #   limitations under the License.
 ################################################################################
 
-# @since serengeti 0.5.0
 # @version 0.5.0
 require 'fog'
 
