@@ -81,8 +81,10 @@ module Serengeti
         @rc_services.each_value { |service| yield service }
       end
 
+      # TODO get hosts without resource pool support.
+      # Not Finished
       def group_placement(dc_resource, vm_groups)
-        hosts
+        hosts = []
         vm_groups.each do |vm_group|
 
         end
@@ -147,6 +149,7 @@ module Serengeti
         end
         scores.first[1].size
       end
+
 
       def place_group_vms_with_hosts(hosts, virtual_group, existed_vms, placed_vms)
         group_place = []
@@ -215,7 +218,7 @@ module Serengeti
           end
         end
         group_place = group_place.flatten.compact
-        logger.debug("group_place:#{group_place.pretty_inspect}")
+        #logger.debug("group_place:#{group_place.pretty_inspect}")
         group_place
       end
 

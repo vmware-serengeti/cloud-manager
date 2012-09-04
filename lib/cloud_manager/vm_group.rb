@@ -140,19 +140,24 @@ module Serengeti
       attr_accessor :racks
       include Serengeti::CloudManager::Utils
 
+      SAMERACK = "samerack"
+      ROUNDROBIN = "roundrobin"
+      SUPPROT_RACK_TYPE = [SAMERACK, ROUNDROBIN]
       def initialize(options = {})
-        @type   = options["type"]
+        @type   = options["type"].downcase
+        raise Serengeti::CloudManager::PlacementException, "Do not support this rack type:#{options["type"]}."\
+          if !SUPPROT_RACK_TYPE.include?(@type)
+
         @racks  = []
-        racks  = options["racks"]
-        if racks
-          racks.each do |rack|
-            if config.cloud_rack_to_hosts.keys.include?(rack)
-              @racks << rack
-            else
-              logger.warn("rack [#{rack}] not in cluster rack info.")
-            end
-          end
-        end
+        racks  = options["racks"] || config.cloud_rack_to_hosts.keys
+        racks_used = racks & config.cloud_rack_to_hosts.keys
+        racks_diff = racks - config.cloud_rack_to_hosts.keys
+        logger.warn("rack [#{rack_diff}] not in cluster rack info.") if !racks_diff.empty? 
+        raise Serengeti::CloudManager::PlacementException, "#{racks} do not in cluster definition." if racks_used.empty?
+        raise Serengeti::CloudManager::PlacementException, "More than one rack #{racks} in SameRack option."\
+          if racks_used.size > 1 and @type == SAMERACK
+        @racks = racks_used
+        logger.debug("group rack: #{racks} used: #{racks_used} diff: #{racks_diff} ")
       end
     end
 
@@ -181,7 +186,7 @@ module Serengeti
           end
         end
         if !config.cloud_rack_to_hosts.empty? && options["group_racks"]
-          @group_rack = VmGroupRack.new(options["group_racks"])
+          @group_racks = VmGroupRack.new(options["group_racks"])
         end
       end
     end
@@ -206,9 +211,16 @@ module Serengeti
         @name = rp["name"]
         @instances = rp["instance_num"]
         @req_rps = {}
+        @placement_policies = nil
         if rp["placement_policies"]
           @placement_policies = VmGroupPlacementPolicy.new(rp["placement_policies"])
         end
+      end
+
+      def rack_policy
+        return nil if @placement_policies.nil?
+        return nil if @placement_policies.group_racks.nil?
+        @placement_policies.group_racks
       end
 
       def to_vm_groups

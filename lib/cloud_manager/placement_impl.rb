@@ -80,6 +80,7 @@ module Serengeti
       def get_virtual_groups(vm_groups)
         # Don't combine any associated groups for now
         # TODO: use the concept of virtual_groups
+        @input_vm_groups = vm_groups
         @vm_groups = {}
 
         # sort the groups to put referred groups in front
@@ -104,6 +105,11 @@ module Serengeti
         @host_map_by_group = {}
         @vm_groups.each {|name, _| @host_map_by_group[name] = {}}
 
+        if !config.cloud_hosts_to_rack.empty?
+          # Init rack info
+          @vm_racks = config.cloud_rack_to_hosts.keys
+        end
+
         @vm_groups
       end
 
@@ -121,9 +127,55 @@ module Serengeti
         end
       end
 
-      def least_used_host(candidates)
+      def rack_used(virtual_node, candidates)
+        return candidates if config.cloud_rack_to_hosts.empty?
+        #Add rack checking
+        rack_type = nil
+        racks = []
+        groups = {}
+        virtual_node.each do |vm|
+          group = @input_vm_groups[vm.spec['vm_group_name']]
+          next if group.nil?
+          next if group.rack_policy.nil?
+          groups[group.name] = 1
+          rack_type ||= group.rack_policy.type
+          if rack_type != group.rack_policy.type
+            rack_type = VmGroupRack::SAMERACK
+          end
+          racks = group.rack_policy.racks if racks.empty?
+          racks &= group.rack_policy.racks
+
+          raise Serengeti::CloudManager::PlacementException,\
+            "can not find same rack with #{groups.keys.pretty_inspect} " if racks.empty?
+        end
+        logger.debug("type:#{rack_type.pretty_inspect}, racks:#{racks.pretty_inspect}")
+        return candidates if rack_type.nil?
+
+        if rack_type == VmGroupRack::SAMERACK
+          hosts = config.cloud_rack_to_hosts[racks[0]]
+          rack_candidates = candidates.keys & hosts
+          return candidates.select { |host, _| rack_candidates.include?(host)}  if !rack_candidates.empty?
+        else
+          # rack type is ROUNDROBIN
+          logger.debug("ROUDROBIN rack:#{racks.pretty_inspect}")
+          (0...@vm_racks.size).each do |i|
+            r = @vm_racks.first
+            @vm_racks.rotate!
+            next if !racks.include?(r)
+            rack_candidates = candidates.keys & config.cloud_rack_to_hosts[r]
+            return candidates.select { |host, _| rack_candidates.include?(host)} if !rack_candidates.empty?
+          end
+        end
+        raise Serengeti::CloudManager::PlacementException,\
+            "Same rack[#{racks.pretty_inspect}] can not find suitable hosts, with group:#{groups.keys.pretty_inspect}"
+      end
+
+      def least_used_host(candidates, virtual_node)
         least_cnt = nil
         candidate = nil
+        candidates = rack_used(virtual_node, candidates)
+        logger.debug("rack_used return :#{candidates.keys.pretty_inspect}")
+ 
         candidates.each do |host, _|
           # this host is never used before, return
           return host unless @host_map_by_cluster.key?(host)
@@ -135,6 +187,7 @@ module Serengeti
             least_cnt = @host_map_by_cluster[host]
             candidate = host
           end
+
         end
         candidate
       end
@@ -249,13 +302,13 @@ module Serengeti
               + vm_group.referred_group
           end
 
-          candidate = least_used_host(referred_candidates)
-          candidate = least_used_host(not_referred_candidates) if candidate.nil?
+          candidate = least_used_host(referred_candidates, virtual_node)
+          candidate = least_used_host(not_referred_candidates, virtual_node) if candidate.nil?
 
           candidate
         else
           # no group association, return the least used candidate
-          least_used_host(candidates)
+          least_used_host(candidates, virtual_node)
         end
       end
 

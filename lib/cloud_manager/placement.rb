@@ -59,6 +59,7 @@ module Serengeti
         @place_service.set_placement_error_msg(msg)
       end
 
+
     end
 
   end

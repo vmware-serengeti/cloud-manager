@@ -59,14 +59,14 @@ module Serengeti
       end
 
       def scores2_host(scores)
-        scores_host = {}
+        host_scores = {}
         scores.each do |name, score|
           score.each do |host, value|
-            scores_host[host] = {} if scores_host[host].nil?
-            scores_host[host][name] = value
+            host_scores[host] = {} if host_scores[host].nil?
+            host_scores[host][name] = value
           end
         end
-        scores_host
+        host_scores
       end
 
       def select_host(vms, scores)

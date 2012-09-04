@@ -56,7 +56,7 @@ module Serengeti
               @con_lock.synchronize { @connection[:ha_ft] << ha_ft }
             end
           rescue => e
-            @con_lock.synchronize { @connection[:err] << e }
+            @con_lock.synchronize { @connection[:err] << e if @connection }
           end
         end
         if @connection[:err].size > 0
@@ -82,7 +82,6 @@ module Serengeti
             #TODO destroy @connection
           end
         end
-        @connection = nil
         logger.info("Disconnect from cloud provider ")
       end
 
