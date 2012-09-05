@@ -115,6 +115,8 @@ module Serengeti
       attr_accessor :template_id
       attr_accessor :affinity
       attr_accessor :ha
+      attr_accessor :vm_folder_path
+
       def initialize(rp=nil)
         if rp
           @cpu = rp["cpu"] || 1
@@ -129,6 +131,7 @@ module Serengeti
           @ha = rp["ha"] #Maybe 'on' 'off' 'ft'
           @ha = 'off' if rp["ha"].nil?
           @rack_id = nil
+          @vm_folder_path = rp["vm_folder_path"]
         end
       end
     end
@@ -166,7 +169,7 @@ module Serengeti
       attr_accessor :instances  #wanted number of instance
       attr_accessor :req_rps
       attr_accessor :network_res
-      attr_accessor :vm_ids    #classes VmInfo
+      attr_accessor :vm_ids     #classes VmInfo
       attr_accessor :placement_policies
 
       def initialize(rp=nil)
@@ -207,6 +210,7 @@ module Serengeti
           'system_affinity' => nil,
 
           'port_groups' => network_res.port_groups,
+          'vm_folder_path' => req_info.vm_folder_path
         }
       end
 

@@ -98,6 +98,7 @@ module Serengeti
           'datastore_moid' => vm.sys_datastore_moid,
           'rp_moid' => vm.resource_pool_moid,
           'host_moid' => vm.host_mob,
+          'folder_path' => vm.spec['vm_folder_path'],
           'power_on' => false,
           'cpu' => vm.spec['cpu'],
           'memory' => vm.spec['req_mem'],
