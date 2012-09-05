@@ -1,7 +1,8 @@
 module Serengeti
   module CloudManager
 
-    class FogDummy < BaseObject
+    class FogDummy
+      include Serengeti::CloudManager::Utils
       def initialize(cloud)
         @cloud = cloud
         @ip_start = 2
@@ -16,7 +17,6 @@ module Serengeti
       def cloud
         @cloud
       end
-
 
       def login()
         cloud.get_provider_info
@@ -124,6 +124,9 @@ module Serengeti
         if @debug_dc[0]['vms']
           @debug_dc[0]['vms'].select { |vm| vm['host_mob'] == host_mob['mob'] }
         end
+      end
+
+      def folder_create(dc_mob, folder_path)
       end
 
       def get_disks_by_vm_mob(vm_mob, options={}) vm_mob["disks"] end

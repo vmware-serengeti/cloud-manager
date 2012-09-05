@@ -29,7 +29,8 @@ module Serengeti
       def_const_value :placement_rp_place_enable, true
     end
 
-    class PlacementService < BaseObject
+    class PlacementService
+      include Serengeti::CloudManager::Utils
       def initialize(cloud)
         @rc_services = {}
         @place_engine = cloud.create_service_obj(config.placement_engine.first, cloud) # Currently, we only use the first engine

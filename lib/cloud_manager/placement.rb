@@ -21,7 +21,7 @@ module Serengeti
       def_const_value :vm_sys_disk_size     , 05 * 1024 #MB
     end
 
-    class Placement < BaseObject
+    class Placement
       def initialize(cloud)
         @cloud = cloud
       end

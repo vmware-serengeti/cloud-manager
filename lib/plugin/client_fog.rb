@@ -24,9 +24,10 @@ module Serengeti
       def_const_value :ha_service_ready, true
     end
 
-    class FogAdaptor < BaseObject
+    class FogAdaptor
       DISK_SIZE_TIMES = 1
       include Serengeti::CloudManager::Parallel
+      include Serengeti::CloudManager::Utils
       def initialize(cloud)
         @cloud = cloud
         @connection = nil

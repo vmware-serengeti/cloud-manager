@@ -16,10 +16,11 @@
 # @version 0.5.1
 module Serengeti
   module CloudManager
-    class VmServer < BaseObject
+    class VmServer
       attr_accessor :error_code
       attr_accessor :error_msg
 
+      include Serengeti::CloudManager::Utils
       def initialize
         @plugin_vm = {}
       end
@@ -43,7 +44,8 @@ module Serengeti
       end
     end
 
-    class InnerServer < BaseObject
+    class InnerServer
+      include Serengeti::CloudManager::Utils
       def hosts; @cm_server.hosts; end
       def rps; @cm_server.rps; end
       def dc_resource; @cm_server.dc_resource; end
@@ -69,7 +71,7 @@ module Serengeti
 
     end
 
-    class CMService < BaseObject
+    class CMService
       attr_reader :hosts
       attr_reader :rps
       attr_reader :vm_groups
@@ -77,6 +79,7 @@ module Serengeti
       attr_reader :clusters
       attr_reader :port_groups
 
+      include Serengeti::CloudManager::Utils
       def initialize(cloud)
         @cloud = cloud
       end

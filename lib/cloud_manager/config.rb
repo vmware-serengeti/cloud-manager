@@ -23,16 +23,6 @@ module Serengeti
       @@self_config
     end
 
-    class BaseObject
-      def logger
-        Serengeti::CloudManager.logger
-      end
-
-      def config
-        Serengeti::CloudManager.config
-      end
-    end
-
     class Config
       def self.def_const_value(name, value)
         define_method("#{name}") do

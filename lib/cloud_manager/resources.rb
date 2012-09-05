@@ -17,7 +17,9 @@
 
 module Serengeti
   module CloudManager
-    class Resources < BaseObject
+    class Resources
+
+      include Serengeti::CloudManager::Utils
       class Datacenter
         attr_accessor :mob
         attr_accessor :name

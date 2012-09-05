@@ -20,7 +20,8 @@ module Serengeti
   module CloudManager
 
     class Cloud
-      class NetworkRes < BaseObject
+      class NetworkRes
+        include Serengeti::CloudManager::Utils
         IP = '(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])'
         def initialize(networking)
           @net_config = networking

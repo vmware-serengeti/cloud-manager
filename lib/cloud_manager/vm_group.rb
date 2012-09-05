@@ -191,7 +191,7 @@ module Serengeti
     end
 
     # This structure contains the group information
-    class VmGroupInfo < BaseObject
+    class VmGroupInfo
       attr_accessor :name       #Group name
       attr_accessor :req_info   #class ResourceInfo
       attr_reader   :vc_req
