@@ -26,6 +26,8 @@ Gem::Specification.new do |s|
     "lib/cloud_manager/cloud_deploy.rb",
     "lib/cloud_manager/cloud_operations.rb",
     "lib/cloud_manager/cloud_progress.rb",
+    "lib/cloud_manager/cloud_update.rb",
+    "lib/cloud_manager/cloud_nodes.rb",
     "lib/cloud_manager/cluster.rb",
     "lib/cloud_manager/config.rb",
     "lib/cloud_manager/deploy.rb",
