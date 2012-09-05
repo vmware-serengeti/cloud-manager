@@ -127,7 +127,7 @@ module Serengeti
         end
       end
 
-      def rack_used(virtual_node, candidates)
+      def rack_used_candidates(candidates, virtual_node)
         return candidates if config.cloud_rack_to_hosts.empty?
         #Add rack checking
         rack_type = nil
@@ -173,8 +173,8 @@ module Serengeti
       def least_used_host(candidates, virtual_node)
         least_cnt = nil
         candidate = nil
-        candidates = rack_used(virtual_node, candidates)
-        logger.debug("rack_used return :#{candidates.keys.pretty_inspect}")
+        candidates = rack_used_candidates(candidates, virtual_node)
+        logger.debug("rack used return :#{candidates.keys.pretty_inspect}")
  
         candidates.each do |host, _|
           # this host is never used before, return

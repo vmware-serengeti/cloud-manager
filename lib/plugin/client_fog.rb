@@ -126,7 +126,6 @@ module Serengeti
         check_connection
         task_state = compute_op { |con| con.vm_power_off(\
                   'instance_uuid' => vm.instance_uuid, 'force'=>false, 'wait' => true) }
-        #task_state #'success', 'running', 'queued', 'error'
       end
 
       def vm_power_on(vm)
@@ -224,29 +223,6 @@ module Serengeti
       def ct_mob_ref_to_attr_hash(mob_ref, attr_s)
         check_connection
         compute_op { |con| con.ct_mob_ref_to_attr_hash(mob_ref, attr_s) }
-      end
-
-      ###################################################
-      # query interface
-
-      FROM_WHERE = {
-        :vm_moid => :_by_moid  , :dc_mob => :_by_dc_mob, :path     => :_by_path,
-        :dc_mob => :_by_dc_mob, :cs_path => :_by_path  , :cs_mob => :_by_cs_mob,
-        :host_mob => :_by_host_mob , :vm_mob => :_by_vm_mob,
-        }
-      GET_OBJ = {
-        :vm_mob => :vm_mob_ref, :portgroups => :portgroups, :clusters => :cluster,
-        :cs_mob_ref => :cs_mob_ref, :hosts => :hosts, :rps => :rps, :ds_name => :ds_name,
-        :datastores => :datastores, :vms => :vms, :disks => :disks,
-        :vm_properties => :vm_properties,
-      }
-
-      def get_value(thing, from, *arg)
-        raise "Unknown things: #{thing}" if !GET_OBJ.key?(thing)
-        raise "Unknown from: #{from}" if !from && !FROM_WHERE.key?(from)
-        check_connection
-        func = "get_#{GET_OBJ[thing]}_by_#{FROM_WHERE[from]}"
-        compute_op { |con| con.__send__(func, *arg) }
       end
 
       # needs vm mobid to get the properties of this vm
