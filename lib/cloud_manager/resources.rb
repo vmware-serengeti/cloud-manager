@@ -175,7 +175,7 @@ module Serengeti
         attr = @client.ct_mob_ref_to_attr_hash(datacenter_mob, "DC")
 
         datacenter                      = Datacenter.new
-        datacenter.mob                  = attr[:mo_ref]
+        datacenter.mob                  = attr["mo_ref"]
         datacenter.name                 = datacenter_name
 
         logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
