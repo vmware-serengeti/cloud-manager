@@ -113,7 +113,6 @@ module Serengeti
       attr_accessor :disk_pattern
       attr_accessor :rack_id
       attr_accessor :template_id
-      attr_accessor :affinity
       attr_accessor :ha
       attr_accessor :vm_folder_path
 
@@ -126,7 +125,6 @@ module Serengeti
           @disk_size *= DISK_SIZE_UNIT_CONVERTER
           @disk_type = rp["storage"]["type"]
           @disk_type = DISK_TYPE_SHARE if @disk_type != DISK_TYPE_LOCAL
-          @affinity = rp["affinity"] || "none"
           @template_id = rp["template_id"]
           @ha = rp["ha"] #Maybe 'on' 'off' 'ft'
           @ha = 'off' if rp["ha"].nil?
