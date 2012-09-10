@@ -42,12 +42,25 @@ module Serengeti
         group_each_by_threads(group, :callee=>'destory vm') { |vm| vm.delete }
       end
 
+      def create_vm_folders(vm_groups_info)
+        vm_groups_info.values.each do |vm_group_info|
+          @client.folder_create(@dc_resources.mob, vm_group_info.req_info.vm_folder_path)
+        end
+      end
+
       def cluster_deploy(vm_placement, options={})
         policy = config.deploy_policy
         policy.downcase!
         policy = DEPLOY_GROUP_POLICY.first if !DEPLOY_GROUP_POLICY.include?(policy)
 
         logger.debug("Enter cluster_deploy policy: #{policy}")
+
+        logger.debug("create vm folder hiraechy before clone/delete vms")
+
+        if vm_placement.first['act'] == 'create_vm_folders'
+          create_vm_folders(vm_placement.first['group'])
+          vm_placement.shift
+        end
 
         #Begin to parallel deploy vms
         order = ( policy == DEPLOY_GROUP_ORDER )

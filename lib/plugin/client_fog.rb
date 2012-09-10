@@ -143,6 +143,27 @@ module Serengeti
         result = compute_op { |con| con.vm_create_disk(info) }
       end
 
+     def folder_create(dc_mob, folder_path)
+        check_connection
+        logger.debug("create vm folder #{folder_path}")
+        begin
+          result = compute_op {|con| con.folder_create(dc_mob, folder_path) }
+        rescue => e
+          logger.error("failed to create vm folder #{folder_path} due to exception #{e}")
+          raise "vm folder #{folder_path} creation failure"
+        end
+      end
+
+      def folder_delete(dc_mob, folder_path)
+        check_connection
+        logger.debug("delete vm folder #{folder_path}")
+        begin
+          result = compute_op {|con| con.folder_delete(dc_mob, folder_path) }
+        rescue => e
+          logger.error("failed to delete vm folder #{folder_path} due to exception #{e}")
+        end
+      end
+
       # Update vm's network configuration
       def vm_update_network(vm, options = {})
         check_connection

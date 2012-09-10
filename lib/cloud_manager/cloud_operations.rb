@@ -30,10 +30,10 @@ module Serengeti
         logger.info("enter #{act} cluster ... ")
         create_cloud_provider(cloud_provider)
         result = prepare_working(cluster_info, cluster_data)
-        dc_resources = result[:dc_res]
+        @dc_resources = result[:dc_res]
 
         @status = action
-        matched_vms = dc_resources.clusters.values.map { |cs| cs.hosts.values.map { |host| host.vms.values } }.flatten
+        matched_vms = @dc_resources.clusters.values.map { |cs| cs.hosts.values.map { |host| host.vms.values } }.flatten
         #for delete action, delete whole cluster currently
         if action == CLUSTER_DELETE
           matched_vms = matched_vms.select { |vm| vm_is_this_cluster?(vm.name) }
@@ -64,6 +64,12 @@ module Serengeti
         action_process(CLOUD_WORK_DELETE, task) do
           vms = cloud_vms_op(@cloud_provider, @cluster_info, @cluster_data, CLUSTER_DELETE)
           group_each_by_threads(vms, :callee=>'delete vm') { |vm| vm.delete }
+
+          # trick: get the root vm folder of this hadoop cluster from its node group's
+          # vm folder path
+          root_folder = cluster_info["groups"].first["vm_folder_path"].split('/')[0,2].join('/')
+          # delete the vm folder after all vms been destroyed
+          @client.folder_delete(@dc_resources.mob, root_folder)
         end
       end
 

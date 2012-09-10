@@ -45,14 +45,15 @@ module Serengeti
               ###########################################################
               #Caculate cluster placement
               result = prepare_working(cluster_info, cluster_data)
-              @dc_resources = dc_resources = result[:dc_res]
+              @dc_resources = result[:dc_res]
+
               vm_groups_existed = result[:group_existed]
               vm_groups_input   = result[:group_input]
 
               logger.info("Begin placement")
               @status = CLUSTER_PLACE
               place_obj = PlacementService.new(self)
-              placement = place_obj.cluster_placement(dc_resources, vm_groups_input, vm_groups_existed)
+              placement = place_obj.cluster_placement(@dc_resources, vm_groups_input, vm_groups_existed)
               @placement_failed = placement[:failed_num]
               if placement[:error_msg].size > 0
                 placement[:error_msg].each { |m| set_cluster_error_msg(m) }
@@ -75,7 +76,7 @@ module Serengeti
               @status = CLUSTER_RE_FETCH_INFO
               logger.info("reload datacenter resources from cloud")
 
-              logger.obj2file(dc_resources, "dc_resource-roll-back-#{cycle_num}")
+              logger.obj2file(@dc_resources, "dc_resource-roll-back-#{cycle_num}")
               cycle_num += 1
             rescue => e
               logger.warn("#{e} - #{e.backtrace.join("\n")}")

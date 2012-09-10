@@ -273,9 +273,11 @@ module Serengeti
             raise error_msg
           end
           logger.debug("out group_place:#{group_place.pretty_inspect}")
+
           @vm_placement[:action] << { 'act' => 'group_deploy', 'group' => group_place }
         end
 
+        @vm_placement[:action].unshift({ 'act' => 'create_vm_folders', 'group' => vm_groups_input})
         logger.debug("vm_placement: #{@vm_placement[:action].pretty_inspect}" )
         logger.obj2file(@vm_placement, 'vm_placement_2')
         @vm_placement
