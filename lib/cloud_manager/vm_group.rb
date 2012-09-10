@@ -131,6 +131,7 @@ module Serengeti
           @ha = rp["ha"] #Maybe 'on' 'off' 'ft'
           @ha = 'off' if rp["ha"].nil?
           @rack_id = nil
+          @vm_folder_path = rp["vm_folder_path"]
         end
       end
     end
