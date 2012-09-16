@@ -119,7 +119,6 @@ module Serengeti
       attr_accessor :hypervisor
       attr_accessor :tools_state
       attr_accessor :tools_version
-      attr_accessor :ip_address
       attr_accessor :is_a_template
       attr_accessor :rp_cluster_name
       attr_accessor :rp_cluster_mob
@@ -132,7 +131,6 @@ module Serengeti
       attr_accessor :can_ha
       attr_accessor :ha_enable
       attr_accessor :ft_enable
-      attr_accessor :deleted
       def succeed?;  ready?  end
       def finished?; succeed? || (@error_code.to_i != 0)  end
       attr_accessor :network_config_json
@@ -188,11 +186,15 @@ module Serengeti
 
       def state; @power_state end
       def dns_name; @hostname end
+
+      def ip_address
+        (@power_state == "poweredOn" && !@deleted) ? @ip_address : ''
+      end
       def public_ip_address; ip_address end
       def private_ip_address; ip_address end
       def ipaddress; ip_address end
-      def ip_address
-        (@power_state == "poweredOn" && !deleted) ? @ip_address : ''
+      def ip_address=(ip)
+        @ip_address = ip
       end
 
       def initialize(vm_name, cloud)
@@ -231,7 +233,6 @@ module Serengeti
       # return service wanted values.
       def to_hash
         progress = VM_ACT_PROGRES[@action]
-        logger.debug("vm :[#{@name}] to hash")
         attrs = {}
         attrs[:name]        = @name
         attrs[:hostname]    = @host_name
@@ -244,8 +245,8 @@ module Serengeti
         attrs[:succeed]     = ready? # FIXME should use 'vm.succeed?'
         attrs[:progress]    = get_progress
 
-        attrs[:created]     = deleted ? false : @created
-        attrs[:deleted]     = deleted
+        attrs[:created]     = @deleted ? false : @created
+        attrs[:deleted]     = @deleted
         attrs[:rack]        = @rack if @rack
 
         attrs[:error_code]  = @error_code.to_i
@@ -428,7 +429,7 @@ module Serengeti
         @status = VM_STATE_WAIT_IP
         start_time = Time.now.to_i
         return if !cloud_op('Wait IP') do
-          logger.debug("Checking vm ip address.")
+          logger.debug("Checking vm #{name} ip address #{@ip_address}.")
           client.get_vm_properties_by_vm_mob(self)
           while (ip_address.nil? || ip_address.empty?)
             client.get_vm_properties_by_vm_mob(self)
