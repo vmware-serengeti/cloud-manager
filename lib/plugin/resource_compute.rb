@@ -54,9 +54,8 @@ module Serengeti
           total_memory(vmServers)
           logger.debug("query hosts: #{info['hosts']} total_mem:#{@total_memory}")
           return info['hosts'].select { |h| hosts[h].real_free_memory > @total_memory if hosts.key?(h) }
-        else
-          return info['hosts']
         end
+        info['hosts']
       end
 
       def recommendation(vmServers, hostnames)
