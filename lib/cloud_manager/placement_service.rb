@@ -124,11 +124,11 @@ module Serengeti
         vm_servers_group
       end
 
-      def create_vm_instances(group, scores, selected_host)
-        logger.debug("specs:#{group[:specs]}")
+      def create_vm_instances(specs, scores, selected_host)
+        logger.debug("specs:#{specs}")
         vms = []
-        group[:specs].each_index do |idx|
-          spec = group[:specs][idx]
+        specs.each_index do |idx|
+          spec = specs[idx]
           vm = VmInfo.new(spec['name'], cloud)
           cluster_hosts = cloud.hosts
           host = cluster_hosts[selected_host]
@@ -156,15 +156,21 @@ module Serengeti
         group_place = []
         virtual_nodes = @place_engine.get_virtual_nodes(virtual_group, existed_vms, placed_vms)
         return [] if virtual_nodes.empty?
+        all_hosts = hosts
 
-        #logger.debug("vns:#{virtual_nodes.pretty_inspect}")
-        vm_servers_groups = create_vm_with_each_resource(virtual_nodes)
+        logger.debug("vns:#{virtual_nodes.pretty_inspect}")
 
-        vm_servers_groups.each do |group|
+        virtual_nodes.each do |vnode|
+          vm = VmServer.new
+          logger.debug("vnode:#{vnode.pretty_inspect}")
+          specs = vnode.map { |spec| spec.to_spec }
+          service_loop { |service| vm.init_with_vm_service(service, specs) }
+
           # Check capacity
           logger.debug("Check capacity: #{hosts.pretty_inspect}")
           service_loop do |service|
-            hosts = service.check_capacity(group[:vm].vm(service.name), hosts)
+            logger.debug("check service name: #{service.name}")
+            hosts = service.check_capacity(vm.vm(service.name), hosts)
             logger.debug("after #{service.name} check: #{hosts.pretty_inspect}")
             raise PlacementException, "Do not find any hosts can match resources requirement after #{service.name} check" if hosts.nil?
           end
@@ -173,11 +179,11 @@ module Serengeti
           scores = {}
           service_loop do |service|
             # service will return {host1=>vm1, host2=>vm2}
-            scores[service.name] = service.evaluate_hosts(group[:vm].vm(service.name), hosts)
+            scores[service.name] = service.evaluate_hosts(vm.vm(service.name), hosts)
           end
 
           sore_size = remove_empty_scores!(scores)
-          raise PlacementException, 'Resource service cannot find any hosts to match resources requirement' if sore_size <= 0
+          raise PlacementException, 'placement engine can not place those vnodes' if sore_size <= 0
 
           #logger.debug("scores: #{scores.pretty_inspect}")
           # place engine to decide how to place
@@ -185,7 +191,7 @@ module Serengeti
           success = true
           selected_host = nil
           loop do
-            selected_host = @place_engine.select_host(group[:vnode], scores)
+            selected_host = @place_engine.select_host(vnode, scores, all_hosts)
             raise PlacementException,'Do not select suitable host' if selected_host.nil?
             logger.debug("host select :#{selected_host}")
 
@@ -209,10 +215,10 @@ module Serengeti
 
           if success
             logger.debug("assign to #{selected_host}")
-            @place_engine.assign_host(group[:vnode], selected_host)
+            @place_engine.assign_host(vnode, selected_host)
 
             # PLACE VM, just for fast devlop. It will remove, if finish vm's deploy service
-            vms = create_vm_instances(group, scores, selected_host)
+            vms = create_vm_instances(specs, scores, selected_host)
 
             vms.each { |vm| cloud.state_sub_vms_set_vm(:placed, vm) }
             group_place << vms
@@ -244,13 +250,14 @@ module Serengeti
         virtual_groups = @place_engine.get_virtual_groups(vm_groups_input)
 
         group_place = []
-        virtual_groups.each_value do |virtual_group|
+        virtual_groups.each do |gp_name, virtual_group|
           # check information and check error
           place_err_msg = nil
           # Group's Resource pool check.
           hosts = []
           # hosts' info is [hostname1, hostname2, ... ]
           if config.placement_rp_place_enable
+            logger.debug("vg_name: #{gp_name}")
             place_rps = group_placement_rps(dc_resource, virtual_group.to_vm_groups)
             next if place_rps.nil?
             logger.debug("place_rps: #{place_rps.pretty_inspect}")
@@ -266,22 +273,29 @@ module Serengeti
                                     cloud.state_sub_vms(:placed))
           rescue PlacementException => e
             ## can not alloc virual_group anymore
-            error_msg = "Can not alloc resource for vm group #{virtual_group.name}: #{e.message}"
+            error_msg = "Can not alloc resource for vm group #{gp_name}: #{e.message}"
             set_placement_error_msg(error_msg)
             @vm_placement[:failed_num] += 1
-            logger.error("VM group #{virtual_group.name} failed to place vm, "\
+            logger.error("VM group #{gp_name} failed to place vm, "\
                          "total failed: #{@vm_placement[:failed_num]}.") if config.debug_placement
             raise error_msg
           end
-          logger.debug("out group_place:#{group_place.pretty_inspect}")
-
+          logger.debug("out group_place vms placement")
+          group_place.each { |vm| logger.debug("#{vm.name} => h:#{vm.host_name} r:#{vm.rack}") }
           @vm_placement[:action] << { 'act' => 'group_deploy', 'group' => group_place }
         end
 
         @vm_placement[:action].unshift({ 'act' => 'create_vm_folders', 'group' => vm_groups_input})
-        logger.debug("vm_placement: #{@vm_placement[:action].pretty_inspect}" )
+        #logger.debug("vm_placement: #{@vm_placement[:action].pretty_inspect}" )
+        logger.debug("vm_placement vms group placement")
+        @vm_placement[:action].each { |g| log_group_place(g['group']) if g['act'] == 'group_deploy' }
         logger.obj2file(@vm_placement, 'vm_placement_2')
         @vm_placement
+      end
+
+      def log_group_place(group_place)
+        #logger.debug("group_place: #{group_place.pretty_inspect}")
+        group_place.each { |vm| logger.debug("#{vm.name} => h:#{vm.host_name} r:#{vm.rack}") }
       end
     end
 

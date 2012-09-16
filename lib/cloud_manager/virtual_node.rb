@@ -17,16 +17,6 @@
 module Serengeti
   module CloudManager
     # associated vm groups can be put in a Virtual Group
-    class VirtualGroup
-      attr_accessor :vm_groups
-
-      def initialize(vm_groups)
-        @vm_groups = []
-        vm_groups.each { | vm_group | @vm_groups << vm_group }
-      end
-
-    end
-
     class VmSpec
       attr_accessor :name
       attr_accessor :group_name
@@ -38,12 +28,52 @@ module Serengeti
         @spec = vm_group.to_spec || {}
       end
 
+      def inspect
+        "Spec:#{@spec.pretty_inspect}"
+      end
+
       def to_spec
         spec["name"] = @name
         spec
       end
-
     end
+
+    class VirtualGroup
+      def initialize(group)
+        @groups = [group]
+      end
+      def inspect
+        @groups.map { |group| group.name }
+      end
+
+      def first; @groups.first end
+
+      def concat(groups)
+        @groups.concat(groups)
+      end
+
+      def each &blk
+        @groups.each &blk
+      end
+
+      def map &blk; @groups.map &blk; end
+
+      def not_strict?
+        @groups.each { |group| return false if group.is_strict? }
+        true
+      end
+
+      def to_vm_groups
+        @groups
+      end
+
+      def size
+        @groups.size
+      end
+
+      def pop; @groups.pop; end
+    end
+
 
     #vms that needs to be placed on the same host formalize a virtual node
     class VirtualNode
@@ -51,6 +81,10 @@ module Serengeti
 
       def initialize()
         @vm_specs = []
+      end
+
+      def inspect
+        @vm_specs.map { |spec| spec.inspect }.join('###')
       end
 
       def each &blk
@@ -63,6 +97,18 @@ module Serengeti
 
       def add (vm_spec)
         @vm_specs << vm_spec
+      end
+
+      def del (vm_spec)
+        @vm_specs.delete(vm_spec)
+      end
+
+      def size
+        @vm_specs.size
+      end
+
+      def empty?
+        @vm_specs.empty?
       end
 
       def to_s

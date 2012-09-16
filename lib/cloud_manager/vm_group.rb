@@ -144,17 +144,18 @@ module Serengeti
       SUPPROT_RACK_TYPE = [SAMERACK, ROUNDROBIN]
       def initialize(options = {})
         @type   = options["type"].downcase
-        raise Serengeti::CloudManager::PlacementException, "Do not support this rack type:#{options["type"]}."\
-          if !SUPPROT_RACK_TYPE.include?(@type)
+        raise Serengeti::CloudManager::PlacementException,\
+          "Do not support this rack type:#{options["type"]}." if !SUPPROT_RACK_TYPE.include?(@type)
 
         @racks  = []
         racks  = options["racks"] || config.cloud_rack_to_hosts.keys
         racks_used = racks & config.cloud_rack_to_hosts.keys
         racks_diff = racks - config.cloud_rack_to_hosts.keys
         logger.warn("rack [#{rack_diff}] not in cluster rack info.") if !racks_diff.empty? 
-        raise Serengeti::CloudManager::PlacementException, "#{racks} do not in cluster definition." if racks_used.empty?
-        raise Serengeti::CloudManager::PlacementException, "More than one rack #{racks} in SameRack option."\
-          if racks_used.size > 1 and @type == SAMERACK
+        raise Serengeti::CloudManager::PlacementException,\
+          "#{racks} do not in cluster definition." if racks_used.empty?
+        raise Serengeti::CloudManager::PlacementException,\
+          "More than one rack #{racks} in SameRack option." if racks_used.size > 1 and @type == SAMERACK
         @racks = racks_used
         logger.debug("group rack: #{racks} used: #{racks_used} diff: #{racks_diff} ")
       end
@@ -163,6 +164,7 @@ module Serengeti
     class VmGroupAssociation
       attr_accessor :referred_group
       attr_accessor :associate_type
+      ASSOC_STRICT = "STRICT"
 
       def initialize(options = {})
         @referred_group = options["reference"] if options["reference"]
@@ -200,6 +202,7 @@ module Serengeti
       attr_accessor :network_res
       attr_accessor :vm_ids    #classes VmInfo
       attr_accessor :placement_policies
+      attr_accessor :created_num
 
       include Serengeti::CloudManager::Utils
       def initialize(rp=nil)
@@ -210,6 +213,7 @@ module Serengeti
         @name = rp["name"]
         @instances = rp["instance_num"]
         @req_rps = {}
+        @created_num = nil
         @placement_policies = nil
         if rp["placement_policies"]
           @placement_policies = VmGroupPlacementPolicy.new(rp["placement_policies"])
@@ -290,6 +294,11 @@ module Serengeti
         return nil if @placement_policies.nil? or @placement_policies.group_associations.size == 0
         return @placement_policies.group_associations[0].associate_type
       end
+
+      def is_strict?
+        associate_type == VmGroupAssociation::ASSOC_STRICT
+      end
+
     end
 
   end
