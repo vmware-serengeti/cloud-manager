@@ -96,12 +96,11 @@ module Serengeti
           vm_group = vm_groups[group_name]
 
           vm_match_host_names = suitable_host_with_rp(vm_group, spec['req_mem'])
-          if match_host_names.nil?
-            match_host_names = vm_match_host_names
-          else
-            match_host_names &= vm_match_host_names
-          end
+          match_host_names ||= vm_match_host_names
+
+          match_host_names &= vm_match_host_names
         end
+        return [] if match_host_names.nil?
         hostnames & match_host_names
       end
 
