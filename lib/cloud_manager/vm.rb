@@ -340,7 +340,14 @@ module Serengeti
 
       # Create vm structure from cloud fetching
       def self.fetch_vm_from_cloud(vm_mob, cloud)
-        vm_existed = cloud.client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
+        vm_existed = nil
+        begin
+          # vm_mob may be stale, catch exception here
+          vm_existed = cloud.client.ct_mob_ref_to_attr_hash(vm_mob, "VM")
+        rescue => e
+          return nil
+        end
+
         return nil if block_given? and !yield(vm_existed["name"])
 
         client = cloud.client
