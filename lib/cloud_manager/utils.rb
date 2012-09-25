@@ -235,6 +235,7 @@ module Serengeti
       end
 
       def vm_match_targets?(vm_name, targets)
+        return true if targets.nil?
         logger.debug("vm:#{vm_name} match?")
         targets.each{ |target|
           return true if vm_match_one_target?(vm_name, target)
@@ -251,6 +252,11 @@ module Serengeti
         return false if (target_info["num"] && vm_info["num"] != target_info["num"])
         logger.debug("vm:#{vm_name} match: #{target.pretty_inspect}")
         true
+      end
+
+      def vm_is_exited_in_cloud?(vm_mob)
+        logger.debug("vm_mob: #{vm_mob} in cloud? #{config.cloud_existed_vms_mob.key?(vm_mob)}")
+        config.cloud_existed_vms_mob.key?(vm_mob)
       end
 
       def vm_is_this_cluster?(vm_name)

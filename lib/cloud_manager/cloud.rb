@@ -35,11 +35,12 @@ module Serengeti
       def_const_value :cloud_template_id, 'vm-0'
       def_const_value :cloud_cluster_share_datastore_pattern, []
       def_const_value :cloud_cluster_local_datastore_pattern, []
-      def_const_value :vc_local_datastore_pattern, []
-      def_const_value :vc_share_datastore_pattern, []
       def_const_value :cloud_rack_to_hosts, {}
       def_const_value :cloud_hosts_to_rack, {}
-    end
+      def_const_value :cloud_existed_vms_mob, {}
+      def_const_value :vc_local_datastore_pattern, []
+      def_const_value :vc_share_datastore_pattern, []
+     end
 
     class Cloud
       attr_accessor :name
@@ -103,6 +104,7 @@ module Serengeti
         @placement_failed = 0
         @cluster_failed_num = 0
         @cloud_error_msg_que = []
+        @existed_vm_mobs = {}
       end
 
       def state_vms_init
@@ -247,9 +249,20 @@ module Serengeti
         end
       end
 
+      def create_existed_vm_mobs_from_cluster_data(cluster_data)
+        return {} if cluster_data.nil? or cluster_data['groups'].nil?
+        cluster_existed_vms = {}
+        cluster_data['groups'].each do |group|
+          group['instances'].each { |vm| cluster_existed_vms[vm['moid']] = vm['name'] }
+        end
+      cluster_existed_vms
+      end
+
       def prepare_working(cluster_info, cluster_data)
         logger.debug("Create vm group from input...")
         vm_groups_input = create_vm_group_from_input(cluster_info, @cloud_provider.vc_datacenter)
+        config.cloud_existed_vms_mob = create_existed_vm_mobs_from_cluster_data(cluster_data)
+        logger.debug("existed vm mobs:#{config.cloud_existed_vms_mob.pretty_inspect}")
         logger.obj2file(vm_groups_input, 'vm_groups_input')
 
         if @client.nil?

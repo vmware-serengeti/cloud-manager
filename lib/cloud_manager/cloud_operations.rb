@@ -19,9 +19,10 @@ module Serengeti
   module CloudManager
     class Cloud
       CLUSTER_ACTION_MESSAGE = {
-        CLUSTER_DELETE => 'delete',
-        CLUSTER_START  => 'start',
-        CLUSTER_STOP   => 'stop',
+        CLUSTER_DELETE  => 'delete',
+        CLUSTER_START   => 'start',
+        CLUSTER_STOP    => 'stop',
+        CLUSTER_LIST    => 'list'
       }
 
       def cloud_vms_op(cloud_provider, cluster_info, cluster_data, action)
@@ -34,26 +35,27 @@ module Serengeti
 
         @status = action
         matched_vms = @dc_resources.clusters.values.map { |cs| cs.hosts.values.map { |host| host.vms.values } }.flatten
+        logger.debug("operate vm list before :#{matched_vms.map {|v| v.name}}")
         #for delete action, delete whole cluster currently
         if action == CLUSTER_DELETE
-          matched_vms = matched_vms.select { |vm| vm_is_this_cluster?(vm.name) }
+          matched_vms = matched_vms.select { |vm| vm_is_this_cluster?(vm.name) and vm_is_exited_in_cloud?(vm.mob) }
         else
-          matched_vms = matched_vms.select { |vm| vm_match_targets?(vm.name, @targets) }
+          matched_vms = matched_vms.select { |vm| vm_match_targets?(vm.name, @targets) and vm_is_exited_in_cloud?(vm.mob)}
         end
 
-        logger.debug("operate vm list:#{matched_vms.pretty_inspect}")
+        logger.debug("operate vm list:#{matched_vms.map {|v| v.name}}")
         logger.debug("vms name: #{matched_vms.collect{ |vm| vm.name }.pretty_inspect}")
 
         #logger.debug("#{act} all vm's")
         matched_vms
       end
 
-      def list_vms()
+      def list_vms(options = {})
         cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
         action_process(CLOUD_WORK_LIST, task) do
           logger.debug("enter list_vms...")
-          create_cloud_provider(cloud_provider)
-          prepare_working(cluster_info, cluster_data)
+          vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_LIST)
+          cluster_wait_ready(vms)
         end
         get_result.servers
       end
@@ -67,8 +69,11 @@ module Serengeti
 
           # trick: get the root vm folder of this hadoop cluster from its node group's
           # vm folder path
-          root_folder = cluster_info["groups"].first["vm_folder_path"].split('/')[0,2].join('/')
+
+          root_folder = cluster_info["groups"].first["vm_folder_path"]
+          break if root_folder.nil?
           # delete the vm folder after all vms been destroyed
+          root_folder = root_folder.split('/')[0,2].join('/')
           @client.folder_delete(@dc_resources.mob, root_folder)
         end
       end
@@ -78,7 +83,7 @@ module Serengeti
         action_process(CLOUD_WORK_START, task) do
           vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_START)
           vms.each { |vm| vm.action = VmInfo::VM_ACTION_START }
-          cluster_wait_ready(vms)
+          cluster_wait_ready(vms, :force_power_on=>true)
         end
       end
 

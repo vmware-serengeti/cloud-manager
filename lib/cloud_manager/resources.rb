@@ -302,6 +302,7 @@ module Serengeti
           host.free_memory        = host.total_memory.to_i - host.used_mem.to_i
           host.unaccounted_memory = 0
 
+          logger.debug("host datastore is: #{host.datastores.pretty_inspect}")
           host.share_datastores = fetch_datastores(host.datastores,
                                                    host.datacenter.share_datastore_pattern)
           logger.debug("warning: no matched sharestores in host:#{host.name}") if host.share_datastores.empty?
@@ -321,7 +322,8 @@ module Serengeti
         vm_mobs = @client.get_vms_by_host_mob(host_mob)
         return vms if vm_mobs.nil?
         vm_mobs.each do |vm_mob|
-          #logger.debug("vm_mob:#{vm_mob.pretty_inspect}")
+          logger.debug("host -- vm_mob:#{vm_mob['name']} @ #{vm_mob['mo_ref']}")
+          next if !vm_is_exited_in_cloud?(vm_mob['mo_ref'])
           vm = VmInfo.fetch_vm_from_cloud(vm_mob, @cloud) { |name| @cloud.vm_is_this_cluster?(name) }
           next if vm.nil?
 
