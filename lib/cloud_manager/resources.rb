@@ -323,7 +323,7 @@ module Serengeti
         return vms if vm_mobs.nil?
         vm_mobs.each do |vm_mob|
           vm = VmInfo.fetch_vm_from_cloud(vm_mob, @cloud) do |vm_info|
-            @cloud.vm_is_this_cluster?(vm_info['name']) and !vm_is_exited_in_cloud?(vm_info['mo_ref'])
+            @cloud.vm_is_this_cluster?(vm_info['name']) and vm_is_exited_in_cloud?(vm_info['mo_ref'])
           end
           next if vm.nil?
 
