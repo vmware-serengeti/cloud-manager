@@ -84,13 +84,17 @@ module Serengeti
         strict_group = {}
         vm_groups.each do |name, group_info|
           logger.debug("group:#{name}, ref:#{group_info.referred_group}")
-          if group_info.referred_group and vm_groups[group_info.referred_group].instance_per_host
-            if group_info.is_strict? and group_info.instance_per_host
-              strict_group[group_info.referred_group] ||= []
-              strict_group[group_info.referred_group].push(group_info)
-            else
-              leaf_groups.unshift(name)
-              leaf_groups.unshift(group_info.referred_group)
+          if group_info.referred_group
+            refer_group = vm_groups[group_info.referred_group]
+            raise "unknown referred group name:#{group_info.referred_group}" if refer_group.nil?
+            if refer_group.instance_per_host
+              if group_info.is_strict? and group_info.instance_per_host
+                strict_group[group_info.referred_group] ||= []
+                strict_group[group_info.referred_group].push(group_info)
+              else
+                leaf_groups.unshift(name)
+                leaf_groups.unshift(group_info.referred_group)
+              end
             end
           else
             leaf_groups.push(name)
@@ -133,7 +137,7 @@ module Serengeti
           group = @input_vm_groups[vm.spec['vm_group_name']]
           next if group.nil?
           next if group.rack_policy.nil?
-          logger.debug("rack group:#{group.pretty_inspect}")
+          #logger.debug("rack group:#{group.pretty_inspect}")
           if group.referred_group
             logger.debug("rack referred_group:#{group.referred_group}")
             referred_group[group.referred_group] = 1 
@@ -302,7 +306,6 @@ module Serengeti
       def assign_host(virtual_node, host_name)
         logger.debug("assign host " + host_name + " to virtual_node " + virtual_node.to_s)
 
-        # right now all nodes in virtual_node belongs to a single vm_group
         virtual_node.each do |spec|
           @host_map_by_group[spec.group_name][host_name] ||= 0
           @host_map_by_group[spec.group_name][host_name] += 1

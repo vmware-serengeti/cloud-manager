@@ -53,6 +53,7 @@ module Serengeti
       VM_ACTION_UPDATE  = 'update'
       VM_ACTION_START   = 'startup'
       VM_ACTION_STOP    = 'stop'
+      VM_ACTION_LIST    = 'list'
 
       VM_CREATE_PROCESS = {
         VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_BIRTH[:done] },
@@ -240,6 +241,7 @@ module Serengeti
         attrs[:ip_address]  = ip_address
         attrs[:status]      = progress ? progress[@status][:status] : ""
         attrs[:action]      = @status[:doing] #@status
+        attrs[:moid]        = @mob
 
         attrs[:finished]    = ready? # FIXME should use 'vm.finished?'
         attrs[:succeed]     = ready? # FIXME should use 'vm.succeed?'
@@ -405,7 +407,7 @@ module Serengeti
       end
 
       # wait vm is ready
-      def wait_ready
+      def wait_ready(options = {})
         logger.debug("vm:#{name} can ha?:#{can_ha}, enable ? #{ha_enable}")
         if !ha_enable && can_ha?
           return if !cloud_op('Disable HA') { client.vm_set_ha(self, ha_enable) }
@@ -425,28 +427,32 @@ module Serengeti
         end
 
         # Power On vm
-        @status = VM_STATE_POWER_ON
-        logger.debug("vm:#{name} power:#{power_state}")
-        if power_state == 'poweredOff'
-          return if !cloud_op('Power on') { client.vm_power_on(self) }
-          logger.debug("#{name} has poweron")
+        if options[:force_power_on]
+          @status = VM_STATE_POWER_ON
+          logger.debug("vm:#{name} power:#{power_state}")
+          if power_state == 'poweredOff'
+            return if !cloud_op('Power on') { client.vm_power_on(self) }
+            logger.debug("#{name} has poweron")
+          end
         end
 
         # Wait IP return
-        @status = VM_STATE_WAIT_IP
-        start_time = Time.now.to_i
-        return if !cloud_op('Wait IP') do
-          logger.debug("Checking vm #{name} ip address #{@ip_address}.")
-          client.get_vm_properties_by_vm_mob(self)
-          while (ip_address.nil? || ip_address.empty?)
+        if power_state == 'poweredOn'
+          @status = VM_STATE_WAIT_IP
+          start_time = Time.now.to_i
+          return if !cloud_op('Wait IP') do
+            logger.debug("Checking vm #{name} ip address #{@ip_address}.")
             client.get_vm_properties_by_vm_mob(self)
-            #FIXME check vm tools status
-            wait_time = Time.now.to_i - start_time
-            logger.debug("vm:#{name} wait #{wait_time}/#{config.wait_ip_timeout_sec}s ip: #{ip_address}")
-            sleep(config.wait_ip_sleep_sec)
+            while (ip_address.nil? || ip_address.empty?)
+              client.get_vm_properties_by_vm_mob(self)
+              #FIXME check vm tools status
+              wait_time = Time.now.to_i - start_time
+              logger.debug("vm:#{name} wait #{wait_time}/#{config.wait_ip_timeout_sec}s ip: #{ip_address}")
+              sleep(config.wait_ip_sleep_sec)
 
-            if (wait_time) > config.wait_ip_timeout_sec
-              raise DeployException, "#{name} wait IP time out (#{wait_time}s, please check ip conflict. )"
+              if (wait_time) > config.wait_ip_timeout_sec
+                raise DeployException, "#{name} wait IP time out (#{wait_time}s, please check ip conflict. )"
+              end
             end
           end
         end
@@ -454,7 +460,7 @@ module Serengeti
         # VM is ready
         @status = VM_STATE_DONE
         mov_vm(:existed, :finished)
-        logger.debug("vm :#{name} started")
+        logger.debug("vm :#{name} done")
       end
 
       # Stop VM in cloud

@@ -39,6 +39,7 @@ module Serengeti
       CLUSTER_DONE      = 'Done'
       CLUSTER_START     = 'Starting'
       CLUSTER_STOP      = 'Stoping'
+      CLUSTER_LIST      = 'Listing'
 
       CLUSTER_CREATE_PROCESS = {
         CLUSTER_BIRTH           => [0, 1],

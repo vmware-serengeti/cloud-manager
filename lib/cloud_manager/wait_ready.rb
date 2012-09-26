@@ -19,9 +19,9 @@ module Serengeti
   module CloudManager
 
     class Cloud
-      def cluster_wait_ready(vm_pool)
+      def cluster_wait_ready(vm_pool, options = {})
         logger.debug("wait all existed vms poweron and return their ip address")
-        group_each_by_threads(vm_pool, :callee=>'wait vm ready') { |vm| vm.wait_ready }
+        group_each_by_threads(vm_pool, :callee=>'wait vm ready') { |vm| vm.wait_ready(options) }
         logger.info("Finish all waiting")
         "finished"
       end

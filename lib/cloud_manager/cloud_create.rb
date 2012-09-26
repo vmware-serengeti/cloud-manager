@@ -70,7 +70,7 @@ module Serengeti
               logger.info("Begin waiting cluster ready")
               #Wait cluster ready
               @status = CLUSTER_WAIT_START
-              successful = cluster_wait_ready(state_sub_vms(:existed).values)
+              successful = cluster_wait_ready(state_sub_vms(:existed).values, :force_power_on => true)
               break if successful
 
               @status = CLUSTER_RE_FETCH_INFO
