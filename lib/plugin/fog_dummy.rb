@@ -41,6 +41,12 @@ module Serengeti
         @vm_prop.delete(vm.name)
       end
 
+      def vm_power_off(vm)
+        logger.debug("power off #{vm.name}")
+        dummy_sleep(4)
+        vm.power_state = "poweredOff"
+      end
+
       def vm_power_on(vm)
         logger.debug("power on #{vm.name}")
         dummy_sleep(4)
