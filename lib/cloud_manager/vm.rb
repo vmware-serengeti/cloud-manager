@@ -433,6 +433,7 @@ module Serengeti
           if power_state == 'poweredOff'
             return if !cloud_op('Power on') { client.vm_power_on(self) }
             logger.debug("#{name} has poweron")
+            @power_state = "poweredOn"
           end
         end
 
