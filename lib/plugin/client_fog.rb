@@ -171,7 +171,7 @@ module Serengeti
         card = 0
         vm.network_config_json.each do |config_json|
           compute_op { |con| con.vm_update_network('instance_uuid' => vm.instance_uuid,
-                                              'adapter_name' => "Network adapter #{card + 1}",
+                                              'adapter_index' => "#{card}",
                                               'portgroup_name' => vm.network_res.port_group(card)) }
 
           logger.debug("network json:#{config_json}") if config.debug_networking
