@@ -26,6 +26,7 @@ module Serengeti
       def pre_placement_cluster(vm_groups, existed_vms)
         result = super
         return result if !result.nil?
+        @host_map_by_group = {}
 
         logger.debug("checking cluster status, filter out VMs that violate instancePerHost constraint")
         vm_groups = vm_groups.values
@@ -41,6 +42,9 @@ module Serengeti
             vm_distribution[vm_info.group_name][vm_info.host_name] ||= []
             vm_distribution[vm_info.group_name][vm_info.host_name] << vm_info
           end
+          @host_map_by_group[vm_info.group_name] ||= {}
+          @host_map_by_group[vm_info.group_name][vm_info.host_name] ||= 0
+          @host_map_by_group[vm_info.group_name][vm_info.host_name] += 1
         end
 
         delete_vms = []
@@ -77,7 +81,6 @@ module Serengeti
       # this method should only be called once, during a placement cycle
       def get_virtual_groups(vm_groups)
         @input_vm_groups = vm_groups
-        @host_map_by_group = {}
 
         leaf_groups = []
         virtual_groups = {}
@@ -99,7 +102,7 @@ module Serengeti
           else
             leaf_groups.push(name)
           end
-          @host_map_by_group[name] = {}
+          @host_map_by_group[name] ||= {}
         end
         logger.debug("strict_group:#{strict_group.pretty_inspect}")
         leaf_groups.uniq!
@@ -178,24 +181,34 @@ module Serengeti
         else
           # rack type is ROUNDROBIN
           logger.debug("ROUDROBIN rack:#{racks.pretty_inspect}, all rack:#{@vm_racks.pretty_inspect}")
-          rack = rr_items(racks, @vm_racks) do |rack|
+          candidate = rr_items(racks, @vm_racks) do |rack|
             logger.debug("checking rack :#{rack}, c:#{candidates.keys}, config:#{config.cloud_rack_to_hosts[rack]}")
             rack_candidates = candidates.keys & config.cloud_rack_to_hosts[rack]
-            return candidates.select { |host, _| rack_candidates.include?(host)} if !rack_candidates.empty?
+            !rack_candidates.empty?
+            if rack
+              candidates.select { |host, _| rack_candidates.include?(host)}
+            else
+              nil
+            end
           end
+          return candidate if !candidate.nil?
         end
         raise Serengeti::CloudManager::PlacementException,\
             "Rack #{racks.pretty_inspect} can not find suitable hosts, with group:#{groups.keys.pretty_inspect}"
       end
 
       def rr_items(candidates, all_items)
-        (0...all_items.size).each do |i|
-          candidate = all_items.first
-          all_items.rotate!
+        moved = []
+        result = nil
+        all_items.each do |candidate|
           next if !candidates.include?(candidate)
-          yield candidate
+          moved << candidate
+          result  = yield candidate
+          break if !result.nil?
         end
-        nil
+        all_items.delete_if {|i| moved.include?(i)}
+        moved.each { |i| all_items.push(i) }
+        result
       end
 
       def add_vm_to_vnode(vnode, group, existed_vms)
@@ -278,29 +291,34 @@ module Serengeti
           group = @input_vm_groups[spec.group_name]
           referred_group_name = group.referred_group
           next if referred_group_name.nil?
-          next if group.instance_per_host
-          # Only check do not set instance_per_host's refered_group
-          strict_candidates = candidates.select do |host, _|
-            #logger.debug("#{referred_group_name}, #{host} no.#{@host_map_by_group[referred_group_name][host].to_i}")
-            @host_map_by_group[referred_group_name][host].to_i > 0
-          end
-          logger.debug("hosts " + strict_candidates.keys.to_s + \
-                       " left after strict constraint checking")
-          if strict_candidates.empty?
-            if group.is_strict?
-              err_msg = "available host list is empty after checking strict constraint"
-              logger.error(err_msg)
-              raise Serengeti::CloudManager::PlacementException, err_msg
+          if group.instance_per_host
+            candidates = candidates.select do |host, _|
+              @host_map_by_group[group.name][host].to_i < group.instance_per_host
             end
           else
-            candidates = strict_candidates
+            # Only check do not set instance_per_host's refered_group
+            strict_candidates = candidates.select do |host, _|
+              #logger.debug("#{referred_group_name}, #{host} no.#{@host_map_by_group[referred_group_name][host].to_i}")
+              @host_map_by_group[referred_group_name][host].to_i > 0
+            end
+            logger.debug("hosts " + strict_candidates.keys.to_s + \
+                         " left after strict constraint checking")
+            if strict_candidates.empty?
+              if group.is_strict?
+                err_msg = "available host list is empty after checking strict constraint"
+                logger.error(err_msg)
+                raise Serengeti::CloudManager::PlacementException, err_msg
+              end
+            else
+              candidates = strict_candidates
+            end
           end
         end
 
         candidates = rack_used_candidates(candidates, virtual_node)
         logger.debug("rack used return :#{candidates.keys.pretty_inspect}")
 
-        rr_items(candidates, all_hosts) { |host| return host }
+        rr_items(candidates.keys, all_hosts) { |host| host }
       end
 
       def assign_host(virtual_node, host_name)

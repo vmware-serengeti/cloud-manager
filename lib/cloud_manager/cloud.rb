@@ -284,6 +284,7 @@ module Serengeti
 
         # Set template vm system disk size
         vm_sys_disk_size = nil
+        raise "Can not load template VM: [#{config.cloud_template_id}]" if dc_res.vm_template.nil?
         dc_res.vm_template.disks.each_value { |disk| break vm_sys_disk_size = disk.size if disk.unit_number == 0 }
         config.vm_sys_disk_size = vm_sys_disk_size
 
