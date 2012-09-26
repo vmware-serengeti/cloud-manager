@@ -1,3 +1,17 @@
+0.7.0 (2012-9-26)
+
+New Features:
+* Support placement with rack aware
+* Implement Virutal Group for strict and instance per host policy
+* Change Host RR logic for placement
+* Make list vms to same progress as start/stop
+* Many small enhancement changes.
+* Add Cluster/Group operations
+* Add moid control, to support multi-Serengeti Server
+
+Bug Fix:
+* Add Error handler for access other Serengeti Server
+
 0.6.0 (2012-8-21)
 
 New Features:
