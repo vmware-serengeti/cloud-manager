@@ -350,7 +350,7 @@ module Serengeti
           return nil
         end
 
-        return nil if block_given? and !yield(vm_existed["name"])
+        return nil if block_given? and !yield(vm_existed)
 
         client = cloud.client
         vm = Serengeti::CloudManager::VmInfo.new(vm_existed["name"], cloud)

@@ -322,9 +322,9 @@ module Serengeti
         vm_mobs = @client.get_vms_by_host_mob(host_mob)
         return vms if vm_mobs.nil?
         vm_mobs.each do |vm_mob|
-          logger.debug("host -- vm_mob:#{vm_mob['name']} @ #{vm_mob['mo_ref']}")
-          next if !vm_is_exited_in_cloud?(vm_mob['mo_ref'])
-          vm = VmInfo.fetch_vm_from_cloud(vm_mob, @cloud) { |name| @cloud.vm_is_this_cluster?(name) }
+          vm = VmInfo.fetch_vm_from_cloud(vm_mob, @cloud) do |vm_info|
+            @cloud.vm_is_this_cluster?(vm_info['name']) and !vm_is_exited_in_cloud?(vm_info['mo_ref'])
+          end
           next if vm.nil?
 
           vm.host_name = host.name
