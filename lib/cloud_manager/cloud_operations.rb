@@ -64,7 +64,7 @@ module Serengeti
       def delete()
         cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
         action_process(CLOUD_WORK_DELETE, task) do
-          vms = cloud_vms_op(@cloud_provider, @cluster_info, @cluster_data, CLUSTER_DELETE)
+          vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_DELETE)
           group_each_by_threads(vms, :callee=>'delete vm') { |vm| vm.delete }
 
           # trick: get the root vm folder of this hadoop cluster from its node group's
