@@ -151,7 +151,7 @@ module Serengeti
         racks  = options["racks"] || config.cloud_rack_to_hosts.keys
         racks_used = racks & config.cloud_rack_to_hosts.keys
         racks_diff = racks - config.cloud_rack_to_hosts.keys
-        logger.warn("rack [#{rack_diff}] not in cluster rack info.") if !racks_diff.empty? 
+        logger.warn("rack [#{racks_diff}] not in cluster rack info.") if !racks_diff.empty? 
         raise Serengeti::CloudManager::PlacementException,\
           "#{racks} do not in cluster definition." if racks_used.empty?
         raise Serengeti::CloudManager::PlacementException,\

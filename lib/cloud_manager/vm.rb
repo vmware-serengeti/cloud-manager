@@ -151,7 +151,7 @@ module Serengeti
       def can_ha?; @can_ha;end
       def rack
         return nil if config.cloud_hosts_to_rack.empty?
-        rack = config.cloud_hosts_to_rack[@host_name]
+        config.cloud_hosts_to_rack[@host_name]
       end
 
       def datastores
@@ -216,7 +216,6 @@ module Serengeti
         @cloud = cloud
         @host_name = nil
         @res_vms = nil
-        @rack = nil
         logger.debug("init vm: #{vm_name}")
       end
 
@@ -249,7 +248,7 @@ module Serengeti
 
         attrs[:created]     = @deleted ? false : @created
         attrs[:deleted]     = @deleted
-        attrs[:rack]        = @rack if @rack
+        attrs[:rack]        = rack
 
         attrs[:error_code]  = @error_code.to_i
         attrs[:error_msg]   = @error_msg.to_s
@@ -292,10 +291,6 @@ module Serengeti
         @host_name  = host.name
         @host_mob   = host.mob
         @storage_service = service['storage']
-
-        if !config.cloud_hosts_to_rack.empty?
-          @rack = config.cloud_hosts_to_rack[@host_name]
-        end
 
         logger.debug("ha: #{spec['ha']}")
         @ft_enable = (spec['ha'] == 'ft')
