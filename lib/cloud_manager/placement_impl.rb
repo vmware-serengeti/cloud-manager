@@ -104,11 +104,11 @@ module Serengeti
           end
           @host_map_by_group[name] ||= {}
         end
-        logger.debug("strict_group:#{strict_group.pretty_inspect}")
+        #logger.debug("strict_group:#{strict_group.pretty_inspect}")
         leaf_groups.uniq!
 
         strict_group.each do |name, groups|
-          logger.debug("leaf_group:#{leaf_groups.pretty_inspect} has #{name}? #{leaf_groups.include?(name)}")
+          #logger.debug("leaf_group:#{leaf_groups.pretty_inspect} has #{name}? #{leaf_groups.include?(name)}")
           if !leaf_groups.include?(name)
             raise Serengeti::CloudManager::PlacementException, "Referred group do not existed"\
               "and we do not support nested referred group #{name}"
@@ -184,13 +184,8 @@ module Serengeti
           candidate = rr_items(racks, @vm_racks) do |rack|
             logger.debug("checking rack :#{rack}, c:#{candidates.keys}, config:#{config.cloud_rack_to_hosts[rack]}")
             rack_candidates = candidates.keys & config.cloud_rack_to_hosts[rack]
-            if !rack_candidates.empty?
-              candidates.select { |host, _| rack_candidates.include?(host)}
-            else
-              nil
-            end
+            return candidates.select { |host, _| rack_candidates.include?(host)} if !rack_candidates.empty?
           end
-          return candidate if !candidate.nil?
         end
         raise Serengeti::CloudManager::PlacementException,\
             "Rack #{racks.pretty_inspect} can not find suitable hosts, with group:#{groups.keys.pretty_inspect}"
@@ -199,15 +194,16 @@ module Serengeti
       def rr_items(candidates, all_items)
         moved = []
         result = nil
-        all_items.each do |candidate|
-          next if !candidates.include?(candidate)
-          moved << candidate
-          result  = yield candidate
-          break if !result.nil?
+        begin
+          all_items.each do |candidate|
+            next if !candidates.include?(candidate)
+            moved << candidate
+            yield candidate
+          end
+        ensure
+          all_items.delete_if {|i| moved.include?(i)}
+          moved.each { |i| all_items.push(i) }
         end
-        all_items.delete_if {|i| moved.include?(i)}
-        moved.each { |i| all_items.push(i) }
-        result
       end
 
       def add_vm_to_vnode(vnode, group, existed_vms)
@@ -246,7 +242,7 @@ module Serengeti
       def get_virtual_nodes(virtual_group, existed_vms, placed_vms)
         virtual_nodes = []
         if virtual_group.size > 1
-          master_group = virtual_group.pop
+          master_group = virtual_group.shift
           master_group.created_num ||= 0
 
           (0...master_group.instances).each do |num|
@@ -255,7 +251,7 @@ module Serengeti
               break nil if master_group.created_num >= master_group.instances
               (0...master_group.instance_per_host).each {|_| add_vm_to_vnode(vnode, master_group, existed_vms) }
             end
-            logger.debug("vnode:#{vnode.pretty_inspect}")
+            #logger.debug("vnode:#{vnode.pretty_inspect}")
             virtual_nodes << vnode if !vnode.nil? and !vnode.empty?
           end
         else
@@ -317,7 +313,7 @@ module Serengeti
         candidates = rack_used_candidates(candidates, virtual_node)
         logger.debug("rack used return :#{candidates.keys.pretty_inspect}")
 
-        rr_items(candidates.keys, all_hosts) { |host| host }
+        rr_items(candidates.keys, all_hosts) { |host| return host }
       end
 
       def assign_host(virtual_node, host_name)

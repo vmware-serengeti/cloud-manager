@@ -29,7 +29,7 @@ module Serengeti
 
       def cluster_vm_group_deploy(group, options = {})
         group_each_by_threads(group, :callee=>'deploy vms') do |vm|
-          logger.debug("deploy vm: #{vm.pretty_inspect}")
+          logger.debug("deploy vm: #{vm.name}")
           if (vm.error_code.to_i != 0)
             logger.debug("VM #{vm.name} can not deploy because:#{vm.error_msg}.")
             next

@@ -378,7 +378,7 @@ module Serengeti
           @status = VM_STATE_CLONE
           mov_vm(:placed, :deploy)
 
-          logger.debug("vm's info :#{self.pretty_inspect}")
+          #logger.debug("vm's info :#{self.pretty_inspect}")
           return if !cloud_op('Clone', :deploy) { client.vm_clone(self, :poweron => false)}
           logger.info("vm:#{name} power:#{power_state} finish clone")
 

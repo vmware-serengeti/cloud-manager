@@ -72,6 +72,7 @@ module Serengeti
       end
 
       def pop; @groups.pop; end
+      def shift; @groups.shift; end
     end
 
 

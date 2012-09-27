@@ -162,7 +162,7 @@ module Serengeti
 
         virtual_nodes.each do |vnode|
           vm = VmServer.new
-          logger.debug("vnode:#{vnode.pretty_inspect}")
+          #logger.debug("vnode:#{vnode.pretty_inspect}")
           specs = vnode.map { |spec| spec.to_spec }
           service_loop { |service| vm.init_with_vm_service(service, specs) }
 
