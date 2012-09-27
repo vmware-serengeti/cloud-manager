@@ -184,8 +184,7 @@ module Serengeti
           candidate = rr_items(racks, @vm_racks) do |rack|
             logger.debug("checking rack :#{rack}, c:#{candidates.keys}, config:#{config.cloud_rack_to_hosts[rack]}")
             rack_candidates = candidates.keys & config.cloud_rack_to_hosts[rack]
-            !rack_candidates.empty?
-            if rack
+            if !rack_candidates.empty?
               candidates.select { |host, _| rack_candidates.include?(host)}
             else
               nil
