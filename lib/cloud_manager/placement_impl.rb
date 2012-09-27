@@ -104,7 +104,6 @@ module Serengeti
           end
           @host_map_by_group[name] ||= {}
         end
-        #logger.debug("strict_group:#{strict_group.pretty_inspect}")
         leaf_groups.uniq!
 
         strict_group.each do |name, groups|
