@@ -322,6 +322,7 @@ module Serengeti
           logger.debug("rack used return :#{c.keys.pretty_inspect}")
           rr_items(c.keys, all_hosts) { |host| return host }
         end
+        nil
       end
 
       def assign_host(virtual_node, host_name)
