@@ -307,16 +307,16 @@ module Serengeti
           end
           logger.debug("vm name:#{spec.name} hosts " + strict_candidates.keys.to_s + \
                        " left after strict constraint checking")
-          candidates_list.unshift(strict_candidates)
-        end
-
-        candidates_list.each do |cand|
-          if cand.empty?
+          if strict_candidates.nil?
             next if !group.is_strict?
             err_msg = "available host list is empty after checking strict constraint"
             logger.error(err_msg)
             raise Serengeti::CloudManager::PlacementException, err_msg
           end
+          candidates_list.unshift(strict_candidates)
+        end
+
+        candidates_list.each do |cand|
           c = rack_used_candidates(cand, virtual_node)
           next if c.nil?
           logger.debug("rack used return :#{c.keys.pretty_inspect}")
