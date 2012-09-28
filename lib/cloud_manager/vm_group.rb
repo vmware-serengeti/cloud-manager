@@ -148,7 +148,8 @@ module Serengeti
           "Do not support this rack type:#{options["type"]}." if !SUPPROT_RACK_TYPE.include?(@type)
 
         @racks  = []
-        racks  = options["racks"] || config.cloud_rack_to_hosts.keys
+        racks = options["racks"]
+        racks = config.cloud_rack_to_hosts.keys if racks.nil? or racks.empty?
         racks_used = racks & config.cloud_rack_to_hosts.keys
         racks_diff = racks - config.cloud_rack_to_hosts.keys
         logger.warn("rack [#{racks_diff}] not in cluster rack info.") if !racks_diff.empty? 
