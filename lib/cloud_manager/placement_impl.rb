@@ -87,6 +87,7 @@ module Serengeti
         strict_group = {}
         vm_groups.each do |name, group_info|
           logger.debug("group:#{name}, ref:#{group_info.referred_group}")
+          #logger.debug("group info:#{group_info.pretty_inspect}")
           if group_info.referred_group
             refer_group = vm_groups[group_info.referred_group]
             raise "unknown referred group name:#{group_info.referred_group}" if refer_group.nil?
@@ -132,50 +133,53 @@ module Serengeti
         return candidates if config.cloud_rack_to_hosts.empty?
         #Add rack checking
         rack_type = nil
-        racks = []
+        racks = nil
         groups = {}
         referred_group = {}
         virtual_node.each do |vm|
           group = @input_vm_groups[vm.spec['vm_group_name']]
           next if group.nil?
-          next if group.rack_policy.nil?
-          #logger.debug("rack group:#{group.pretty_inspect}")
+          logger.debug("rack group:#{group.name}")
+          logger.debug("rack group policy:#{group.rack_policy.pretty_inspect}")
           if group.referred_group
             logger.debug("rack referred_group:#{group.referred_group}")
-            referred_group[group.referred_group] = 1 
+            referred_group[group.referred_group] ||= 0 
+            referred_group[group.referred_group] += 1
+            raise Serengeti::CloudManager::PlacementException,\
+              "Do not support more than one referred group in rack policy" if referred_group.size > 1
+            ref_group_name = referred_group.keys[0]
+            ref_group = @input_vm_groups[ref_group_name]
+            raise Serengeti::CloudManager::PlacementException,\
+              "The #{ref_group_name} group does not existed" if ref_group.nil?
+            if group.is_strict?
+              logger.debug("strict group, use 'ref_group' rack info")
+              rack_type = ref_group.rack_policy.type
+              racks = ref_group.rack_policy.racks
+              break
+            end
           end
           groups[group.name] = 1
+          next if group.rack_policy.nil?
+
           rack_type ||= group.rack_policy.type
           if rack_type != group.rack_policy.type
             rack_type = VmGroupRack::SAMERACK
           end
-          racks = group.rack_policy.racks if racks.empty?
-          racks &= group.rack_policy.racks
-
-          raise Serengeti::CloudManager::PlacementException,\
-            "can not find same rack with #{groups.keys.pretty_inspect} " if racks.empty? && referred_group.empty?
+          logger.debug("rack_policy:#{group.rack_policy.pretty_inspect}")
+          racks ||= group.rack_policy.racks
+          racks &= group.rack_policy.racks if !group.rack_policy.racks.nil?
         end
-        logger.debug("type:#{rack_type.pretty_inspect}, racks:#{racks.pretty_inspect}")
+
+        logger.debug("type:#{rack_type.to_s}, racks:#{racks.pretty_inspect}")
         return candidates if rack_type.nil?
-
-        if !referred_group.empty?
-          raise Serengeti::CloudManager::PlacementException,\
-            "Do not support more than one referred group in rack policy" if referred_group.size > 1
-          ref_group_name = referred_group.keys[0]
-          group = @input_vm_groups[ref_group_name]
-          raise Serengeti::CloudManager::PlacementException,\
-            "The #{ref_group_name} group does not existed" if group.nil?
-
-          return candidates if group.rack_policy.nil?
-
-          rack_type = group.rack_policy.type
-          racks = group.rack_policy.racks
-        end
-
+        raise Serengeti::CloudManager::PlacementException,\
+          "can not find suitable rack with #{groups.keys.pretty_inspect} " if racks.empty?
+ 
         if rack_type == VmGroupRack::SAMERACK
-          logger.debug("Create host with SAMERACK:#{racks.pretty_inspect}")
+          logger.debug("Create host with SAMERACK:#{racks.pretty_inspect}, candidate:#{candidates.keys.pretty_inspect}")
           hosts = config.cloud_rack_to_hosts[racks[0]]
           rack_candidates = candidates.keys & hosts
+          logger.debug("rack hosts :#{hosts.pretty_inspect}")
           return candidates.select { |host, _| rack_candidates.include?(host)}  if !rack_candidates.empty?
         else
           # rack type is ROUNDROBIN
@@ -186,8 +190,8 @@ module Serengeti
             return candidates.select { |host, _| rack_candidates.include?(host)} if !rack_candidates.empty?
           end
         end
-        raise Serengeti::CloudManager::PlacementException,\
-            "Rack #{racks.pretty_inspect} can not find suitable hosts, with group:#{groups.keys.pretty_inspect}"
+        #raise Serengeti::CloudManager::PlacementException, "Rack #{racks.pretty_inspect} can not find suitable hosts, with group:#{groups.keys.pretty_inspect}"
+        nil
       end
 
       def rr_items(candidates, all_items)
@@ -280,45 +284,49 @@ module Serengeti
             "input available host list cannot be empty"
         end
 
+        candidates_list = []
+
         # remove hosts that have VM placed so that to satisfy strict requirement
         virtual_node.each do |spec|
           group = @input_vm_groups[spec.group_name]
-          referred_group_name = group.referred_group
-          next if referred_group_name.nil?
           if group.instance_per_host
             candidates = candidates.select do |host, _|
               @host_map_by_group[group.name][host].to_i < group.instance_per_host
             end
-          else
-            # Only check do not set instance_per_host's refered_group
-            strict_candidates = candidates.select do |host, _|
-              #logger.debug("#{referred_group_name}, #{host} no.#{@host_map_by_group[referred_group_name][host].to_i}")
-              @host_map_by_group[referred_group_name][host].to_i > 0
-            end
-            logger.debug("hosts " + strict_candidates.keys.to_s + \
-                         " left after strict constraint checking")
-            if strict_candidates.empty?
-              if group.is_strict?
-                err_msg = "available host list is empty after checking strict constraint"
-                logger.error(err_msg)
-                raise Serengeti::CloudManager::PlacementException, err_msg
-              end
-            else
-              candidates = strict_candidates
-            end
+            logger.debug("#{spec.name} group: #{group.name} after instance_per_host checking: #{candidates.keys}")
           end
+          candidates_list.push(candidates)
+
+          next if virtual_node.size > 1
+          referred_group_name = group.referred_group
+          next if referred_group_name.nil?
+
+          strict_candidates = candidates.select do |host, _|
+            logger.debug("#{referred_group_name}, #{host} no.#{@host_map_by_group[referred_group_name][host].to_i}")
+            @host_map_by_group[referred_group_name][host].to_i > 0
+          end
+          logger.debug("vm name:#{spec.name} hosts " + strict_candidates.keys.to_s + \
+                       " left after strict constraint checking")
+          candidates_list.unshift(strict_candidates)
         end
 
-        candidates = rack_used_candidates(candidates, virtual_node)
-        logger.debug("rack used return :#{candidates.keys.pretty_inspect}")
-
-        rr_items(candidates.keys, all_hosts) { |host| return host }
+        candidates_list.each do |cand|
+          if cand.empty?
+            next if !group.is_strict?
+            err_msg = "available host list is empty after checking strict constraint"
+            logger.error(err_msg)
+            raise Serengeti::CloudManager::PlacementException, err_msg
+          end
+          c = rack_used_candidates(cand, virtual_node)
+          next if c.nil?
+          logger.debug("rack used return :#{c.keys.pretty_inspect}")
+          rr_items(c.keys, all_hosts) { |host| return host }
+        end
       end
 
       def assign_host(virtual_node, host_name)
-        logger.debug("assign host " + host_name + " to virtual_node " + virtual_node.to_s)
-
         virtual_node.each do |spec|
+          logger.debug("#{spec.name} assign host #{host_name} to virtual_node #{virtual_node.inspect}")
           @host_map_by_group[spec.group_name][host_name] ||= 0
           @host_map_by_group[spec.group_name][host_name] += 1
         end

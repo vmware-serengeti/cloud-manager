@@ -37,7 +37,7 @@ module Serengeti
               conf['ip_pool'][ip] = 1 if (single_result)
             end
           end
-          logger.debug("IP net_config:#{@net_config.pretty_inspect}")
+          #logger.debug("IP net_config:#{@net_config.pretty_inspect}")
           @lock = Mutex.new
         end
 

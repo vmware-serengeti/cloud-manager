@@ -107,7 +107,6 @@ module Serengeti
 
       def inner_create_servers(vm_specs)
         if yield
-          logger.debug("create specs as itself")
           return vm_specs #InnerServers
         end
         vm_specs.map { |vm_spec| Fog::Storage::Vsphere::Shared::VM.new(vm_spec) }
