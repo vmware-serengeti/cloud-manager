@@ -297,7 +297,7 @@ module Serengeti
           end
           candidates_list.push(candidates)
 
-          next if virtual_node.size > 1
+          next if virtual_node.size > (group.instance_per_host || 1)
           referred_group_name = group.referred_group
           next if referred_group_name.nil?
 
