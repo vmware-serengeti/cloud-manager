@@ -286,6 +286,9 @@ module Serengeti
 
         candidates_list = []
 
+        groups = {}
+        virtual_node.each { |spec| groups[spec.group_name] = 1 }
+
         # remove hosts that have VM placed so that to satisfy strict requirement
         virtual_node.each do |spec|
           group = @input_vm_groups[spec.group_name]
@@ -297,7 +300,8 @@ module Serengeti
           end
           candidates_list.push(candidates)
 
-          next if virtual_node.size > (group.instance_per_host || 1)
+          next if groups.size > 1
+
           referred_group_name = group.referred_group
           next if referred_group_name.nil?
 

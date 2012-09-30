@@ -335,6 +335,16 @@ module Serengeti
         @cloud.mov_vm(self, from, to)
       end
 
+      def fetch_vm_disks(vm_mob)
+        disk_attrs = client.get_disks_by_vm_mob(vm_mob)
+        disk_attrs.each do |attr|
+          disk = disk_add(attr['size'], attr['path'], attr['scsi_num'])
+          datastore_name = client.get_ds_name_by_path(attr['path'])
+          disk.datastore_name = datastore_name
+        end
+      end
+
+
       # Create vm structure from cloud fetching
       def self.fetch_vm_from_cloud(vm_mob, cloud)
         vm_existed = nil
@@ -354,12 +364,7 @@ module Serengeti
         client.update_vm_with_properties_string(vm, vm_existed)
 
         #update disk info
-        disk_attrs = client.get_disks_by_vm_mob(vm_mob)
-        disk_attrs.each do |attr|
-          disk = vm.disk_add(attr['size'], attr['path'], attr['scsi_num'])
-          datastore_name = client.get_ds_name_by_path(attr['path'])
-          disk.datastore_name = datastore_name
-        end
+        vm.fetch_vm_disks(vm_mob)
 
         vm.can_ha = client.is_vm_in_ha_cluster(vm)
         vm.created = true
@@ -387,6 +392,11 @@ module Serengeti
           return if !cloud_op('Reconfigure network', :deploy) { reconfigure_network }
           logger.info("vm:#{name} finish reconfigure networking")
 
+          return if !cloud_op('Fetch Disk', :deploy) do
+            vm_mob = client.get_vm_mob_ref_by_moid(mob, nil);
+            fetch_vm_disks(vm_mob)
+          end
+          logger.info("vm:#{name} finish fetch disk info")
           #Move deployed vm to existed queue
           mov_vm(:deploy, :existed)
           @created = true
