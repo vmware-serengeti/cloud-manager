@@ -200,7 +200,7 @@ module Serengeti
         begin
           all_items.each do |candidate|
             next if !candidates.include?(candidate)
-            moved << candidate
+            moved.push(candidate)
             yield candidate
           end
         ensure
@@ -301,19 +301,19 @@ module Serengeti
           referred_group_name = group.referred_group
           next if referred_group_name.nil?
 
-          strict_candidates = candidates.select do |host, _|
+          associated_candidates = candidates.select do |host, _|
             logger.debug("#{referred_group_name}, #{host} no.#{@host_map_by_group[referred_group_name][host].to_i}")
             @host_map_by_group[referred_group_name][host].to_i > 0
           end
-          logger.debug("vm name:#{spec.name} hosts " + strict_candidates.keys.to_s + \
+          logger.debug("vm name:#{spec.name} hosts " + associated_candidates.keys.to_s + \
                        " left after strict constraint checking")
-          if strict_candidates.nil?
+          if associated_candidates.nil?
             next if !group.is_strict?
             err_msg = "available host list is empty after checking strict constraint"
             logger.error(err_msg)
             raise Serengeti::CloudManager::PlacementException, err_msg
           end
-          candidates_list.unshift(strict_candidates)
+          candidates_list.unshift(associated_candidates)
         end
 
         candidates_list.each do |cand|
