@@ -392,11 +392,11 @@ module Serengeti
           return if !cloud_op('Reconfigure network', :deploy) { reconfigure_network }
           logger.info("vm:#{name} finish reconfigure networking")
 
-          return if !cloud_op('Fetch Disk', :deploy) do
-            vm_mob = client.get_vm_mob_ref_by_moid(mob, nil);
-            fetch_vm_disks(vm_mob)
-          end
-          logger.info("vm:#{name} finish fetch disk info")
+          #return if !cloud_op('Fetch Disk', :deploy) do
+          #  vm_mob = client.get_vm_mob_ref_by_moid(mob, nil);
+          #  fetch_vm_disks(vm_mob)
+          #end
+          #logger.info("vm:#{name} finish fetch disk info")
           #Move deployed vm to existed queue
           mov_vm(:deploy, :existed)
           @created = true
@@ -536,13 +536,12 @@ module Serengeti
       def physical_host; @host_name; end
 
       def volumes(limitation = Serengeti::CloudManager.config.vm_data_disk_start_index)
-        if @disks.empty?
-          return [] if res_vms.nil?
-          return res_vms['storage'].get_volumes_for_os('data')
-        else
+        return res_vms['storage'].get_volumes_for_os('data') if !res_vms.nil?
+        if !@disks.empty?
           return @disks.collect { |path, disk| "/dev/sd#{DISK_DEV_LABEL[disk.unit_number]}" \
             if disk.unit_number >= limitation }.compact.sort
         end
+        []
       end
     end
 
