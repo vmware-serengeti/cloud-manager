@@ -90,7 +90,7 @@ module Serengeti
           #logger.debug("group info:#{group_info.pretty_inspect}")
           if group_info.referred_group
             refer_group = vm_groups[group_info.referred_group]
-            raise "unknown referred group name:#{group_info.referred_group}" if refer_group.nil?
+            raise "Unknown referred group name:#{group_info.referred_group}." if refer_group.nil?
             if refer_group.instance_per_host
               if group_info.is_strict? and group_info.instance_per_host
                 strict_group[group_info.referred_group] ||= []
@@ -99,6 +99,8 @@ module Serengeti
                 leaf_groups.unshift(name)
                 leaf_groups.unshift(group_info.referred_group)
               end
+            else
+              leaf_groups.push(name)
             end
           else
             leaf_groups.push(name)
@@ -111,7 +113,7 @@ module Serengeti
           #logger.debug("leaf_group:#{leaf_groups.pretty_inspect} has #{name}? #{leaf_groups.include?(name)}")
           if !leaf_groups.include?(name)
             raise Serengeti::CloudManager::PlacementException, "Referred group do not existed"\
-              "and we do not support nested referred group #{name}"
+              "and we do not support nested referred group #{name}."
           end
 
           virtual_groups["#{name}-related"] = VirtualGroup.new(vm_groups[name])
@@ -146,11 +148,11 @@ module Serengeti
             referred_group[group.referred_group] ||= 0 
             referred_group[group.referred_group] += 1
             raise Serengeti::CloudManager::PlacementException,\
-              "Do not support more than one referred group in rack policy" if referred_group.size > 1
+              "Do not support more than one referred group in rack policy." if referred_group.size > 1
             ref_group_name = referred_group.keys[0]
             ref_group = @input_vm_groups[ref_group_name]
             raise Serengeti::CloudManager::PlacementException,\
-              "The #{ref_group_name} group does not existed" if ref_group.nil?
+              "\"#{ref_group_name}\" group does not existed." if ref_group.nil?
             if group.is_strict?
               logger.debug("strict group, use 'ref_group' rack info")
               rack_type = ref_group.rack_policy.type
@@ -173,7 +175,7 @@ module Serengeti
         logger.debug("type:#{rack_type.to_s}, racks:#{racks.pretty_inspect}")
         return candidates if rack_type.nil?
         raise Serengeti::CloudManager::PlacementException,\
-          "can not find suitable rack with #{groups.keys.pretty_inspect} " if racks.empty?
+          "Can not find suitable rack with #{groups.keys.pretty_inspect}." if racks.empty?
  
         if rack_type == VmGroupRack::SAMERACK
           logger.debug("Create host with SAMERACK:#{racks.pretty_inspect}, candidate:#{candidates.keys.pretty_inspect}")
@@ -190,7 +192,6 @@ module Serengeti
             return candidates.select { |host, _| rack_candidates.include?(host)} if !rack_candidates.empty?
           end
         end
-        #raise Serengeti::CloudManager::PlacementException, "Rack #{racks.pretty_inspect} can not find suitable hosts, with group:#{groups.keys.pretty_inspect}"
         nil
       end
 
@@ -274,14 +275,14 @@ module Serengeti
 
         if virtual_node.vm_specs.size == 0
           raise Serengeti::CloudManager::PlacementException, \
-            "Internal error: virtual node should contain at least one vm"
+            "Internal error: virtual node should contain at least one vm."
         end
 
         candidates = resource_availability['storage']
         if candidates.empty?
-          logger.error("input available host list cannot be empty")
+          logger.error("Input available host list cannot be empty")
           raise Serengeti::CloudManager::PlacementException, \
-            "input available host list cannot be empty"
+            "Input available host list cannot be empty."
         end
 
         candidates_list = []
@@ -313,7 +314,7 @@ module Serengeti
                        " left after strict constraint checking")
           if associated_candidates.nil?
             next if !group.is_strict?
-            err_msg = "available host list is empty after checking strict constraint"
+            err_msg = "Available host list is empty after checking strict constraint."
             logger.error(err_msg)
             raise Serengeti::CloudManager::PlacementException, err_msg
           end
