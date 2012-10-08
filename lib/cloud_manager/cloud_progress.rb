@@ -106,6 +106,15 @@ module Serengeti
         end
       end
 
+      def get_cluster_error_msgs(servers)
+        msg = (@cloud_error_msg_que.nil?) ? '' : @cloud_error_msg_que.join
+        return msg if servers.nil? or servers.empty?
+
+        error_servers = servers.select { |s| s.error_msg.to_s.size > 0 }
+        err_msg = error_servers.map { |s| s.error_msg }.join("\n")
+        "#{msg}\nVM Error:\n#{err_msg}"
+      end
+
       # Get cluster operation's status
       def get_result
         result = IaasResult.new
@@ -116,11 +125,11 @@ module Serengeti
           result.success = state_sub_vms_size(:finished)
           result.failure = state_sub_vms_size(:failed) + @placement_failed + @cluster_failed_num
           result.succeed = @success && result.failure <= 0
-          result.error_msg = (@cloud_error_msg_que.nil?) ? '' : @cloud_error_msg_que.join
           result.running = result.deploy + result.waiting + result.waiting_start
           result.total = result.running + result.success + result.failure
           result.servers = []
           get_result_by_vms(result.servers, @state_vms)
+          result.error_msg = get_cluster_error_msgs(result.servers)
         end
         result
       end

@@ -141,6 +141,7 @@ module Serengeti
         virtual_node.each do |vm|
           group = @input_vm_groups[vm.spec['vm_group_name']]
           next if group.nil?
+
           logger.debug("rack group:#{group.name}")
           logger.debug("rack group policy:#{group.rack_policy.pretty_inspect}")
           if group.referred_group
@@ -153,6 +154,7 @@ module Serengeti
             ref_group = @input_vm_groups[ref_group_name]
             raise Serengeti::CloudManager::PlacementException,\
               "\"#{ref_group_name}\" group does not existed." if ref_group.nil?
+            next if ref_group.rack_policy.nil?
             if group.is_strict?
               logger.debug("strict group, use 'ref_group' rack info")
               rack_type = ref_group.rack_policy.type
