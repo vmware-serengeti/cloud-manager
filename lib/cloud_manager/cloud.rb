@@ -218,6 +218,9 @@ module Serengeti
           :vsphere_server => @cloud_provider.vc_addr,
           :vsphere_username => @cloud_provider.vc_user,
           :vsphere_password => @cloud_provider.vc_pwd,
+          :cert => @cloud_provider.cert,
+          :key => @cloud_provider.key,
+          :extension_key => @cloud_provider.extension_key,
         }
         logger.debug("info: #{info.pretty_inspect}") if config.debug_provider_login_info
         info
