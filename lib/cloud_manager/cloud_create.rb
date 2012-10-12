@@ -59,7 +59,6 @@ module Serengeti
                 placement[:error_msg].each { |m| set_cluster_error_msg(m) }
                 raise 'placement failed!'
               end
-              logger.obj2file(placement, 'placement')
 
               #Begin cluster deploy
               logger.info("Begin deploy")
@@ -76,7 +75,6 @@ module Serengeti
               @status = CLUSTER_RE_FETCH_INFO
               logger.info("reload datacenter resources from cloud")
 
-              logger.obj2file(@dc_resources, "dc_resource-roll-back-#{cycle_num}")
               cycle_num += 1
             rescue => e
               logger.warn("#{e} - #{e.backtrace.join("\n")}")

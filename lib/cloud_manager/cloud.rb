@@ -21,6 +21,7 @@ module Serengeti
       def_const_value :client_connection, {'require' => 'plugin/client_fog', 'obj' => 'FogAdaptor'}
       def_const_value :template_placement , false
 
+      def_const_value :debug_not_check_vm_mob, false
       def_const_value :debug_log_trace    , false
       def_const_value :debug_provider_login_info, false
       def_const_value :debug_log_trace_depth , 3
@@ -70,6 +71,7 @@ module Serengeti
         @vm_lock = Mutex.new
         @task = task
 
+        load_cloud_config_from_home
         @cluster_info       = options[:cluster_definition]
         @cloud_provider     = options[:cloud_provider]
         @cluster_last_data  = options[:cluster_data]
@@ -107,6 +109,17 @@ module Serengeti
         @existed_vm_mobs = {}
       end
 
+      def load_cloud_config_from_home
+        config_file = "#{Dir.home}/.cloud-manager.yaml"
+        begin
+          config = YAML.load(File.open(config_file))
+          logger.debug("update config:#{config}") if !config.nil? and !config.empty?
+          Serengeti::CloudManager.config.update(config)
+        rescue => e
+          logger.debug("Ignore ~/.cloud-manager.yaml configuration.")
+        end
+      end
+
       def state_vms_init
         @state_vms = {
           :existed  => { }, :deploy   => { },
@@ -135,7 +148,7 @@ module Serengeti
 
       def mov_vm(vm, src, dest)
         @vm_lock.synchronize do
-          raise "unknow type #{src} or #{dest}" if !@state_vms.key?(src) || !@state_vms.key?(dest)
+          raise "Unknow VM state to move #{src} or #{dest}." if !@state_vms.key?(src) || !@state_vms.key?(dest)
           return if !@state_vms[src].has_key?(vm.name)
           # vm in this vms, move to des vms
           @state_vms[src].delete(vm.name)
@@ -150,13 +163,13 @@ module Serengeti
       def create_cloud_provider(cloud_provider)
         @cloud_provider = Config.new(cloud_provider)
         @name = cloud_provider["name"]
-        raise "cloud provider name is nil!" if @cloud_provider.name.nil?
-        raise "datacenter's name is nil!" if @cloud_provider.vc_datacenter.nil?
-        raise "vc_clusters is nil" if @cloud_provider.vc_clusters.nil?
+        raise "Do not give cloud provider name!" if @cloud_provider.name.nil?
+        raise "Do not give datacenter's name!" if @cloud_provider.vc_datacenter.nil?
+        raise "Do not give vc_clusters' info." if @cloud_provider.vc_clusters.nil?
         @vc_req_rps = req_clusters_rp_to_hash(@cloud_provider.vc_clusters)
         logger.debug("req_rps:#{@vc_req_rps.pretty_inspect}")
 
-        raise "cloud_provider's IP address is nil." if @cloud_provider.vc_addr.nil?
+        raise "Do not give cloud_provider's IP address." if @cloud_provider.vc_addr.nil?
 
         config.vc_share_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_shared_datastore_pattern || [])
         config.vc_local_datastore_pattern = change_wildcard2regex(@cloud_provider.vc_local_datastore_pattern || [])
@@ -288,7 +301,7 @@ module Serengeti
 
         # Set template vm system disk size
         vm_sys_disk_size = nil
-        raise "Can not find template VM: [#{config.cloud_template_id}]" if dc_res.vm_template.nil?
+        raise "Can not find template VM: [#{config.cloud_template_id}]." if dc_res.vm_template.nil?
         dc_res.vm_template.disks.each_value { |disk| break vm_sys_disk_size = disk.size if disk.unit_number == 0 }
         config.vm_sys_disk_size = vm_sys_disk_size
 

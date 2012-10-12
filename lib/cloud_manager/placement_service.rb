@@ -34,7 +34,7 @@ module Serengeti
       def initialize(cloud)
         @rc_services = {}
         @place_engine = cloud.create_service_obj(config.placement_engine.first, cloud) # Currently, we only use the first engine
-        raise ParameterException "place engine can not create" if @place_engine.nil?
+        raise ParameterException "Placement engine can not be created." if @place_engine.nil?
         load_res_service(cloud, @rc_services)
         @vm_placement = {}
         @vm_placement[:failed_num] = 0
@@ -60,9 +60,9 @@ module Serengeti
       end
 
       def check_service(service)
-        raise ParameterException "registered service is null" if service.nil?
-        raise ParameterException "registered service do not have name" if service.name.to_s.empty?
-        raise ParameterException "registered service is existed" if @rc_services.has_key?(service.name)
+        raise ParameterException "Registered service is null." if service.nil?
+        raise ParameterException "Registered service should own a name." if service.name.to_s.empty?
+        raise ParameterException "Registered service \"#{service.name}\"is existed." if @rc_services.has_key?(service.name)
       end
 
       def load_res_service(cloud, services)
@@ -104,7 +104,7 @@ module Serengeti
         place_rps = place_rps.flatten.compact
         if place_rps.nil? || place_rps.size == 0
           @vm_placement[:failed_num] += 1
-          err_msg = "Can not get any resource pools for vm"
+          err_msg = "Can not get any resource pools for vm."
           logger.error(err_msg)
           set_placement_error_msg(err_msg)
           return nil
@@ -172,7 +172,8 @@ module Serengeti
             logger.debug("check service name: #{service.name}")
             hosts = service.check_capacity(vm.vm(service.name), hosts)
             logger.debug("after #{service.name} check: #{hosts.pretty_inspect}")
-            raise PlacementException, "Do not find any hosts can match resources requirement after #{service.name} check" if hosts.nil?
+            raise PlacementException, "Do not find any hosts can match resources"\
+              "requirement after #{service.name} check." if hosts.nil?
           end
 
           # Each service calc their values
@@ -183,7 +184,7 @@ module Serengeti
           end
 
           sore_size = remove_empty_scores!(scores)
-          raise PlacementException, 'placement engine can not place those vnodes' if sore_size <= 0
+          raise PlacementException, 'Placement engine can not place those vnodes.' if sore_size <= 0
 
           #logger.debug("scores: #{scores.pretty_inspect}")
           # place engine to decide how to place
@@ -192,7 +193,7 @@ module Serengeti
           selected_host = nil
           loop do
             selected_host = @place_engine.select_host(vnode, scores, all_hosts)
-            raise PlacementException,'Do not select suitable host' if selected_host.nil?
+            raise PlacementException,'Can not select a suitable host.' if selected_host.nil?
             logger.debug("host select :#{selected_host}")
 
             committed_service = []
@@ -273,7 +274,7 @@ module Serengeti
                                     cloud.state_sub_vms(:placed))
           rescue PlacementException => e
             ## can not alloc virual_group anymore
-            error_msg = "Can not alloc resource for vm group #{gp_name}: #{e.message}"
+            error_msg = "Can not alloc resource for vm group #{gp_name}: #{e.message}."
             set_placement_error_msg(error_msg)
             @vm_placement[:failed_num] += 1
             logger.error("VM group #{gp_name} failed to place vm, "\

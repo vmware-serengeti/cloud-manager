@@ -37,7 +37,7 @@ module Serengeti
         input_groups = cluster_info["groups"]
         return nil if input_groups.nil?
         template_id = cluster_info["template_id"] #currently, it is mob_ref
-        raise "template_id should a vm mob id (like vm-1234)" if /^vm-[\d]+$/.match(template_id).nil?
+        raise "template_id should a vm mob id (like vm-1234)." if /^vm-[\d]+$/.match(template_id).nil?
         cluster_req_rps = @vc_req_rps
         cluster_req_rps = req_clusters_rp_to_hash(cluster_info["vc_clusters"]) if cluster_info["vc_clusters"]
         cluster_networking = cluster_info["networking"]
@@ -79,8 +79,8 @@ module Serengeti
               cluster_name = result["cluster_name"]
               group_name = result["group_name"]
               num = result["num"]
-              #logger.debug("vm split to #{cluster_name}::#{group_name}::#{num}")
               next if (cluster_name != config.cloud_cluster_name)
+
               vm_group = vm_groups[group_name]
               if vm_group.nil?
                 # Create new Group

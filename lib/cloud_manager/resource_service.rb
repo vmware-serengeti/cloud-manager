@@ -33,12 +33,12 @@ module Serengeti
       end
 
       def vm(plugin_name)
-        raise "Do not input correctly plugin name. #{plugin_name}" if !@plugin_vm.key?(plugin_name)
+        raise "Do not input correctly plugin name. #{plugin_name}." if !@plugin_vm.key?(plugin_name)
         @plugin_vm[plugin_name][:vm]
       end
 
       def assigned(plugin_name, selected_host, output_vm)
-        raise "Do not input correctly plugin name. #{plugin_name}" if !@plugin_vm.key?(plugin_name)
+        raise "Do not input correctly plugin name. #{plugin_name}." if !@plugin_vm.key?(plugin_name)
         @plugin_vm[plugin_name][:output_vm] = output_vm
         @plugin_vm[plugin_name][:select_host] = selected_host
       end
@@ -93,9 +93,9 @@ module Serengeti
         vm_groups = info[:vm_groups]
         placement_service = info[:place_service]
 
-        raise "do not input vm_groups for CMService class" if vm_groups.nil?
-        raise "do not input dc_resouce for CMService class" if dc_resource.nil?
-        raise "do not input dc_resouce for CMService class" if placement_service.nil?
+        raise "Do not input vm_groups for CMService class." if vm_groups.nil?
+        raise "Do not input dc_resouce for CMService class." if dc_resource.nil?
+        raise "Do not input dc_resouce for CMService class." if placement_service.nil?
 
         @hosts = dc_resource.hosts
         @rps = dc_resource.resource_pools

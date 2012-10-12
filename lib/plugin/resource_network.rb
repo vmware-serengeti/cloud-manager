@@ -41,7 +41,6 @@ module Serengeti
           if unknown_pg
             failed_vm_num = vm_group.instances - vm_group.vm_ids.size
             error_msg = "group #{vm_group.name}: can not find port group:#{unknown_pg} in vSphere."
-            logger.error(error_msg)
             raise PlacementException,error_msg
           end
           #TODO add more networking check here

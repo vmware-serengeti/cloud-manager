@@ -170,10 +170,7 @@ module Serengeti
 
       def fetch_datacenter(datacenter_name)
         datacenter_mob = @client.get_dc_mob_ref_by_path(datacenter_name)
-        if datacenter_mob.nil?
-          logger.debug("Do not find the datacenter: #{datacenter_name}")
-          raise "Do not find the datacenter: #{datacenter_name}"
-        end
+        raise "Do not find the datacenter: #{datacenter_name}." if datacenter_mob.nil?
         attr = @client.ct_mob_ref_to_attr_hash(datacenter_mob, "DC")
 
         datacenter                      = Datacenter.new
@@ -182,7 +179,6 @@ module Serengeti
 
         logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
-        #raise "Missing share_datastore_pattern in director config" if @cloud.vc_share_datastore_pattern.nil?
         logger.debug("share pattern:#{config.vc_share_datastore_pattern}")
         logger.debug("local pattern:#{config.vc_local_datastore_pattern}")
         datacenter.share_datastore_pattern = config.vc_share_datastore_pattern

@@ -109,7 +109,7 @@ module Serengeti
       end
 
       def check_connection
-        raise "Do not login cloud server, please login first" if @connection.nil?
+        raise "Do not login cloud server, please login first." if @connection.nil?
       end
 
       # TODO add vm_xxxx return state checking
@@ -151,7 +151,7 @@ module Serengeti
           result = compute_op {|con| con.folder_create(dc_mob, folder_path) }
         rescue => e
           logger.error("failed to create vm folder #{folder_path} due to exception #{e}")
-          raise "vm folder #{folder_path} creation failure"
+          raise "vm folder #{folder_path} creation failure."
         end
       end
 
@@ -230,7 +230,7 @@ module Serengeti
             sleep(4)
             logger.debug("Waiting FT work")
           when 'error'
-            raise "FT failed #{result.pretty_inspect}"
+            raise "FT failed #{result.pretty_inspect}."
             break
           when 'success'
             logger.debug("#{enable_string} FT success!!")

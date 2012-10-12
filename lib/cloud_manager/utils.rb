@@ -255,6 +255,7 @@ module Serengeti
       end
 
       def vm_is_exited_in_cloud?(vm_mob)
+        return true if config.debug_not_check_vm_mob
         logger.debug("vm_mob: #{vm_mob} in cloud? #{config.cloud_existed_vms_mob.key?(vm_mob)}")
         config.cloud_existed_vms_mob.key?(vm_mob)
       end

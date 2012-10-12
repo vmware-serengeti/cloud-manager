@@ -41,6 +41,11 @@ module Serengeti
 
       def method_missing(m, *args, &block)
         v = @config[m.to_s]
+        if v.nil?
+          puts "CONFIG WARN: unknown config item: #{m}"
+          return nil
+        end
+        v
       end
 
       def update(input)
