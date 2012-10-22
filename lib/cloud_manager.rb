@@ -1,4 +1,5 @@
 ###############################################################################
+
 #   Copyright (c) 2012 VMware, Inc. All Rights Reserved.
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -56,6 +57,9 @@ module Serengeti
           parameter['cloud_provider']['vc_addr'] = provider_config['vc_addr'] if provider_config['vc_addr']
           parameter['cloud_provider']['vc_user'] = provider_config['vc_user'] if provider_config['vc_user']
           parameter['cloud_provider']['vc_pwd']  = provider_config['vc_pwd'] if provider_config['vc_pwd']
+          parameter['cloud_provider']['cert']  = provider_config['cert'] if provider_config['cert']
+          parameter['cloud_provider']['key']  = provider_config['key'] if provider_config['key']
+          parameter['cloud_provider']['extension_key']  = provider_config['extension_key'] if provider_config['extension_key']
           parameter['cloud_provider']['vc_datacenter']  = provider_config['vc_datacenter'] if provider_config['vc_datacenter']
         rescue => e
           Serengeti::CloudManager.logger.debug("fail to read #{provider_file}. It will read config from parameter 'cloud_provider'")

@@ -28,9 +28,13 @@ module Serengeti
       @@self_logger
     end
 
+    def self.log_level
+      SerengetiLogger.log_level
+    end
+
     def self.set_log_level(log_level)
       log_level = log_level.to_s.downcase
-      raise "Unknown log level #{log_level}, it should be in #{LOG_LEVEL.keys}" unless LOG_LEVEL.has_key?(log_level)
+      raise "Unknown log level #{log_level}, it should be #{LOG_LEVEL.keys}." unless LOG_LEVEL.has_key?(log_level)
       SerengetiLogger.set_log_level (LOG_LEVEL[log_level])
     end
 
@@ -39,6 +43,10 @@ module Serengeti
       @@level = LOG_LEVEL['debug']
       def self.set_log_level(log_level)
         @@level = log_level
+      end
+
+      def self.log_level()
+        LOG_LEVEL_NAME[@@level]
       end
 
       def initialize(options={})

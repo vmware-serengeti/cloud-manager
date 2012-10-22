@@ -457,7 +457,8 @@ module Serengeti
               sleep(config.wait_ip_sleep_sec)
 
               if (wait_time) > config.wait_ip_timeout_sec
-                raise DeployException, "#{name} wait IP time out (#{wait_time}s, please check ip conflict. )."
+                raise DeployException, "VM #{name} is powered on, but it can not get IP after #{wait_time}s."\
+                    " Please check IP conflict or ensure DHCP has enough IPs."
               end
             end
           end

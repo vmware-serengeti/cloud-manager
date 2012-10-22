@@ -41,11 +41,6 @@ module Serengeti
 
       def method_missing(m, *args, &block)
         v = @config[m.to_s]
-        if v.nil?
-          puts "CONFIG ERROR: method missing: #{m}"
-          return nil
-        end
-        v
       end
 
       def update(input)
