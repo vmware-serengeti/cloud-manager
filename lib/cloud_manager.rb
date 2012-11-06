@@ -106,7 +106,7 @@ module Serengeti
       end
 
       def self.list_vms_cluster(parameter, options={})
-        op_helper(parameter, :wait=>true) { |cloud| cloud.list_vms }
+        op_helper(parameter, :wait=>true) { |cloud| cloud.list_vms(options) }
       end
 
       def self.set_log_level(level)

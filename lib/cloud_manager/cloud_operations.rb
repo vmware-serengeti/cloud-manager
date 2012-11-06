@@ -55,7 +55,7 @@ module Serengeti
         action_process(CLOUD_WORK_LIST, task) do
           logger.debug("enter list_vms...")
           vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_LIST)
-          cluster_wait_ready(vms)
+          cluster_wait_ready(vms) if options[:wait_for_ip]
         end
         get_result.servers
       end
