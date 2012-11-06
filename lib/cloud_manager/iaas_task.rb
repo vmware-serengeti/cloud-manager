@@ -72,9 +72,9 @@ module Serengeti
         @cloud.stop()
       end
 
-      def list_vms
+      def list_vms(options = {})
         logger.debug("call cloud.list_vms...")
-        @cloud.list_vms()
+        @cloud.list_vms(options)
       end
 
       def create
