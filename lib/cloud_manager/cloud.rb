@@ -355,7 +355,7 @@ module Serengeti
       end
 
       def change_wildcard2regex_str(str)
-        str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').gsub(/[)]/, '\)').gsub(/[(]/, '\(').gsub(/[.]/, '\.').tap { |out| return "^#{out}$" } unless str.nil?
+        str.gsub(/[*]/, '.*').gsub(/[?]/, '.{1}').tap { |out| return "^#{out}$" } unless str.nil?
         "^$"
       end
 
