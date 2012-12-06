@@ -115,6 +115,7 @@ module Serengeti
       attr_accessor :template_id
       attr_accessor :ha
       attr_accessor :vm_folder_path
+      attr_accessor :disk_bisect
 
       def initialize(rp=nil)
         if rp
@@ -130,6 +131,7 @@ module Serengeti
           @ha = 'off' if rp["ha"].nil?
           @rack_id = nil
           @vm_folder_path = rp["vm_folder_path"]
+          @disk_bisect = rp["storage"]["bisect"] || false
         end
       end
     end
@@ -245,6 +247,7 @@ module Serengeti
           'data_shared' => (req_info.disk_type == "shared"),
           'data_mode' => 'thick_egger_zeroed',
           'data_affinity' => 'split',
+          'disk_bisect' => req_info.disk_bisect,
 
           'system_size' => config.vm_sys_disk_size,
           'system_shared' => (req_info.disk_type == "shared"),
