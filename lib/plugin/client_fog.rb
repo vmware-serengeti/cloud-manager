@@ -26,18 +26,52 @@ module Serengeti
 
     class FogAdaptor
       DISK_SIZE_TIMES = 1
+      LOOP_INTERVAL = 2
+      SESSION_KEEP_ALIVE_INTERVAL = 60
       include Serengeti::CloudManager::Parallel
       include Serengeti::CloudManager::Utils
       def initialize(cloud)
         @cloud = cloud
         @connection = nil
+        @compute_conn_idx = 0
+        @ha_conn_idx = 0
         @con_lock = Mutex.new
+        @keep_alive_thread = nil
       end
 
       def cloud
         @cloud
       end
 
+      def keep_alive
+        count = 0
+        while true do
+          sleep(LOOP_INTERVAL)
+          count += 1
+
+          if count == SESSION_KEEP_ALIVE_INTERVAL/LOOP_INTERVAL
+            begin
+              @connection[:compute].each do |con|
+                con.keep_alive
+              end
+
+              @connection[:ha_ft].each do |con|
+                con.keep_alive
+              end
+            rescue
+              # ignore any exceptions
+            end
+
+            count = 0
+          end
+        end
+      end
+
+      def self.finalize(thread)
+         proc {
+           Thread.kill(thread)
+         }
+      end
 
       def login()
         return unless @connection.nil?
@@ -45,13 +79,13 @@ module Serengeti
 
         # Create Client pool for faster access vSphere
         @connection = {}
-        @connection[:con] = []
+        @connection[:compute] = []
         @connection[:ha_ft] = []
         @connection[:err] = []
         group_each_by_threads(connect_list, :callee => 'cloud login') do |con|
           begin
             connection = Fog::Compute.new(cloud.get_provider_info)
-            @con_lock.synchronize { @connection[:con] << connection }
+            @con_lock.synchronize { @connection[:compute] << connection }
             if config.ha_service_ready
               ha_ft = Fog::Highavailability.new(cloud.get_provider_info)
               @con_lock.synchronize { @connection[:ha_ft] << ha_ft }
@@ -65,17 +99,33 @@ module Serengeti
                         "error is:\n#{@connection[:err].join("\n")}")
           raise "#{@connection[:err].size} connections fail to login."
         end
-        logger.debug("Use #{@connection[:con].size} channels to connect cloud service\n}")
+        logger.debug("Use #{@connection[:compute].size} channels to connect cloud service\n}")
+
+        @keep_alive_thread = Thread.new { keep_alive() }
+        ObjectSpace.define_finalizer( self, self.class.finalize(@keep_alive_thread) )
       end
 
       def compute_op
-        yield @con_lock.synchronize { @connection[:con].rotate!.first }
+        yield @con_lock.synchronize {
+          conn = @connection[:compute][@compute_conn_idx]
+          @compute_conn_idx += 1
+          @compute_conn_idx = 0 if @compute_conn_idx == @connection[:compute].size
+          conn
+        }
       end
 
       def ha_ft_op
-        yield @con_lock.synchronize { @connection[:ha_ft].rotate!.first }
+        yield @con_lock.synchronize {
+          conn = @connection[:ha_ft][@ha_conn_idx]
+          @ha_conn_idx += 1
+          @ha_conn_idx = 0 if @ha_conn_idx == @connection[:ha_ft].size
+          conn
+        }
       end
 
+      # TODO, right now logout is not correctly invoked when cloud manger
+      # is asynchronous called by up layer. When logout is fixed, keep alive
+      # thread can be destroyed more elegantly.
       def logout
         @con_lock.synchronize do
           unless @connection.nil?
