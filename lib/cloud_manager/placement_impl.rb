@@ -100,6 +100,7 @@ module Serengeti
                 leaf_groups.unshift(group_info.referred_group)
               end
             else
+              leaf_groups.push(group_info.referred_group)
               leaf_groups.push(name)
             end
           else
