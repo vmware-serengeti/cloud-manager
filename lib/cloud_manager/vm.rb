@@ -386,6 +386,7 @@ module Serengeti
           @can_ha = client.is_vm_in_ha_cluster(self)
 
           @status = VM_STATE_RECONFIG
+          req_info.disk_type == DISK_TYPE_TEMP
           return if !cloud_op('Reconfigure disk', :deploy) { reconfigure_disk}
           logger.info("vm:#{name} finish reconfigure disk")
 
@@ -514,7 +515,6 @@ module Serengeti
       def reconfigure_disk(options={})
         res_vms['storage'].id = mob
         storage_service.deploy(res_vms['storage'])
-        #disks.each_value { |disk| client.vm_create_disk(self, disk) if disk.unit_number > 0}
       end
 
       def reconfigure_network(options = {})

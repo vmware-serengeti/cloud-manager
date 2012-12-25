@@ -104,6 +104,8 @@ module Serengeti
 
     DISK_TYPE_SHARE = 'shared'
     DISK_TYPE_LOCAL = 'local'
+    DISK_TYPE_TEMP  = 'temp'
+    DISK_TYPE = [DISK_TYPE_SHARE, DISK_TYPE_LOCAL, DISK_TYPE_TEMP]
     class ResourceInfo
       DISK_SIZE_UNIT_CONVERTER = 1024
       attr_accessor :cpu
@@ -125,7 +127,7 @@ module Serengeti
           @disk_pattern = rp["storage"]["name_pattern"]
           @disk_size *= DISK_SIZE_UNIT_CONVERTER
           @disk_type = rp["storage"]["type"]
-          @disk_type = DISK_TYPE_SHARE if @disk_type != DISK_TYPE_LOCAL
+          @disk_type = DISK_TYPE_SHARE if DISK_TYPE.include?(@disk_type)
           @template_id = rp["template_id"]
           @ha = rp["ha"] #Maybe 'on' 'off' 'ft'
           @ha = 'off' if rp["ha"].nil?
@@ -243,7 +245,7 @@ module Serengeti
           'ha' => req_info.ha,
 
           'datastore_pattern' => req_info.disk_pattern,
-          'data_size' => req_info.disk_size,
+          'data_size' => (req_info.disk_type == DISK_TYPE_TEMP) ? 0 : req_info.disk_size,
           'data_shared' => (req_info.disk_type == "shared"),
           'data_mode' => 'thick_egger_zeroed',
           'data_affinity' => 'split',
