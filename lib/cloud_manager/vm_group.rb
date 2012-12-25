@@ -127,7 +127,7 @@ module Serengeti
           @disk_pattern = rp["storage"]["name_pattern"]
           @disk_size *= DISK_SIZE_UNIT_CONVERTER
           @disk_type = rp["storage"]["type"]
-          @disk_type = DISK_TYPE_SHARE if DISK_TYPE.include?(@disk_type)
+          @disk_type = DISK_TYPE_SHARE if !DISK_TYPE.include?(@disk_type)
           @template_id = rp["template_id"]
           @ha = rp["ha"] #Maybe 'on' 'off' 'ft'
           @ha = 'off' if rp["ha"].nil?
