@@ -216,6 +216,7 @@ module Serengeti
         @cloud = cloud
         @host_name = nil
         @res_vms = nil
+        @datadisk_size = 0
         logger.debug("init vm: #{vm_name}")
       end
 
@@ -291,6 +292,7 @@ module Serengeti
         @host_name  = host.name
         @host_mob   = host.mob
         @storage_service = service['storage']
+        @datadisk_size = spec['data_size']
 
         logger.debug("ha: #{spec['ha']}")
         @ft_enable = (spec['ha'] == 'ft')
@@ -386,9 +388,12 @@ module Serengeti
           @can_ha = client.is_vm_in_ha_cluster(self)
 
           @status = VM_STATE_RECONFIG
-          req_info.disk_type == DISK_TYPE_TEMP
-          return if !cloud_op('Reconfigure disk', :deploy) { reconfigure_disk}
-          logger.info("vm:#{name} finish reconfigure disk")
+          if @datadisk_size > 0
+            return if !cloud_op('Reconfigure disk', :deploy) { reconfigure_disk}
+            logger.info("vm:#{name} finish reconfigure disk")
+          else
+            logger.debug("vm:#{name} do not config data disk.")
+          end
 
           return if !cloud_op('Reconfigure network', :deploy) { reconfigure_network }
           logger.info("vm:#{name} finish reconfigure networking")

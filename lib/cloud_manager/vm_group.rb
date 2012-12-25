@@ -104,7 +104,7 @@ module Serengeti
 
     DISK_TYPE_SHARE = 'shared'
     DISK_TYPE_LOCAL = 'local'
-    DISK_TYPE_TEMP  = 'temp'
+    DISK_TYPE_TEMP  = 'tempfs'
     DISK_TYPE = [DISK_TYPE_SHARE, DISK_TYPE_LOCAL, DISK_TYPE_TEMP]
     class ResourceInfo
       DISK_SIZE_UNIT_CONVERTER = 1024
