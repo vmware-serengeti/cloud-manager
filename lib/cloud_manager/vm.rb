@@ -388,12 +388,8 @@ module Serengeti
           @can_ha = client.is_vm_in_ha_cluster(self)
 
           @status = VM_STATE_RECONFIG
-          if @datadisk_size > 0
-            return if !cloud_op('Reconfigure disk', :deploy) { reconfigure_disk}
-            logger.info("vm:#{name} finish reconfigure disk")
-          else
-            logger.debug("vm:#{name} do not config data disk.")
-          end
+          return if !cloud_op('Reconfigure disk', :deploy) { reconfigure_disk}
+          logger.info("vm:#{name} finish reconfigure disk")
 
           return if !cloud_op('Reconfigure network', :deploy) { reconfigure_network }
           logger.info("vm:#{name} finish reconfigure networking")

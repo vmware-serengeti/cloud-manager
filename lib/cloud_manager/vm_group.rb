@@ -246,13 +246,13 @@ module Serengeti
 
           'datastore_pattern' => req_info.disk_pattern,
           'data_size' => (req_info.disk_type == DISK_TYPE_TEMP) ? 0 : req_info.disk_size,
-          'data_shared' => (req_info.disk_type == "shared"),
+          'data_shared' => (req_info.disk_type == DISK_TYPE_SHARE),
           'data_mode' => 'thick_egger_zeroed',
           'data_affinity' => 'split',
           'disk_bisect' => req_info.disk_bisect,
 
           'system_size' => config.vm_sys_disk_size,
-          'system_shared' => (req_info.disk_type == "shared"),
+          'system_shared' => (req_info.disk_type == DISK_TYPE_SHARE and req_info.disk_type != DISK_TYPE_TEMP),
           'system_mode' => 'thin',
           'system_affinity' => nil,
 
