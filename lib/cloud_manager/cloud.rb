@@ -188,7 +188,10 @@ module Serengeti
           next if input_group.nil?
           logger.debug("find same group #{exist_group.name}, and change each vm's configuration")
           exist_group.vm_ids.each_value { |vm| vm.ha_enable = (input_group.req_info.ha == 'on') }
-          exist_group.vm_ids.each_value { |vm| vm.ha_enable = vm.ft_enable = (input_group.req_info.ha == 'ft') }
+          exist_group.vm_ids.each_value { |vm|
+            vm.ft_enable = (input_group.req_info.ha == 'ft')
+            vm.ha_enable = vm.ft_enable if vm.ft_enable
+          }
 =begin
           if cluster_data && cluster_data['groups']
             cluster_data_instances = cluster_data['groups'].map do |group|
