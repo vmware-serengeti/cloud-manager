@@ -126,6 +126,8 @@ module Serengeti
       attr_accessor :group_name
       attr_accessor :created
       attr_accessor :cluster_name
+      attr_accessor :elastic
+      attr_accessor :extra_config
       attr_accessor :rp_name
       attr_accessor :network_res
       attr_accessor :assign_ip
@@ -217,6 +219,8 @@ module Serengeti
         @host_name = nil
         @res_vms = nil
         @datadisk_size = 0
+        @elastic = false
+        @extra_config = []
         logger.debug("init vm: #{vm_name}")
       end
 
@@ -293,6 +297,7 @@ module Serengeti
         @host_mob   = host.mob
         @storage_service = service['storage']
         @datadisk_size = spec['data_size']
+        @elastic = spec['elastic']
 
         logger.debug("ha: #{spec['ha']}")
         @ft_enable = (spec['ha'] == 'ft')
@@ -431,6 +436,12 @@ module Serengeti
           #end
           return if !cloud_op('Operate FT') { client.vm_set_ft(self, ft_enable) }
           logger.debug("Enable FT on vm #{name}")
+        end
+
+        # config vhm
+        if config.cloud_has_compute_group
+          logger.info("vm #{name}, instance_uuid:#{instance_uuid}, masterVM_uuid:#{config.vhm_masterVM_uuid}, masterVM_moid: #{config.vhm_masterVM_moid}, elastic:#{elastic}, automation: #{config.cloud_vhm_enable}, self.moid: #{mob}")
+          return if !cloud_op('Config VHM') { client.vm_config_vhm(self) }
         end
 
         # Power On vm

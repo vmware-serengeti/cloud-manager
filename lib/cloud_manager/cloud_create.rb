@@ -20,6 +20,9 @@ module Serengeti
 
     class Config
       def_const_value :deploy_retry_num, 0
+      def_const_value :vhm_masterVM_uuid, ''
+      def_const_value :vhm_masterVM_moid, ''
+      def_const_value :serengeti_uuid, ''
     end
 
     class Cloud
@@ -66,6 +69,9 @@ module Serengeti
               successful = cluster_deploy(placement[:action])
               next if placement[:rollback] == 'fetch_info'
 
+              #specify vhm master node
+              specify_vhm_master(state_sub_vms(:existed).values)
+
               logger.info("Begin waiting cluster ready")
               #Wait cluster ready
               @status = CLUSTER_WAIT_START
@@ -90,6 +96,20 @@ module Serengeti
           # Cluster deploy successfully
         end
 
+      end
+
+      # just specify the first deployed non-computeonly vm as master vm currently
+      def specify_vhm_master(vms)
+        if config.vhm_masterVM_uuid == '' || config.vhm_masterVM_moid == ''
+          vms.each do |vm|
+            if !vm.elastic
+              @client.get_vm_properties_by_vm_mob(vm)
+              config.vhm_masterVM_uuid = vm.uuid
+              config.vhm_masterVM_moid = vm.mob
+              break
+            end
+          end
+        end
       end
     end
 

@@ -231,6 +231,18 @@ module Serengeti
         end
       end
 
+      def vm_config_vhm(vm)
+        check_connection
+        logger.debug("config vhm")
+        result = compute_op{ |con| con.vm_config_vhm('instance_uuid' => vm.instance_uuid,
+                                                     'serengeti_uuid' => config.serengeti_uuid,
+                                                     'masterVM_uuid' => config.vhm_masterVM_uuid,
+                                                     'masterVM_moid' => config.vhm_masterVM_moid,
+                                                     'vm_elastic' => vm.elastic,
+                                                     'self_moid' => vm.mob,
+                                                     'vhm_enable' => config.cloud_vhm_enable) }
+      end
+
       ##################################################
       # High Availability Interface
       def vm_set_ha(vm, enable)
@@ -390,6 +402,7 @@ module Serengeti
         vm.tools_state      = vm_properties["tools_state"]
         vm.tools_version    = vm_properties["tools_version"]
         vm.is_a_template    = vm_properties["is_a_template"]
+        vm.extra_config     = vm_properties["extra_config"]
         nil
       end
 

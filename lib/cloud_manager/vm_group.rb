@@ -74,6 +74,7 @@ module Serengeti
           cluster.hosts.each_value do |host|
             host.vms.each_value do |vm|
               logger.debug("vm :#{vm.name}")
+
               result = parse_vm_from_name(vm.name)
               next unless result
               cluster_name = result["cluster_name"]
@@ -81,6 +82,7 @@ module Serengeti
               num = result["num"]
               next if (cluster_name != config.cloud_cluster_name)
 
+              sync_vhm_info(vm)
               vm_group = vm_groups[group_name]
               if vm_group.nil?
                 # Create new Group
@@ -100,6 +102,22 @@ module Serengeti
         #logger.debug("res_group:#{vm_groups}")
         vm_groups
       end
+
+      def sync_vhm_info(vm)
+        if config.vhm_masterVM_uuid == '' || config.vhm_masterVM_moid == ''
+          config.vhm_masterVM_uuid = get_value(vm.extra_config, "vhmInfo.masterVM.uuid")
+          config.vhm_masterVM_moid = get_value(vm.extra_config, "vhmInfo.masterVM.moid")
+        end
+      end
+
+      def get_value(prop, key)
+        prop.each do |entry|
+          if entry[:key] == key
+            return entry[:value]
+          end
+        end
+        return ''
+      end
     end
 
     DISK_TYPE_SHARE = 'shared'
@@ -118,6 +136,7 @@ module Serengeti
       attr_accessor :ha
       attr_accessor :vm_folder_path
       attr_accessor :disk_bisect
+      attr_accessor :elastic
 
       def initialize(rp=nil)
         if rp
@@ -134,8 +153,23 @@ module Serengeti
           @rack_id = nil
           @vm_folder_path = rp["vm_folder_path"]
           @disk_bisect = rp["storage"]["bisect"] || false
+
+          # generally, cloud-manager is supposed to be not aware of group roles, here is really an exception case
+          roles = rp["roles"]
+          if roles.size == 1 && roles.include?("hadoop_tasktracker")
+            @elastic = true
+          else
+            @elastic = false
+          end
+          # set config.serengeti_uuid when first meet "vm_folder_path"
+          config.serengeti_uuid = rp["vm_folder_path"].split(/\//)[0] if config.serengeti_uuid == ''
         end
       end
+
+      def config
+        Serengeti::CloudManager.config
+      end
+
     end
 
     class VmGroupRack
@@ -257,7 +291,8 @@ module Serengeti
           'system_affinity' => nil,
 
           'port_groups' => network_res.port_groups,
-          'vm_folder_path' => req_info.vm_folder_path
+          'vm_folder_path' => req_info.vm_folder_path,
+          'elastic' => req_info.elastic
         }
       end
 

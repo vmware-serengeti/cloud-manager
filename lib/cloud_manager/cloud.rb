@@ -41,6 +41,8 @@ module Serengeti
       def_const_value :cloud_existed_vms_mob, {}
       def_const_value :vc_local_datastore_pattern, []
       def_const_value :vc_share_datastore_pattern, []
+      def_const_value :cloud_vhm_enable, false
+      def_const_value :cloud_has_compute_group, false
      end
 
     class Cloud
@@ -98,6 +100,8 @@ module Serengeti
         @need_abort = nil
         config.cloud_cluster_name = @cluster_info['name']
         config.cloud_template_id  = @cluster_info['template_id']
+        config.cloud_vhm_enable = @cluster_info['automation_enable'] || false
+        config.cloud_has_compute_group = @cluster_info.has_key?('automation_enable')
 
         @status = CLUSTER_BIRTH
         @client = nil
