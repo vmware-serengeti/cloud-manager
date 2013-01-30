@@ -43,6 +43,7 @@ module Serengeti
       def_const_value :vc_share_datastore_pattern, []
       def_const_value :cloud_vhm_enable, false
       def_const_value :cloud_has_compute_group, false
+      def_const_value :cluster_has_local_datastores, false
      end
 
     class Cloud
@@ -102,6 +103,7 @@ module Serengeti
         config.cloud_template_id  = @cluster_info['template_id']
         config.cloud_vhm_enable = @cluster_info['automation_enable'] || false
         config.cloud_has_compute_group = @cluster_info.has_key?('automation_enable')
+        config.cluster_has_local_datastores = (!@cluster_info['vc_local_datastore_pattern'].nil?) and (!@cluster_info['vc_local_datastore_pattern'].empty?)
 
         @status = CLUSTER_BIRTH
         @client = nil
