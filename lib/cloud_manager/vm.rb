@@ -48,12 +48,13 @@ module Serengeti
       VM_STATE_READY      = { :doing => "Initializing"  , :done => 'VM Ready' }
       VM_STATE_POWER_OFF  = { :doing => "Powering Off"  , :done => 'Powered Off' }
 
-      VM_ACTION_CREATE  = 'create'
-      VM_ACTION_DELETE  = 'delete'
-      VM_ACTION_UPDATE  = 'update'
-      VM_ACTION_START   = 'startup'
-      VM_ACTION_STOP    = 'stop'
-      VM_ACTION_LIST    = 'list'
+      VM_ACTION_CREATE    = 'create'
+      VM_ACTION_DELETE    = 'delete'
+      VM_ACTION_UPDATE    = 'update'
+      VM_ACTION_START     = 'startup'
+      VM_ACTION_STOP      = 'stop'
+      VM_ACTION_LIST      = 'list'
+      VM_ACTION_RECONFIG  = 'reconfig'
 
       VM_CREATE_PROCESS = {
         VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_BIRTH[:done] },
@@ -79,6 +80,13 @@ module Serengeti
         VM_STATE_DONE      => { :progress => 100 , :status => VM_STATE_POWER_OFF[:done] },
       }
 
+      VM_RECONFIG_PROCESS = {
+        VM_STATE_READY     => { :progress =>   0 , :status => VM_STATE_READY[:done] },
+        VM_STATE_RECONFIG  => { :progress =>  20 , :status => VM_STATE_READY[:done] },
+        VM_STATE_DONE      => { :progress => 100 , :status => VM_STATE_RECONFIG[:done] },
+      }
+
+
       VM_START_PROCESS = {
         VM_STATE_BIRTH    => { :progress =>   0, :status => VM_STATE_POWER_OFF[:done] },
         VM_STATE_READY    => { :progress =>  10, :status => VM_STATE_CLONE[:done] },
@@ -92,6 +100,12 @@ module Serengeti
         VM_ACTION_DELETE  => VM_DELETE_PROCESS,
         VM_ACTION_START   => VM_START_PROCESS,
         VM_ACTION_STOP    => VM_STOP_PROCESS,
+        VM_ACTION_RECONFIG => VM_RECONFIG_PROCESS
+      }
+
+      SUPPORTED_RECONFIG_ACTIONS = {
+        "Reconfig VHM Info" => "vm_config_vhm",
+        "Reconfig IOShares" => "vm_config_ioshares"
       }
 
       attr_accessor :id
@@ -439,10 +453,8 @@ module Serengeti
         end
 
         # config vhm
-        if config.cloud_has_compute_group
-          logger.info("vm #{name}, instance_uuid:#{instance_uuid}, masterVM_uuid:#{config.vhm_masterVM_uuid}, masterVM_moid: #{config.vhm_masterVM_moid}, elastic:#{elastic}, automation: #{config.cloud_vhm_enable}, self.moid: #{mob}")
-          return if !cloud_op('Config VHM') { client.vm_config_vhm(self) }
-        end
+        logger.info("vm #{name}, instance_uuid:#{instance_uuid}, masterVM_uuid:#{config.vhm_masterVM_uuid}, masterVM_moid: #{config.vhm_masterVM_moid}, elastic:#{elastic}, automation: #{config.cloud_vhm_enable}, min_num: #{config.cloud_vhm_min_computenodes_num}, self.moid: #{mob}")
+        return if !cloud_op('Config VHM') { client.vm_config_vhm(self) }
 
         # Power On vm
         if options[:force_power_on]
@@ -495,6 +507,20 @@ module Serengeti
         return if !cloud_op('Reread') { client.get_vm_properties_by_vm_mob(self) }
         @status = VM_STATE_DONE
         logger.debug("stop :#{name}")
+        mov_vm(:existed, :finished)
+      end
+
+      # Reconfig VM without restart
+      def reconfig
+        @action = VM_ACTION_RECONFIG
+        @status = VM_STATE_RECONFIG
+        logger.debug("reconfig vm: #{name}")
+        SUPPORTED_RECONFIG_ACTIONS.each do |desc, action|
+          return if !cloud_op(desc) {
+            client.send(action, self)
+          }
+        end
+        @status = VM_STATE_DONE
         mov_vm(:existed, :finished)
       end
 

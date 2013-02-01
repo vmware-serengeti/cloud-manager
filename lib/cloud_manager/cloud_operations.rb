@@ -22,6 +22,7 @@ module Serengeti
         CLUSTER_DELETE  => 'delete',
         CLUSTER_START   => 'start',
         CLUSTER_STOP    => 'stop',
+        CLUSTER_RECONFIG => 'reconfig',
         CLUSTER_LIST    => 'list'
       }
 
@@ -92,6 +93,14 @@ module Serengeti
         action_process(CLOUD_WORK_STOP, task) do
           vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_STOP)
           group_each_by_threads(vms, :callee=>'stop vm') { |vm| vm.stop }
+        end
+      end
+
+      def reconfig()
+        cloud_provider, cluster_info, cluster_data, task = @cloud_provider, @cluster_info, @cluster_last_data, @task
+        action_process(CLOUD_WORK_RECONFIG, task) do
+          vms = cloud_vms_op(cloud_provider, cluster_info, cluster_data, CLUSTER_RECONFIG)
+          group_each_by_threads(vms, :callee=>'reconfig vm') { |vm| vm.reconfig }
         end
       end
 

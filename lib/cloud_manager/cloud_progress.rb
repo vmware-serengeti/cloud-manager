@@ -18,13 +18,14 @@
 module Serengeti
   module CloudManager
     class Cloud
-      CLOUD_WORK_CREATE = 'create'
-      CLOUD_WORK_DELETE = 'delete'
-      CLOUD_WORK_UPDATE = 'update'
-      CLOUD_WORK_LIST   = 'list'
-      CLOUD_WORK_START  = 'start'
-      CLOUD_WORK_STOP   = 'stop'
-      CLOUD_WORK_NONE   = 'none'
+      CLOUD_WORK_CREATE    = 'create'
+      CLOUD_WORK_DELETE    = 'delete'
+      CLOUD_WORK_UPDATE    = 'update'
+      CLOUD_WORK_LIST      = 'list'
+      CLOUD_WORK_START     = 'start'
+      CLOUD_WORK_STOP      = 'stop'
+      CLOUD_WORK_RECONFIG  = 'reconfig'
+      CLOUD_WORK_NONE      = 'none'
 
       CLUSTER_BIRTH       = "birth"
       CLUSTER_CONNECT     = "Connect to cloud"
@@ -40,6 +41,7 @@ module Serengeti
       CLUSTER_START     = 'Starting'
       CLUSTER_STOP      = 'Stoping'
       CLUSTER_LIST      = 'Listing'
+      CLUSTER_RECONFIG  = 'Reconfiguring'
 
       CLUSTER_CREATE_PROCESS = {
         CLUSTER_BIRTH           => [0, 1],
@@ -85,12 +87,21 @@ module Serengeti
         CLUSTER_DONE        => [100, 0],
       }
 
+      CLUSTER_RECONFIG_PROCESS = {
+        CLUSTER_BIRTH       => [0, 1],
+        CLUSTER_CONNECT     => [1, 4],
+        CLUSTER_FETCH_INFO  => [5, 25],
+        CLUSTER_RECONFIG    => [30, 70],
+        CLUSTER_DONE        => [100, 0],
+      }
+
       CLUSTER_PROCESS = {
-        CLOUD_WORK_CREATE => CLUSTER_CREATE_PROCESS,
-        CLOUD_WORK_DELETE => CLUSTER_DELETE_PROCESS,
-        CLOUD_WORK_LIST   => CLUSTER_LIST_PROCESS,
-        CLOUD_WORK_START  => CLUSTER_START_PROCESS,
-        CLOUD_WORK_STOP   => CLUSTER_STOP_PROCESS,
+        CLOUD_WORK_CREATE     => CLUSTER_CREATE_PROCESS,
+        CLOUD_WORK_DELETE     => CLUSTER_DELETE_PROCESS,
+        CLOUD_WORK_LIST       => CLUSTER_LIST_PROCESS,
+        CLOUD_WORK_START      => CLUSTER_START_PROCESS,
+        CLOUD_WORK_STOP       => CLUSTER_STOP_PROCESS,
+        CLOUD_WORK_RECONFIG   => CLUSTER_RECONFIG_PROCESS,
       }
 
       # Get VMs' info from vm queues

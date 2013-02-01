@@ -105,6 +105,10 @@ module Serengeti
         op_helper(parameter, options) { |cloud| cloud.create }
       end
 
+      def self.reconfig_cluster(parameter, options={})
+        op_helper(parameter, options) { |cloud| cloud.reconfig }
+      end
+
       def self.list_vms_cluster(parameter, options={})
         op_helper(parameter, :wait=>true) { |cloud| cloud.list_vms(options) }
       end

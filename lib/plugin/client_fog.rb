@@ -232,15 +232,22 @@ module Serengeti
       end
 
       def vm_config_vhm(vm)
-        check_connection
-        logger.debug("config vhm")
-        result = compute_op{ |con| con.vm_config_vhm('instance_uuid' => vm.instance_uuid,
-                                                     'serengeti_uuid' => config.serengeti_uuid,
-                                                     'masterVM_uuid' => config.vhm_masterVM_uuid,
-                                                     'masterVM_moid' => config.vhm_masterVM_moid,
-                                                     'vm_elastic' => vm.elastic,
-                                                     'self_moid' => vm.mob,
-                                                     'vhm_enable' => config.cloud_vhm_enable) }
+        if !config.cloud_vhm_enable.nil?
+          check_connection
+          logger.debug("config vhm")
+          result = compute_op{ |con| con.vm_config_vhm('instance_uuid' => vm.instance_uuid,
+                                                       'serengeti_uuid' => config.serengeti_uuid,
+                                                       'masterVM_uuid' => config.vhm_masterVM_uuid,
+                                                       'masterVM_moid' => config.vhm_masterVM_moid,
+                                                       'vm_elastic' => vm.elastic,
+                                                       'self_moid' => vm.mob,
+                                                       'vhm_enable' => config.cloud_vhm_enable,
+                                                       'vhm_min_num' => config.cloud_vhm_min_computenodes_num) }
+          end
+      end
+
+      def vm_config_ioshares(vm)
+        # TODO
       end
 
       ##################################################

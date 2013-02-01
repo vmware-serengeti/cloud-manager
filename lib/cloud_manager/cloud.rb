@@ -42,7 +42,8 @@ module Serengeti
       def_const_value :vc_local_datastore_pattern, []
       def_const_value :vc_share_datastore_pattern, []
       def_const_value :cloud_vhm_enable, false
-      def_const_value :cloud_has_compute_group, false
+      # if not specified, maintain the former setting, might be nil/unsigned Integer
+      def_const_value :cloud_vhm_min_computenodes_num, nil
       def_const_value :cluster_has_local_datastores, false
      end
 
@@ -102,7 +103,7 @@ module Serengeti
         config.cloud_cluster_name = @cluster_info['name']
         config.cloud_template_id  = @cluster_info['template_id']
         config.cloud_vhm_enable = @cluster_info['automation_enable'] || false
-        config.cloud_has_compute_group = @cluster_info.has_key?('automation_enable')
+        config.cloud_vhm_min_computenodes_num = @cluster_info['vhm_min_num']
         config.cluster_has_local_datastores = (!@cluster_info['vc_local_datastore_pattern'].nil?) and (!@cluster_info['vc_local_datastore_pattern'].empty?)
 
         @status = CLUSTER_BIRTH

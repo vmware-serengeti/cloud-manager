@@ -87,6 +87,11 @@ module Serengeti
         @cloud.delete()
       end
 
+      def reconfig
+        logger.debug("call cloud.reconfig...")
+        @cloud.reconfig()
+      end
+
       def Cluster
         Cluster.new(@cloud)
       end
