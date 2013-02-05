@@ -233,7 +233,7 @@ module Serengeti
         @host_name = nil
         @res_vms = nil
         @datadisk_size = 0
-        @elastic = false
+        @elastic = nil
         @extra_config = []
         logger.debug("init vm: #{vm_name}")
       end
