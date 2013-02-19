@@ -188,6 +188,7 @@ module Serengeti
         check_connection
         info = { 'instance_uuid' => vm.instance_uuid,
           'vmdk_path' => disk.fullpath,
+          'disk_type' => disk.type,
           'disk_size' => disk.size / DISK_SIZE_TIMES }
         info['provison_type'] = (disk.shared && disk.type == 'data') ? 'thin' : nil
         logger.debug("Create disk :#{disk.fullpath} size:#{disk.size}MB, type:#{info['provison_type']}")
