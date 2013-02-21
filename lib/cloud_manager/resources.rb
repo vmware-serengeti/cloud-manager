@@ -352,7 +352,7 @@ module Serengeti
 
       def isMatched?(name, match_patterns)
         #logger.debug("isMatched? #{name}, #{match_patterns.pretty_inspect}")
-        match_patterns.each { |pattern| return true if name.match(pattern) }
+        match_patterns.each { |pattern| return true if name.gsub(/\(/, '').gsub(/\)/, '').gsub(/\[/, '').gsub(/\]/, '').match(pattern) }
         #logger.debug("Not Match? ")
         false
       end
