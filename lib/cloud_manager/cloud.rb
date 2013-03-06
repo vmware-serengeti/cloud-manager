@@ -104,7 +104,7 @@ module Serengeti
         config.cloud_template_id  = @cluster_info['template_id']
         config.cloud_vhm_enable = @cluster_info['automation_enable'] || false
         config.cloud_vhm_min_computenodes_num = @cluster_info['vhm_min_num']
-        config.cluster_has_local_datastores = (!@cluster_info['vc_local_datastore_pattern'].nil?) and (!@cluster_info['vc_local_datastore_pattern'].empty?)
+        config.cluster_has_local_datastores = (!@cloud_provider['vc_local_datastore_pattern'].nil?) && (!@cloud_provider['vc_local_datastore_pattern'].empty?)
 
         @status = CLUSTER_BIRTH
         @client = nil

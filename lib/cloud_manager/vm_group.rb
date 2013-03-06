@@ -286,7 +286,7 @@ module Serengeti
           'disk_bisect' => req_info.disk_bisect,
 
           'system_size' => config.vm_sys_disk_size,
-          'system_shared' => ((req_info.disk_type == DISK_TYPE_SHARE and req_info.disk_type != DISK_TYPE_TEMP) \
+          'system_shared' => ((req_info.disk_type == DISK_TYPE_SHARE) \
                               || (req_info.disk_type == DISK_TYPE_TEMP and !config.cluster_has_local_datastores)),
           'system_mode' => 'thin',
           'system_affinity' => nil,
