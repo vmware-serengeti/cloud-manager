@@ -67,6 +67,34 @@ module Serengeti
     end
 
     class ResourceStorage < CMService
+
+      LOOP_INTERVAL = 2
+      SESSION_KEEP_ALIVE_INTERVAL = 60
+
+      def keep_alive
+        count = 0
+        while true do
+          sleep(LOOP_INTERVAL)
+          count += 1
+
+          if count == SESSION_KEEP_ALIVE_INTERVAL/LOOP_INTERVAL
+            begin
+              @server.keep_alive
+            rescue
+              # ignore any exceptions
+            end
+
+            count = 0
+          end
+        end
+      end
+
+      def self.finalize(thread)
+         proc {
+           Thread.kill(thread)
+         }
+      end
+
       def initialize(cloud)
         super
         if config.enable_inner_storage_service
@@ -80,6 +108,9 @@ module Serengeti
           info['local_datastore_pattern'] = config.vc_local_datastore_pattern
           @server = cloud.create_service_obj(config.storage_service, info)
         end
+
+        @keep_alive_thread = Thread.new { keep_alive() }
+        ObjectSpace.define_finalizer( self, self.class.finalize(@keep_alive_thread) )
       end
 
       def name
